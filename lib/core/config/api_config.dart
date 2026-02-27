@@ -1,5 +1,5 @@
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
 /// API configuration for the Node.js backend
 ///
@@ -8,6 +8,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 /// - Production: Set via --dart-define=API_URL=https://your-api.com
 class ApiConfig {
   ApiConfig._();
+
+  /// Default production URL (Render backend)
+  static const String _defaultProductionUrl = 'https://prompt-app-05kv.onrender.com';
 
   /// Production URL from environment variable (set via --dart-define)
   static const String? _productionUrl = String.fromEnvironment('API_URL');
@@ -23,9 +26,13 @@ class ApiConfig {
   }
 
   /// Base URL for API calls
-  /// Uses production URL if set, otherwise falls back to localhost
-  static String get baseUrl =>
-      (_productionUrl?.isNotEmpty == true) ? _productionUrl! : localhostUrl;
+  /// Uses --dart-define URL if set, otherwise production URL for release builds,
+  /// or localhost for debug builds
+  static String get baseUrl {
+    if (_productionUrl?.isNotEmpty == true) return _productionUrl!;
+    if (kReleaseMode) return _defaultProductionUrl;
+    return localhostUrl;
+  }
 
   /// Full API endpoint path
   static String get apiEndpoint => '$baseUrl/api';
@@ -40,5 +47,6 @@ class ApiConfig {
   static String get healthEndpoint => '$baseUrl/health';
 
   /// Check if running in production mode
-  static bool get isProduction => _productionUrl?.isNotEmpty == true;
+  static bool get isProduction =>
+      _productionUrl?.isNotEmpty == true || kReleaseMode;
 }
