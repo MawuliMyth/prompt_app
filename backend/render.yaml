@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: prompt-app-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CLAUDE_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

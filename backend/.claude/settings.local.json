@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run:*)",
+      "Bash(curl:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(flutter pub:*)",
+      "Bash(\"C:\\\\Users\\\\josep\\\\Documents\\\\flutter_projects\\\\promt_app\\\\backend\\\\render.yaml\":*)"
+    ]
+  }
+}

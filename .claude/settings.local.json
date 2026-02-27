@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 5 node:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(where ffmpeg:*)",
+      "Bash(flutter:*)",
+      "Bash(keytool:*)",
+      "Bash(dart run:*)",
+      "Bash(flutter pub:*)",
+      "Bash(file:*)",
+      "Bash(dart analyze:*)",
+      "Bash(netstat:*)"
+    ]
+  }
+}
