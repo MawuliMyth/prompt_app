@@ -35,7 +35,12 @@ class FavouritesScreen extends StatelessWidget {
                           final prompt = promptProvider.favouritePrompts[index];
                           return Stack(
                             children: [
-                               PromptHistoryCard(prompt: prompt),
+                               PromptHistoryCard(
+                                 prompt: prompt,
+                                 onDelete: () {
+                                   promptProvider.deletePrompt(authProvider.currentUser, prompt.id);
+                                 },
+                               ),
                                Positioned(
                                   top: 16,
                                   right: 16,
