@@ -102,7 +102,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                  itemCount: promptProvider.prompts.length,
                                  itemBuilder: (context, index) {
                                     final prompt = promptProvider.prompts[index];
-                                    return PromptHistoryCard(prompt: prompt);
+                                    return PromptHistoryCard(
+                                      prompt: prompt,
+                                      onDelete: () {
+                                        promptProvider.deletePrompt(
+                                          authProvider.currentUser,
+                                          prompt.id,
+                                        );
+                                      },
+                                    );
                                  },
                                ),
                         )
@@ -255,8 +263,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
 class PromptHistoryCard extends StatelessWidget {
    final PromptModel prompt;
+   final VoidCallback onDelete;
 
-   const PromptHistoryCard({super.key, required this.prompt});
+   const PromptHistoryCard({super.key, required this.prompt, required this.onDelete});
 
    String _getEmojiForCategory(String category) {
       switch(category) {
@@ -279,74 +288,120 @@ class PromptHistoryCard extends StatelessWidget {
    Widget build(BuildContext context) {
       final theme = Theme.of(context);
 
-      return GestureDetector(
-         onTap: () {
-             Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => ResultScreen(
-                   originalText: prompt.originalText,
-                   enhancedPrompt: prompt.enhancedPrompt,
-                   category: prompt.category,
-                   existingPrompt: prompt, // Pass existing prompt to prevent duplicate save
-                ))
-             );
-         },
-         onLongPress: () {
-             // Show options: Copy, Share, Favourite, Delete
-         },
-         child: Container(
+      return Dismissible(
+         key: Key(prompt.id),
+         direction: DismissDirection.endToStart,
+         background: Container(
             margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
             decoration: BoxDecoration(
-               color: theme.cardColor,
+               color: Colors.red.shade400,
                borderRadius: BorderRadius.circular(16),
-               border: Border.all(color: AppColors.dividerLight),
             ),
-            child: Column(
-               crossAxisAlignment: CrossAxisAlignment.start,
-               children: [
-                  Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                     children: [
-                        Text(AppDateUtils.formatDateTime(prompt.createdAt), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
-                        Row(
-                           children: [
-                              Text(_getEmojiForCategory(prompt.category), style: const TextStyle(fontSize: 16)),
-                              const SizedBox(width: 4),
-                              Text(prompt.category, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
-                           ],
-                        )
-                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(prompt.originalText, style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 8),
-                  Container(
-                     padding: const EdgeInsets.all(12),
-                     decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(8),
+            child: const Icon(
+               Icons.delete,
+               color: Colors.white,
+               size: 28,
+            ),
+         ),
+         confirmDismiss: (direction) async {
+            return await showDialog(
+               context: context,
+               builder: (context) => AlertDialog(
+                  title: Text('Delete Prompt?', style: AppTextStyles.headingMedium),
+                  content: Text('This action cannot be undone.', style: AppTextStyles.body),
+                  actions: [
+                     TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text('Cancel', style: AppTextStyles.button.copyWith(color: AppColors.textSecondaryLight)),
                      ),
-                     child: Row(
+                     TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text('Delete', style: AppTextStyles.button.copyWith(color: Colors.red)),
+                     ),
+                  ],
+               ),
+            );
+         },
+         onDismissed: (direction) {
+            onDelete();
+            ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(
+                  content: const Text('Prompt deleted'),
+                  backgroundColor: AppColors.primaryLight,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  duration: const Duration(seconds: 2),
+               ),
+            );
+         },
+         child: GestureDetector(
+            onTap: () {
+                Navigator.of(context).push(
+                   MaterialPageRoute(builder: (_) => ResultScreen(
+                      originalText: prompt.originalText,
+                      enhancedPrompt: prompt.enhancedPrompt,
+                      category: prompt.category,
+                      existingPrompt: prompt, // Pass existing prompt to prevent duplicate save
+                   ))
+                );
+            },
+            child: Container(
+               margin: const EdgeInsets.only(bottom: 16),
+               padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.dividerLight),
+               ),
+               child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                     Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                           Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                 color: _getScoreColor(prompt.strengthScore).withOpacity(0.1),
-                                 shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                 child: Text('${prompt.strengthScore}', style: AppTextStyles.caption.copyWith(color: _getScoreColor(prompt.strengthScore), fontWeight: FontWeight.bold)),
-                              ),
-                           ),
-                           const SizedBox(width: 12),
-                           Expanded(
-                              child: Text(prompt.enhancedPrompt, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight), maxLines: 2, overflow: TextOverflow.ellipsis),
+                           Text(AppDateUtils.formatDateTime(prompt.createdAt), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
+                           Row(
+                              children: [
+                                 Text(_getEmojiForCategory(prompt.category), style: const TextStyle(fontSize: 16)),
+                                 const SizedBox(width: 4),
+                                 Text(prompt.category, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
+                              ],
                            )
                         ],
                      ),
-                  )
-               ],
+                     const SizedBox(height: 12),
+                     Text(prompt.originalText, style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
+                     const SizedBox(height: 8),
+                     Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                           color: theme.colorScheme.surface,
+                           borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                           children: [
+                              Container(
+                                 width: 32,
+                                 height: 32,
+                                 decoration: BoxDecoration(
+                                    color: _getScoreColor(prompt.strengthScore).withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                 ),
+                                 child: Center(
+                                    child: Text('${prompt.strengthScore}', style: AppTextStyles.caption.copyWith(color: _getScoreColor(prompt.strengthScore), fontWeight: FontWeight.bold)),
+                                 ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                 child: Text(prompt.enhancedPrompt, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight), maxLines: 2, overflow: TextOverflow.ellipsis),
+                              )
+                           ],
+                        ),
+                     )
+                  ],
+               ),
             ),
          ),
       );
