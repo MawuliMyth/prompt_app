@@ -3,7 +3,7 @@ import multer from 'multer';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { transcribeAudio } from './services/groq.js';
-import { enhancePrompt } from './services/claude.js';
+import { enhancePrompt, generateVariations } from './services/claude.js';
 
 // Load environment variables
 dotenv.config();
@@ -106,7 +106,7 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 // Prompt enhancement endpoint
 app.post('/api/enhance', async (req, res) => {
   try {
-    const { prompt, category, isPremium } = req.body;
+    const { prompt, category, isPremium, tone, persona } = req.body;
 
     if (!prompt || prompt.trim().length === 0) {
       return res.status(400).json({
@@ -116,9 +116,15 @@ app.post('/api/enhance', async (req, res) => {
     }
 
     const premiumStatus = isPremium === true;
-    console.log(`Enhancing prompt for category: ${category || 'General'}, isPremium: ${premiumStatus}`);
+    console.log(`Enhancing prompt for category: ${category || 'General'}, isPremium: ${premiumStatus}, tone: ${tone || 'Auto'}`);
 
-    const enhancedPrompt = await enhancePrompt(prompt, category || 'General', premiumStatus);
+    const enhancedPrompt = await enhancePrompt(
+      prompt,
+      category || 'General',
+      premiumStatus,
+      tone || 'Auto',
+      persona || null
+    );
 
     console.log(`Enhancement complete`);
 
@@ -131,6 +137,38 @@ app.post('/api/enhance', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to enhance prompt'
+    });
+  }
+});
+
+// Prompt variations endpoint (premium feature)
+app.post('/api/variations', async (req, res) => {
+  try {
+    const { prompt, category, isPremium } = req.body;
+
+    if (!prompt || prompt.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Prompt text is required'
+      });
+    }
+
+    const premiumStatus = isPremium === true;
+    console.log(`Generating variations for category: ${category || 'General'}, isPremium: ${premiumStatus}`);
+
+    const variations = await generateVariations(prompt, category || 'General', premiumStatus);
+
+    console.log(`Variations generated successfully`);
+
+    res.json({
+      success: true,
+      variations: variations
+    });
+  } catch (error) {
+    console.error('Variations error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to generate variations'
     });
   }
 });

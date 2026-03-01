@@ -26,12 +26,11 @@ class ApiConfig {
   }
 
   /// Base URL for API calls
-  /// Uses --dart-define URL if set, otherwise production URL for release builds,
-  /// or localhost for debug builds
+  /// Uses --dart-define URL if set, otherwise production URL (Render)
+  /// Use --dart-define=API_URL=http://localhost:3001 for local development
   static String get baseUrl {
     if (_productionUrl?.isNotEmpty == true) return _productionUrl!;
-    if (kReleaseMode) return _defaultProductionUrl;
-    return localhostUrl;
+    return _defaultProductionUrl;
   }
 
   /// Full API endpoint path
@@ -42,6 +41,9 @@ class ApiConfig {
 
   /// Prompt enhancement endpoint
   static String get enhanceEndpoint => '$apiEndpoint/enhance';
+
+  /// Prompt variations endpoint (premium feature)
+  static String get variationsEndpoint => '$apiEndpoint/variations';
 
   /// Health check endpoint
   static String get healthEndpoint => '$baseUrl/health';

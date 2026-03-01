@@ -6,12 +6,15 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/free_prompt_provider.dart';
 import '../../providers/template_provider.dart';
+import '../../providers/premium_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
+import '../../core/widgets/upgrade_banner.dart';
+import '../../core/widgets/locked_feature_sheet.dart';
 import '../../data/services/audio_recorder_service.dart';
 import '../../data/services/transcription_service.dart';
 import '../../data/services/claude_service.dart';
@@ -33,6 +36,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   final ClaudeService _claudeService = ClaudeService();
 
   String _selectedCategory = 'General';
+  String _selectedTone = 'Auto';
   bool _isRecording = false;
   bool _isProcessing = false;
   bool _isTranscribing = false;
@@ -44,6 +48,15 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     {'name': 'Coding', 'icon': '💻'},
     {'name': 'Writing', 'icon': '✍️'},
     {'name': 'Business', 'icon': '📊'},
+  ];
+
+  final List<Map<String, String>> _tones = [
+    {'name': 'Auto', 'icon': '🤖'},
+    {'name': 'Professional', 'icon': '💼'},
+    {'name': 'Creative', 'icon': '🎨'},
+    {'name': 'Casual', 'icon': '😊'},
+    {'name': 'Persuasive', 'icon': '💡'},
+    {'name': 'Technical', 'icon': '⚙️'},
   ];
 
   @override
@@ -212,6 +225,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final freePromptProvider = Provider.of<FreePromptProvider>(context, listen: false);
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
 
     if (!authProvider.isAuthenticated && freePromptProvider.hasReachedLimit) {
       _showSignupBottomSheet();
@@ -220,10 +234,18 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
 
     setState(() => _isProcessing = true);
 
+    // Get persona if premium
+    String? persona;
+    if (premiumProvider.hasPremiumAccess && premiumProvider.userData?.persona != null) {
+      persona = premiumProvider.userData!.persona;
+    }
+
     final result = await _claudeService.enhancePrompt(
       roughPrompt: text,
       category: _selectedCategory,
       isAuthenticated: authProvider.isAuthenticated,
+      tone: _selectedTone,
+      persona: persona,
     );
 
     setState(() => _isProcessing = false);
@@ -294,6 +316,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                         ),
                         const SizedBox(height: 24),
 
+                        // Upgrade Banner (only shows for free users)
+                        const UpgradeBanner(),
+
                         // Section B (Categories)
                         SizedBox(
                           height: 40,
@@ -327,6 +352,113 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                               );
                             },
                           ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Section B2 (Tones - Premium Feature)
+                        Consumer<PremiumProvider>(
+                          builder: (context, premiumProvider, child) {
+                            final hasPremium = premiumProvider.hasPremiumAccess;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Tone',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.textSecondaryLight,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (!hasPremium) ...[
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.lock_outline,
+                                        size: 12,
+                                        color: AppColors.textSecondaryLight,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  height: 36,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _tones.length,
+                                    itemBuilder: (context, index) {
+                                      final tone = _tones[index];
+                                      final isSelected = _selectedTone == tone['name'];
+                                      final isLocked = !hasPremium && index > 0; // Only 'Auto' is free
+
+                                      return Padding(
+                                        padding: const EdgeInsets.only(right: 8.0),
+                                        child: ChoiceChip(
+                                          label: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (isLocked)
+                                                Icon(
+                                                  Icons.lock_outline,
+                                                  size: 12,
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : theme.colorScheme.onSurface.withOpacity(0.5),
+                                                )
+                                              else
+                                                Text(
+                                                  '${tone['icon']} ${tone['name']}',
+                                                  style: TextStyle(
+                                                    color: isSelected
+                                                        ? Colors.white
+                                                        : theme.colorScheme.onSurface,
+                                                    fontWeight: isSelected
+                                                        ? FontWeight.w600
+                                                        : FontWeight.w400,
+                                                    fontSize: isSmallScreen ? 11 : 13,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          selected: isSelected,
+                                          onSelected: (selected) {
+                                            if (selected) {
+                                              if (isLocked) {
+                                                LockedFeatureSheet.show(
+                                                  context,
+                                                  'Tone Selection',
+                                                  'Choose from 6 different tones to customize your prompts',
+                                                );
+                                              } else {
+                                                setState(() => _selectedTone = tone['name']!);
+                                              }
+                                            }
+                                          },
+                                          labelStyle: TextStyle(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : theme.colorScheme.onSurface,
+                                            fontWeight: isSelected
+                                                ? FontWeight.w600
+                                                : FontWeight.w400,
+                                            fontSize: isSmallScreen ? 11 : 13,
+                                          ),
+                                          selectedColor: AppColors.primaryLight,
+                                          backgroundColor: theme.colorScheme.surface,
+                                          side: BorderSide(
+                                            color: isSelected
+                                                ? Colors.transparent
+                                                : AppColors.primaryLight,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 24),
 

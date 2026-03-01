@@ -185,6 +185,24 @@ class PremiumService {
     }
   }
 
+  /// Update user's AI persona (role/profession for personalized prompts)
+  Future<bool> updatePersona(String? persona) async {
+    final ref = _userDocRef();
+    if (ref == null) return false;
+
+    try {
+      await ref.set({
+        'persona': persona,
+      }, SetOptions(merge: true));
+
+      debugPrint('Persona updated: $persona');
+      return true;
+    } catch (e) {
+      debugPrint('Error updating persona: $e');
+      return false;
+    }
+  }
+
   /// Stream of user data for real-time premium status updates
   Stream<UserModel?> userStream() {
     final uid = _currentUserId;

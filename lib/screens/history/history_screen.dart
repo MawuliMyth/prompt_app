@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
+import '../../providers/premium_provider.dart';
 import '../../data/models/prompt_model.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
@@ -14,6 +15,7 @@ import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../result/result_screen.dart';
 import '../auth/login_screen.dart';
+import '../paywall/paywall_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -26,6 +28,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final _searchController = TextEditingController();
   final List<String> _categories = ['All', 'Image Generation', 'Coding', 'Writing', 'Business', 'General'];
   Timer? _debounceTimer;
+
+  static const int _freeUserHistoryLimit = 10;
 
   @override
   void initState() {
@@ -104,22 +108,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         body: !authProvider.isAuthenticated
           ? _buildGuestEmptyState(theme)
-          : Consumer<PromptProvider>(
-              builder: (context, promptProvider, _) {
+          : Consumer2<PromptProvider, PremiumProvider>(
+              builder: (context, promptProvider, premiumProvider, _) {
+                final hasPremium = premiumProvider.hasPremiumAccess;
+                final allPrompts = promptProvider.prompts;
+
+                // Limit prompts for free users
+                final displayPrompts = hasPremium
+                    ? allPrompts
+                    : allPrompts.take(_freeUserHistoryLimit).toList();
+                final isLimited = !hasPremium && allPrompts.length > _freeUserHistoryLimit;
+
                 return promptProvider.isLoading
                   ? _buildShimmerLoading()
                   : Column(
                       children: [
                         _buildSearchBar(theme, promptProvider),
                         _buildFilters(theme, promptProvider),
+                        // Show upgrade banner for free users with limited history
+                        if (isLimited) _buildLimitBanner(theme, allPrompts.length),
                         Expanded(
-                           child: promptProvider.prompts.isEmpty
+                           child: displayPrompts.isEmpty
                              ? _buildEmptyHistory(theme)
                              : ListView.builder(
                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                 itemCount: promptProvider.prompts.length,
+                                 itemCount: displayPrompts.length,
                                  itemBuilder: (context, index) {
-                                    final prompt = promptProvider.prompts[index];
+                                    final prompt = displayPrompts[index];
                                     return PromptHistoryCard(
                                       prompt: prompt,
                                       onDelete: () async {
@@ -199,6 +214,72 @@ class _HistoryScreenState extends State<HistoryScreen> {
            },
         )
      );
+  }
+
+  Widget _buildLimitBanner(ThemeData theme, int totalPrompts) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.lock_outline, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Viewing $_freeUserHistoryLimit of $totalPrompts prompts',
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Upgrade to Premium for unlimited history',
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PaywallScreen()),
+            ),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Upgrade',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.primaryLight,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildShimmerLoading() {

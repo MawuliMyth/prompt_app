@@ -11,9 +11,12 @@ import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/strength_calculator.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
+import '../../core/widgets/locked_feature_sheet.dart';
 import '../../data/models/prompt_model.dart';
+import '../../data/services/claude_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
+import '../../providers/premium_provider.dart';
 import '../auth/signup_screen.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -44,6 +47,12 @@ class _ResultScreenState extends State<ResultScreen>
   late Animation<double> _animation;
 
   PromptModel? _currentPrompt;
+
+  // Variations state
+  final ClaudeService _claudeService = ClaudeService();
+  bool _isLoadingVariations = false;
+  List<String>? _variations;
+  bool _showVariations = false;
 
   @override
   void initState() {
@@ -250,6 +259,51 @@ class _ResultScreenState extends State<ResultScreen>
     });
   }
 
+  void _copyVariationToClipboard(String variation) async {
+    await Clipboard.setData(ClipboardData(text: variation));
+    HapticFeedback.lightImpact();
+    if (mounted) {
+      SnackbarUtils.showSuccess(context, 'Variation copied!');
+    }
+  }
+
+  Future<void> _loadVariations() async {
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+
+    // Check if premium
+    if (!premiumProvider.hasPremiumAccess) {
+      LockedFeatureSheet.show(
+        context,
+        'Prompt Variations',
+        'Get 3 different versions of every prompt',
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoadingVariations = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final result = await _claudeService.generateVariations(
+      roughPrompt: widget.originalText,
+      category: widget.category,
+      isAuthenticated: authProvider.isAuthenticated,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoadingVariations = false;
+        if (result['success'] == true) {
+          _variations = result['variations'] as List<String>;
+          _showVariations = true;
+        } else {
+          SnackbarUtils.showError(context, result['error'] ?? 'Failed to load variations');
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -451,6 +505,121 @@ class _ResultScreenState extends State<ResultScreen>
                           ],
                         ),
                       ),
+                      const SizedBox(height: 16),
+
+                      // Section D - Variations (Premium Feature)
+                      Consumer<PremiumProvider>(
+                        builder: (context, premiumProvider, child) {
+                          final hasPremium = premiumProvider.hasPremiumAccess;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Variations button
+                              GestureDetector(
+                                onTap: _isLoadingVariations ? null : _loadVariations,
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: hasPremium
+                                          ? AppColors.primaryLight.withValues(alpha: 0.3)
+                                          : AppColors.dividerLight,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      if (_isLoadingVariations)
+                                        const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      else ...[
+                                        Icon(
+                                          hasPremium ? Icons.auto_awesome : Icons.lock_outline,
+                                          size: 18,
+                                          color: hasPremium
+                                              ? AppColors.primaryLight
+                                              : AppColors.textSecondaryLight,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          hasPremium ? 'See 3 Variations ✨' : 'See 3 Variations 🔒',
+                                          style: AppTextStyles.body.copyWith(
+                                            color: hasPremium
+                                                ? AppColors.primaryLight
+                                                : AppColors.textSecondaryLight,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Variations cards
+                              if (_showVariations && _variations != null) ...[
+                                const SizedBox(height: 16),
+                                ...List.generate(_variations!.length, (index) {
+                                  final labels = ['Formal 📋', 'Creative 🎨', 'Concise ⚡'];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: GestureDetector(
+                                      onTap: () => _copyVariationToClipboard(_variations![index]),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: theme.cardColor,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: AppColors.dividerLight),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  labels[index],
+                                                  style: AppTextStyles.caption.copyWith(
+                                                    color: AppColors.primaryLight,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Icon(
+                                                  Icons.copy,
+                                                  size: 16,
+                                                  color: AppColors.textSecondaryLight,
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              _variations![index],
+                                              style: AppTextStyles.body.copyWith(
+                                                color: theme.colorScheme.onSurface,
+                                                fontSize: isSmallScreen ? 13 : 14,
+                                              ),
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+
                       const SizedBox(height: 100), // Space for bottom bar
                     ],
                   ),

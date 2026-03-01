@@ -7,6 +7,7 @@ import '../../core/utils/platform_utils.dart';
 import '../history/history_screen.dart';
 import '../favourites/favourites_screen.dart';
 import '../templates/templates_screen.dart';
+import '../analytics/analytics_screen.dart';
 import '../settings/settings_screen.dart';
 import 'home_view.dart';
 
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const HistoryScreen(),
     const FavouritesScreen(),
     const TemplatesScreen(),
+    const AnalyticsScreen(),
     const SettingsScreen(),
   ];
 
@@ -67,6 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.doc_text),
             label: 'Templates',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.chart_bar),
+            label: 'Analytics',
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.settings),
@@ -118,6 +124,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.text_snippet_outlined),
             activeIcon: Icon(Icons.text_snippet),
             label: 'Templates',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart),
+            label: 'Analytics',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),

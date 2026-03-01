@@ -14,6 +14,7 @@ class UserModel {
   final DateTime? premiumExpiryDate;
   final DateTime? trialStartDate;
   final bool trialUsed;
+  final String? persona; // User's role/profession for personalized prompts
 
   UserModel({
     required this.uid,
@@ -27,6 +28,7 @@ class UserModel {
     this.premiumExpiryDate,
     this.trialStartDate,
     this.trialUsed = false,
+    this.persona,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String documentId) {
@@ -54,6 +56,7 @@ class UserModel {
               : map['trialStartDate'].toDate())
           : null,
       trialUsed: map['trialUsed'] ?? false,
+      persona: map['persona'],
     );
   }
 
@@ -73,6 +76,7 @@ class UserModel {
           ? Timestamp.fromDate(trialStartDate!)
           : null,
       'trialUsed': trialUsed,
+      'persona': persona,
     };
   }
 
@@ -88,6 +92,7 @@ class UserModel {
     DateTime? premiumExpiryDate,
     DateTime? trialStartDate,
     bool? trialUsed,
+    String? persona,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -101,6 +106,7 @@ class UserModel {
       premiumExpiryDate: premiumExpiryDate ?? this.premiumExpiryDate,
       trialStartDate: trialStartDate ?? this.trialStartDate,
       trialUsed: trialUsed ?? this.trialUsed,
+      persona: persona,
     );
   }
 

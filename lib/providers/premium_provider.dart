@@ -155,6 +155,35 @@ class PremiumProvider extends ChangeNotifier {
     return false;
   }
 
+  /// Update user's AI persona
+  Future<bool> updatePersona(String? persona) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final success = await _premiumService.updatePersona(persona);
+      if (success) {
+        // Update local userData
+        if (_userData != null) {
+          _userData = _userData!.copyWith(persona: persona);
+        }
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = 'Failed to update persona';
+      }
+    } catch (e) {
+      debugPrint('Error updating persona: $e');
+      _error = 'Failed to update persona';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
   /// Clear any error message
   void clearError() {
     _error = null;
