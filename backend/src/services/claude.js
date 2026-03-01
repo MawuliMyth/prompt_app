@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import 'dotenv/config';
 
-const anthropic = new Anthropic();
+// Initialize Anthropic client with API key from environment
+// Supports both ANTHROPIC_API_KEY (SDK default) and CLAUDE_API_KEY (custom)
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY,
+});
 
 // Model configuration based on premium status
 const MODEL_CONFIG = {
