@@ -3,6 +3,12 @@ import 'dotenv/config';
 
 const anthropic = new Anthropic();
 
+// Model configuration based on premium status
+const MODEL_CONFIG = {
+  premium: 'claude-sonnet-4-5',
+  free: 'claude-haiku-4-5-20251001'
+};
+
 // Category-specific instructions (migrated from Firebase Functions)
 const categoryInstructions = {
   'General': 'Create a clear, specific, and well-structured prompt for any AI assistant.',
@@ -37,11 +43,16 @@ Transform the following rough input into a professional prompt:`;
  * Enhance a prompt using Claude API
  * @param {string} roughPrompt - The rough/user prompt to enhance
  * @param {string} category - The category for context
+ * @param {boolean} isPremium - Whether to use premium model (default: false)
  * @returns {Promise<string>} - Enhanced prompt
  */
-async function enhancePrompt(roughPrompt, category = 'General') {
+async function enhancePrompt(roughPrompt, category = 'General', isPremium = false) {
+  const model = isPremium ? MODEL_CONFIG.premium : MODEL_CONFIG.free;
+
+  console.log(`Using model: ${model} (isPremium: ${isPremium})`);
+
   const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
+    model: model,
     max_tokens: 1024,
     system: getSystemPrompt(category),
     messages: [

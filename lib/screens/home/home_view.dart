@@ -223,6 +223,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     final result = await _claudeService.enhancePrompt(
       roughPrompt: text,
       category: _selectedCategory,
+      isAuthenticated: authProvider.isAuthenticated,
     );
 
     setState(() => _isProcessing = false);

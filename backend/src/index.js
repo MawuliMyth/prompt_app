@@ -106,7 +106,7 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 // Prompt enhancement endpoint
 app.post('/api/enhance', async (req, res) => {
   try {
-    const { prompt, category } = req.body;
+    const { prompt, category, isPremium } = req.body;
 
     if (!prompt || prompt.trim().length === 0) {
       return res.status(400).json({
@@ -115,9 +115,10 @@ app.post('/api/enhance', async (req, res) => {
       });
     }
 
-    console.log(`Enhancing prompt for category: ${category || 'General'}`);
+    const premiumStatus = isPremium === true;
+    console.log(`Enhancing prompt for category: ${category || 'General'}, isPremium: ${premiumStatus}`);
 
-    const enhancedPrompt = await enhancePrompt(prompt, category || 'General');
+    const enhancedPrompt = await enhancePrompt(prompt, category || 'General', premiumStatus);
 
     console.log(`Enhancement complete`);
 

@@ -8,6 +8,7 @@ import 'providers/auth_provider.dart';
 import 'providers/prompt_provider.dart';
 import 'providers/free_prompt_provider.dart';
 import 'providers/template_provider.dart';
+import 'providers/premium_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,13 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()..loadTheme()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, PremiumProvider>(
+          create: (_) => PremiumProvider(),
+          update: (context, auth, premium) {
+            premium!.updateUser(auth.currentUser);
+            return premium;
+          },
+        ),
         ChangeNotifierProxyProvider<AuthProvider, PromptProvider>(
           create: (_) => PromptProvider(),
           update: (context, auth, prompt) {

@@ -2,23 +2,37 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
+import 'premium_service.dart';
 
 class ClaudeService {
+  final PremiumService _premiumService = PremiumService();
+
   /// Enhance a rough prompt using Claude API via Node backend
   ///
   /// [roughPrompt] - The user's rough/casual prompt text
   /// [category] - The category for context (e.g., 'General', 'Coding', 'Image Generation')
+  /// [isAuthenticated] - Whether the user is logged in (if false, always uses free model)
   ///
   /// Returns a map with 'success' and either 'enhancedPrompt' or 'error'
   Future<Map<String, dynamic>> enhancePrompt({
     required String roughPrompt,
     required String category,
+    bool isAuthenticated = false,
   }) async {
     try {
       final uri = Uri.parse(ApiConfig.enhanceEndpoint);
 
+      // Check premium status - only for authenticated users
+      bool isPremium = false;
+      if (isAuthenticated) {
+        isPremium = await _premiumService.checkIsPremium();
+        debugPrint('User is authenticated. Premium status: $isPremium');
+      } else {
+        debugPrint('User is guest - using free model');
+      }
+
       debugPrint('Sending enhancement request to $uri');
-      debugPrint('Category: $category, Prompt length: ${roughPrompt.length}');
+      debugPrint('Category: $category, Prompt length: ${roughPrompt.length}, isPremium: $isPremium');
 
       final response = await http.post(
         uri,
@@ -28,6 +42,7 @@ class ClaudeService {
         body: jsonEncode({
           'prompt': roughPrompt,
           'category': category,
+          'isPremium': isPremium,
         }),
       );
 
