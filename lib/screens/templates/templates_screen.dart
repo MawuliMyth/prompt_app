@@ -1,7 +1,12 @@
+import 'dart:io' show Platform;
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/adaptive_widgets.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../providers/template_provider.dart';
 import '../home/home_screen.dart';
 
@@ -42,13 +47,15 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
      ],
   };
 
+  String _selectedCategory = 'General';
+
   void _useTemplate(String content, String category) {
     final templateProvider = Provider.of<TemplateProvider>(context, listen: false);
     templateProvider.setTemplate(content, category);
 
     // Navigate to HomeScreen which will switch to HomeView
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      PlatformUtils.adaptivePageRoute(const HomeScreen()),
       (route) => false,
     );
   }
@@ -60,97 +67,166 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final isSmallScreen = screenWidth < 360;
+    final isCupertino = !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
-    return DefaultTabController(
-      length: categories.length,
-      child: SafeArea(
-        child: Scaffold(
-          appBar: AppBar(
-             title: Text('Templates', style: AppTextStyles.headingLarge.copyWith(color: AppColors.primaryLight)),
-             bottom: TabBar(
-                isScrollable: true,
-                indicatorColor: AppColors.primaryLight,
-                labelColor: AppColors.primaryLight,
-                unselectedLabelColor: AppColors.textSecondaryLight,
-                labelStyle: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                tabs: categories.map((c) => Tab(text: c)).toList(),
-             ),
-          ),
-          body: TabBarView(
-             children: categories.map((category) {
-                final templates = _templatesMap[category]!;
-                return GridView.builder(
-                   padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
-                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: isTablet ? 3 : 2,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: isSmallScreen ? 12 : 16,
-                      mainAxisSpacing: isSmallScreen ? 12 : 16,
-                   ),
-                   itemCount: templates.length,
-                   itemBuilder: (context, index) {
-                      final t = templates[index];
-                      return Container(
-                         decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.dividerLight),
-                         ),
-                         child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                               Expanded(
-                                  child: Padding(
-                                     padding: EdgeInsets.all(isSmallScreen ? 10.0 : 12.0),
-                                     child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                           Text(t['icon']!, style: TextStyle(fontSize: isSmallScreen ? 22 : 28)),
-                                           SizedBox(height: isSmallScreen ? 6 : 8),
-                                           Text(
-                                              t['title']!,
-                                              style: AppTextStyles.headingSmall.copyWith(
-                                                 color: theme.colorScheme.onSurface,
-                                                 fontSize: isSmallScreen ? 13 : 15
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                           ),
-                                           const SizedBox(height: 4),
-                                           Text(
-                                              t['desc']!,
-                                              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight, fontSize: isSmallScreen ? 11 : 12),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                           ),
-                                        ],
-                                     ),
-                                  ),
-                               ),
-                               InkWell(
-                                  onTap: () => _useTemplate(t['content']!, category),
-                                  child: Container(
-                                     padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 10),
-                                     alignment: Alignment.center,
-                                     decoration: const BoxDecoration(
-                                        color: AppColors.primaryLight,
-                                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-                                     ),
-                                     child: Text(
-                                        'Use Template',
-                                        style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: isSmallScreen ? 12 : 14)
-                                     ),
-                                  ),
-                               )
-                            ],
-                         ),
-                      );
-                   },
-                );
-             }).toList(),
-          ),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AdaptiveAppBar(title: 'Templates'),
+        body: Column(
+          children: [
+            // Category Selector
+            if (isCupertino)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: CupertinoSlidingSegmentedControl<String>(
+                    groupValue: _selectedCategory,
+                    onValueChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedCategory = value);
+                      }
+                    },
+                    children: Map.fromEntries(
+                      categories.map((cat) => MapEntry(
+                        cat,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            cat,
+                            style: TextStyle(fontSize: isSmallScreen ? 10 : 12),
+                          ),
+                        ),
+                      )),
+                    ),
+                  ),
+                ),
+              )
+            else
+              SizedBox(
+                height: 50,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final cat = categories[index];
+                    final isSelected = _selectedCategory == cat;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8, bottom: 8),
+                      child: FilterChip(
+                        label: Text(cat),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setState(() => _selectedCategory = cat);
+                        },
+                        backgroundColor: theme.colorScheme.surface,
+                        selectedColor: AppColors.primaryLight,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+            // Templates Grid
+            Expanded(
+              child: _buildTemplatesGrid(
+                _templatesMap[_selectedCategory]!,
+                _selectedCategory,
+                theme,
+                isTablet,
+                isSmallScreen,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTemplatesGrid(
+    List<Map<String, String>> templates,
+    String category,
+    ThemeData theme,
+    bool isTablet,
+    bool isSmallScreen,
+  ) {
+    return GridView.builder(
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isTablet ? 3 : 2,
+        childAspectRatio: 0.85,
+        crossAxisSpacing: isSmallScreen ? 12 : 16,
+        mainAxisSpacing: isSmallScreen ? 12 : 16,
+      ),
+      itemCount: templates.length,
+      itemBuilder: (context, index) {
+        final t = templates[index];
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.dividerLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(isSmallScreen ? 10.0 : 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(t['icon']!, style: TextStyle(fontSize: isSmallScreen ? 22 : 28)),
+                      SizedBox(height: isSmallScreen ? 6 : 8),
+                      Text(
+                        t['title']!,
+                        style: AppTextStyles.headingSmall.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: isSmallScreen ? 13 : 15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        t['desc']!,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondaryLight,
+                          fontSize: isSmallScreen ? 11 : 12,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _useTemplate(t['content']!, category),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 10),
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+                  ),
+                  child: Text(
+                    'Use Template',
+                    style: AppTextStyles.button.copyWith(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 12 : 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

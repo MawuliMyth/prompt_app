@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,8 @@ import '../../providers/template_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../data/services/audio_recorder_service.dart';
 import '../../data/services/transcription_service.dart';
@@ -266,9 +269,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
 
     return SafeArea(
       child: Scaffold(
-         appBar: AppBar(
-            title: Text('Prompt', style: AppTextStyles.headingLarge.copyWith(color: AppColors.primaryLight)),
-         ),
+         appBar: AdaptiveAppBar(title: 'Prompt'),
          body: LayoutBuilder(
            builder: (context, constraints) {
              final contentMaxWidth = isTablet ? 600.0 : constraints.maxWidth;

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -6,6 +8,9 @@ import '../../data/models/prompt_model.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/utils/snackbar_utils.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../result/result_screen.dart';
 import '../auth/login_screen.dart';
@@ -20,10 +25,12 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final _searchController = TextEditingController();
   final List<String> _categories = ['All', 'Image Generation', 'Coding', 'Writing', 'Business', 'General'];
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
        final promptProvider = Provider.of<PromptProvider>(context, listen: false);
        promptProvider.setSearchQuery('');
@@ -31,34 +38,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
   }
 
+  void _onSearchChanged() {
+    setState(() {}); // Rebuild to update clear button visibility
+
+    // Debounce search to avoid excessive filtering
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      final promptProvider = Provider.of<PromptProvider>(context, listen: false);
+      promptProvider.setSearchQuery(_searchController.text);
+    });
+  }
+
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _showClearAllConfirm() {
-    showDialog(
+  void _showClearAllConfirm() async {
+    final confirmed = await AdaptiveDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Clear History?', style: AppTextStyles.headingMedium),
-        content: Text('This action cannot be undone. Are you sure you want to delete all your prompt history?', style: AppTextStyles.body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: AppTextStyles.button.copyWith(color: AppColors.textSecondaryLight)),
-          ),
-          TextButton(
-             onPressed: () {
-                final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                Provider.of<PromptProvider>(context, listen: false).clearAllHistory(authProvider.currentUser);
-                Navigator.pop(context);
-             },
-             child: Text('Clear All', style: AppTextStyles.button.copyWith(color: Colors.red)),
-          )
-        ],
-      )
+      title: 'Clear History?',
+      content: 'This action cannot be undone. Are you sure you want to delete all your prompt history?',
+      cancelText: 'Cancel',
+      confirmText: 'Clear All',
+      isDestructive: true,
     );
+
+    if (confirmed == true) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final promptProvider = Provider.of<PromptProvider>(context, listen: false);
+      final success = await promptProvider.clearAllHistory(authProvider.currentUser);
+      if (!success && context.mounted) {
+        SnackbarUtils.showError(
+          context,
+          promptProvider.error ?? 'Failed to clear history',
+        );
+      }
+    }
   }
 
   @override
@@ -68,8 +86,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-           title: Text('History', style: AppTextStyles.headingLarge.copyWith(color: AppColors.primaryLight)),
+        appBar: AdaptiveAppBar(
+           title: 'History',
            actions: [
               Consumer<PromptProvider>(
                 builder: (context, promptProvider, _) {
@@ -104,11 +122,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     final prompt = promptProvider.prompts[index];
                                     return PromptHistoryCard(
                                       prompt: prompt,
-                                      onDelete: () {
-                                        promptProvider.deletePrompt(
+                                      onDelete: () async {
+                                        final success = await promptProvider.deletePrompt(
                                           authProvider.currentUser,
                                           prompt.id,
                                         );
+                                        if (!success && mounted) {
+                                          SnackbarUtils.showError(
+                                            context,
+                                            promptProvider.error ?? 'Failed to delete prompt',
+                                          );
+                                        }
                                       },
                                     );
                                  },
@@ -127,7 +151,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: TextField(
            controller: _searchController,
-           onChanged: (val) => provider.setSearchQuery(val),
            decoration: InputDecoration(
               hintText: 'Search prompts...',
               prefixIcon: const Icon(Icons.search),
@@ -135,6 +158,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                  ? IconButton(
                       icon: const Icon(Icons.clear),
                       onPressed: () {
+                         _debounceTimer?.cancel();
                          _searchController.clear();
                          provider.setSearchQuery('');
                       },

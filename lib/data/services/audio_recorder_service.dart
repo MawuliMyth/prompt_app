@@ -1,12 +1,13 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+// Conditional import for platform-specific file operations
+import 'audio_recorder_io.dart' if (dart.library.html) 'audio_recorder_web.dart';
 
 /// Service for recording audio using flutter_sound
 ///
-/// Records audio in WebM/Opus format which is compatible with Groq Whisper API
+/// Records audio in MP4/AAC format which is compatible with Groq Whisper API
 class AudioRecorderService {
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   bool _isInitialized = false;
@@ -15,10 +16,19 @@ class AudioRecorderService {
   /// Check if currently recording
   bool get isRecording => _recorder.isRecording;
 
+  /// Check if recording is supported on current platform
+  bool get isSupported => !kIsWeb;
+
   /// Initialize the recorder
   /// Returns true if initialization was successful
   Future<bool> initialize() async {
     if (_isInitialized) return true;
+
+    // Web platform doesn't support flutter_sound recorder
+    if (kIsWeb) {
+      debugPrint('Audio recording is not supported on web platform');
+      return false;
+    }
 
     try {
       // Request microphone permission
@@ -53,10 +63,10 @@ class AudioRecorderService {
     }
 
     try {
-      // Get temporary directory for recording
-      final directory = await getTemporaryDirectory();
+      // Get temporary directory for recording using platform-specific implementation
+      final directory = await getRecordingDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      _currentRecordingPath = '${directory.path}/recording_$timestamp.m4a';
+      _currentRecordingPath = '$directory/recording_$timestamp.m4a';
 
       debugPrint('Starting recording to: $_currentRecordingPath');
 
@@ -92,18 +102,13 @@ class AudioRecorderService {
         return null;
       }
 
-      // Read the file as bytes
-      final file = File(_currentRecordingPath!);
-      if (await file.exists()) {
-        final bytes = await file.readAsBytes();
+      // Read the file as bytes using platform-specific implementation
+      final bytes = await readRecordingFile(_currentRecordingPath!);
+      if (bytes != null) {
         debugPrint('Read ${bytes.length} bytes from recording');
 
         // Clean up the temporary file
-        try {
-          await file.delete();
-        } catch (_) {
-          // Ignore cleanup errors
-        }
+        await deleteRecordingFile(_currentRecordingPath!);
 
         return bytes;
       }
@@ -125,14 +130,7 @@ class AudioRecorderService {
 
     // Clean up temporary file
     if (_currentRecordingPath != null) {
-      try {
-        final file = File(_currentRecordingPath!);
-        if (await file.exists()) {
-          await file.delete();
-        }
-      } catch (_) {
-        // Ignore cleanup errors
-      }
+      await deleteRecordingFile(_currentRecordingPath!);
     }
 
     _currentRecordingPath = null;

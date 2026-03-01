@@ -1,9 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/snackbar_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../history/history_screen.dart'; // Reuse PromptHistoryCard
 import '../auth/login_screen.dart';
@@ -19,9 +22,7 @@ class FavouritesScreen extends StatelessWidget {
 
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('Favourites', style: AppTextStyles.headingLarge.copyWith(color: AppColors.primaryLight)),
-        ),
+        appBar: AdaptiveAppBar(title: 'Favourites'),
         body: !authProvider.isAuthenticated
             ? _buildGuestEmptyState(context, theme)
             : promptProvider.isLoading
@@ -37,8 +38,14 @@ class FavouritesScreen extends StatelessWidget {
                             children: [
                                PromptHistoryCard(
                                  prompt: prompt,
-                                 onDelete: () {
-                                   promptProvider.deletePrompt(authProvider.currentUser, prompt.id);
+                                 onDelete: () async {
+                                   final success = await promptProvider.deletePrompt(authProvider.currentUser, prompt.id);
+                                   if (!success && context.mounted) {
+                                     SnackbarUtils.showError(
+                                       context,
+                                       promptProvider.error ?? 'Failed to delete prompt',
+                                     );
+                                   }
                                  },
                                ),
                                Positioned(
@@ -54,8 +61,14 @@ class FavouritesScreen extends StatelessWidget {
                                       icon: const Icon(Icons.star, color: Colors.amber, size: 20),
                                       padding: EdgeInsets.zero,
                                       constraints: const BoxConstraints(),
-                                      onPressed: () {
-                                         promptProvider.toggleFavourite(authProvider.currentUser, prompt);
+                                      onPressed: () async {
+                                        final success = await promptProvider.toggleFavourite(authProvider.currentUser, prompt);
+                                        if (!success && context.mounted) {
+                                          SnackbarUtils.showError(
+                                            context,
+                                            promptProvider.error ?? 'Failed to update favourite',
+                                          );
+                                        }
                                       },
                                     ),
                                   ),

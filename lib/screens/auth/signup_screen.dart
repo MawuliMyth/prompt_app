@@ -136,9 +136,7 @@ class _SignupScreenState extends State<SignupScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const LoginScreen())
-          ),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SafeArea(

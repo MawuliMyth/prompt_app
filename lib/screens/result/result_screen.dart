@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/strength_calculator.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../data/models/prompt_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
@@ -94,12 +97,16 @@ class _ResultScreenState extends State<ResultScreen>
         createdAt: DateTime.now(),
         userId: authProvider.currentUser!.uid,
       );
-      await promptProvider.savePrompt(
+      final success = await promptProvider.savePrompt(
         authProvider.currentUser,
         _currentPrompt!,
       );
       if (mounted) {
-        SnackbarUtils.showSuccess(context, 'Saved to history!');
+        if (success) {
+          SnackbarUtils.showSuccess(context, 'Saved to history!');
+        } else {
+          SnackbarUtils.showError(context, promptProvider.error ?? 'Failed to save prompt');
+        }
       }
     }
   }
@@ -113,22 +120,37 @@ class _ResultScreenState extends State<ResultScreen>
       return;
     }
 
+    // Ensure we have a prompt to toggle
+    if (_currentPrompt == null) {
+      SnackbarUtils.showError(context, 'Unable to favourite. Please try again.');
+      return;
+    }
+
+    final newFavouriteStatus = !_isFavourited;
     setState(() {
-      _isFavourited = !_isFavourited;
+      _isFavourited = newFavouriteStatus;
     });
 
-    if (_currentPrompt != null) {
-      _currentPrompt = _currentPrompt!.copyWith(isFavourite: _isFavourited);
-      await promptProvider.toggleFavourite(
-        authProvider.currentUser,
-        _currentPrompt!,
+    _currentPrompt = _currentPrompt!.copyWith(isFavourite: _isFavourited);
+    final success = await promptProvider.toggleFavourite(
+      authProvider.currentUser,
+      _currentPrompt!,
+    );
+
+    if (!success && mounted) {
+      // Revert UI on failure
+      setState(() {
+        _isFavourited = !newFavouriteStatus;
+      });
+      SnackbarUtils.showError(
+        context,
+        promptProvider.error ?? 'Failed to update favourite',
       );
-      if (mounted) {
-        SnackbarUtils.showSuccess(
-          context,
-          _isFavourited ? 'Added to favourites!' : 'Removed from favourites',
-        );
-      }
+    } else if (mounted) {
+      SnackbarUtils.showSuccess(
+        context,
+        _isFavourited ? 'Added to favourites!' : 'Removed from favourites',
+      );
     }
   }
 
@@ -237,16 +259,11 @@ class _ResultScreenState extends State<ResultScreen>
     final contentMaxWidth = isTablet ? 600.0 : screenWidth;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Enhanced Prompt',
-          style: AppTextStyles.headingMedium.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
+      appBar: AdaptiveAppBar(
+        title: 'Enhanced Prompt',
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined),
+            icon: Icon(PlatformUtils.useCupertino(context) ? CupertinoIcons.share : Icons.share_outlined),
             onPressed: () => SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt)),
             tooltip: 'Share',
           ),

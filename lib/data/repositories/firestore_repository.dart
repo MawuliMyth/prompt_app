@@ -33,8 +33,9 @@ class FirestoreRepository {
 
   Future<void> incrementTotalPrompts(String uid) async {
     final docRef = _firestore.collection('users').doc(uid);
-    await docRef.update({
+    // Use set with merge to create document if it doesn't exist
+    await docRef.set({
       'totalPromptsGenerated': FieldValue.increment(1),
-    });
+    }, SetOptions(merge: true));
   }
 }
