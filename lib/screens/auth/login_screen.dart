@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -271,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) ...[
+              if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS)) ...[
                 const SizedBox(height: 16),
                 // Apple Sign In Button with Apple Logo
                 SizedBox(

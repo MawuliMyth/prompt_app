@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
@@ -247,6 +248,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
       _isCopied = true;
     });
     HapticFeedback.lightImpact();
+    // Announce for accessibility
+    // ignore: deprecated_member_use
+    SemanticsService.announce('Copied to clipboard', TextDirection.ltr);
     if (mounted) {
       SnackbarUtils.showSuccess(context, 'Copied to clipboard');
     }
@@ -576,9 +580,13 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               ...List.generate(_variations!.length, (index) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
-                  child: GestureDetector(
-                    onTap: () => _copyVariationToClipboard(_variations![index]),
-                    child: Container(
+                  child: Semantics(
+                    label: '${_variationTypes[index].name} variation',
+                    hint: 'Tap to copy this variation',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () => _copyVariationToClipboard(_variations![index]),
+                      child: Container(
                       padding: const EdgeInsets.all(AppConstants.spacing16),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surface,
@@ -626,6 +634,7 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                       ),
                     ),
                   ),
+                ),
                 );
               }),
             ],
@@ -705,12 +714,43 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
     final color = backgroundColor ?? AppColors.primaryLight;
 
     if (isOutlined) {
-      return OutlinedButton(
+      return Semantics(
+        label: label,
+        button: true,
+        child: OutlinedButton(
+          onPressed: onPressed,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            side: const BorderSide(color: AppColors.borderLight, width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18),
+              if (!isSmallScreen) ...[
+                const SizedBox(width: 4),
+                Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Semantics(
+      label: label,
+      button: true,
+      child: ElevatedButton(
         onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          side: const BorderSide(color: AppColors.borderLight, width: 1.5),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConstants.radiusButton),
           ),
@@ -725,29 +765,6 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
             ],
           ],
         ),
-      );
-    }
-
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppConstants.radiusButton),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18),
-          if (!isSmallScreen) ...[
-            const SizedBox(width: 4),
-            Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
-          ],
-        ],
       ),
     );
   }

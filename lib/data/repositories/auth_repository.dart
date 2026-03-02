@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart' show SignInWithApple, AppleIDAuthorizationScopes, AuthorizationCredentialAppleID, SignInWithAppleAuthorizationException, AuthorizationErrorCode;
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 
@@ -73,21 +73,15 @@ class AuthRepository {
     return credential;
   }
 
-  Future<UserCredential?> signInWithGoogle() async {
+  Future<Map<String, dynamic>?> signInWithGoogle() async {
     try {
-      debugPrint('Starting Google Sign-In...');
-
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        debugPrint('Google Sign-In cancelled by user');
-        return null; // Cancelled
+        // User cancelled the sign-in
+        return {'credential': null, 'cancelled': true};
       }
 
-      debugPrint('Google user selected: ${googleUser.email}');
-
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      debugPrint('Got Google auth tokens - accessToken: ${googleAuth.accessToken != null}, idToken: ${googleAuth.idToken != null}');
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -95,27 +89,24 @@ class AuthRepository {
       );
 
       final result = await _auth.signInWithCredential(credential);
-      debugPrint('Firebase sign-in successful: ${result.user?.email}');
       // Create Firestore user document if new user
       if (result.user != null) {
         await _createOrUpdateUserDocument(result.user!);
       }
-      return result;
+      return {'credential': result, 'cancelled': false};
     } catch (e) {
       debugPrint('Google Sign-In error: $e');
       rethrow;
     }
   }
 
-  Future<UserCredential?> signInWithApple() async {
+  Future<Map<String, dynamic>?> signInWithApple() async {
     // Check platform - Apple Sign-In only works on iOS/macOS (not web)
     if (kIsWeb || (!Platform.isIOS && !Platform.isMacOS)) {
       throw Exception('Apple Sign-In is only supported on iOS and macOS devices.');
     }
 
     try {
-      debugPrint('Starting Apple Sign-In...');
-
       final AuthorizationCredentialAppleID appleCredential =
           await SignInWithApple.getAppleIDCredential(
             scopes: [
@@ -124,15 +115,12 @@ class AuthRepository {
             ],
           );
 
-      debugPrint('Got Apple credential - identityToken: ${appleCredential.identityToken != null}');
-
       final OAuthCredential credential = OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
         accessToken: appleCredential.authorizationCode,
       );
 
       final result = await _auth.signInWithCredential(credential);
-      debugPrint('Firebase Apple sign-in successful: ${result.user?.email}');
       // Create Firestore user document if new user
       if (result.user != null) {
         // Apple may provide name on first sign-in
@@ -143,7 +131,12 @@ class AuthRepository {
             : null;
         await _createOrUpdateUserDocument(result.user!, displayName: displayName);
       }
-      return result;
+      return {'credential': result, 'cancelled': false};
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        return {'credential': null, 'cancelled': true};
+      }
+      rethrow;
     } catch (e) {
       debugPrint('Apple Sign-In error: $e');
       rethrow;

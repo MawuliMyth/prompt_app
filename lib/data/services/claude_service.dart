@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -33,13 +34,15 @@ class ClaudeService {
       bool isPremium = false;
       if (isAuthenticated) {
         isPremium = await _premiumService.checkIsPremium();
-        debugPrint('User is authenticated. Premium status: $isPremium');
-      } else {
-        debugPrint('User is guest - using free model');
+        if (kDebugMode) {
+          debugPrint('User is authenticated. Premium status: $isPremium');
+        }
       }
 
-      debugPrint('Sending enhancement request to $uri');
-      debugPrint('Category: $category, Prompt length: ${roughPrompt.length}, isPremium: $isPremium, tone: $tone');
+      if (kDebugMode) {
+        debugPrint('Sending enhancement request to $uri');
+        debugPrint('Category: $category, Prompt length: ${roughPrompt.length}, isPremium: $isPremium, tone: $tone');
+      }
 
       final response = await http.post(
         uri,
@@ -53,9 +56,11 @@ class ClaudeService {
           'tone': tone,
           'persona': persona,
         }),
-      );
+      ).timeout(_httpTimeout);
 
-      debugPrint('Enhancement response status: ${response.statusCode}');
+      if (kDebugMode) {
+        debugPrint('Enhancement response status: ${response.statusCode}');
+      }
 
       final data = jsonDecode(response.body);
 
@@ -70,14 +75,26 @@ class ClaudeService {
           'error': data['error'] ?? 'Something went wrong. Please try again.',
         };
       }
+    } on TimeoutException {
+      if (kDebugMode) {
+        debugPrint('Request timed out during enhancement');
+      }
+      return {
+        'success': false,
+        'error': 'Request timed out. Please check your connection and try again.',
+      };
     } on http.ClientException catch (e) {
-      debugPrint('Network error during enhancement: $e');
+      if (kDebugMode) {
+        debugPrint('Network error during enhancement: $e');
+      }
       return {
         'success': false,
         'error': 'Network error. Please check your connection.',
       };
     } catch (e) {
-      debugPrint('Enhancement error: $e');
+      if (kDebugMode) {
+        debugPrint('Enhancement error: $e');
+      }
       return {
         'success': false,
         'error': 'Something went wrong. Please try again.',
@@ -106,8 +123,10 @@ class ClaudeService {
         isPremium = await _premiumService.checkIsPremium();
       }
 
-      debugPrint('Sending variations request to $uri');
-      debugPrint('Category: $category, isPremium: $isPremium');
+      if (kDebugMode) {
+        debugPrint('Sending variations request to $uri');
+        debugPrint('Category: $category, isPremium: $isPremium');
+      }
 
       final response = await http.post(
         uri,
@@ -119,9 +138,11 @@ class ClaudeService {
           'category': category,
           'isPremium': isPremium,
         }),
-      );
+      ).timeout(_httpTimeout);
 
-      debugPrint('Variations response status: ${response.statusCode}');
+      if (kDebugMode) {
+        debugPrint('Variations response status: ${response.statusCode}');
+      }
 
       final data = jsonDecode(response.body);
 
@@ -136,14 +157,26 @@ class ClaudeService {
           'error': data['error'] ?? 'Failed to generate variations.',
         };
       }
+    } on TimeoutException {
+      if (kDebugMode) {
+        debugPrint('Request timed out during variations');
+      }
+      return {
+        'success': false,
+        'error': 'Request timed out. Please check your connection and try again.',
+      };
     } on http.ClientException catch (e) {
-      debugPrint('Network error during variations: $e');
+      if (kDebugMode) {
+        debugPrint('Network error during variations: $e');
+      }
       return {
         'success': false,
         'error': 'Network error. Please check your connection.',
       };
     } catch (e) {
-      debugPrint('Variations error: $e');
+      if (kDebugMode) {
+        debugPrint('Variations error: $e');
+      }
       return {
         'success': false,
         'error': 'Something went wrong. Please try again.',

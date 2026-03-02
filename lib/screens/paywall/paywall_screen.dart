@@ -14,36 +14,6 @@ class PaywallScreen extends StatefulWidget {
 }
 
 class _PaywallScreenState extends State<PaywallScreen> {
-  int _selectedPlanIndex = 1; // Default to Yearly
-
-  final List<_PlanOption> _plans = [
-    _PlanOption(
-      id: 'monthly',
-      title: 'Monthly',
-      price: '\$8.99',
-      period: '/month',
-      subtitle: null,
-      badge: null,
-    ),
-    _PlanOption(
-      id: 'yearly',
-      title: 'Yearly',
-      price: '\$59.99',
-      period: '/year',
-      subtitle: '\$5.00/month',
-      badge: 'SAVE 44%',
-      isPopular: true,
-    ),
-    _PlanOption(
-      id: 'lifetime',
-      title: 'Lifetime',
-      price: '\$89.99',
-      period: ' once',
-      subtitle: null,
-      badge: 'BEST VALUE',
-    ),
-  ];
-
   final List<_FeatureRow> _features = [
     _FeatureRow('Daily prompts', '5/day', 'Unlimited', true, true),
     _FeatureRow('AI Model', 'Standard', 'Advanced', false, true),
@@ -79,11 +49,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Pricing cards
-                    _buildPricingCards(theme),
-
-                    const SizedBox(height: AppConstants.spacing32),
-
                     // Feature comparison
                     _buildFeatureComparison(theme),
 
@@ -171,123 +136,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPricingCards(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Choose Your Plan',
-          style: AppTextStyles.title.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: AppConstants.spacing16),
-        Row(
-          children: List.generate(_plans.length, (index) {
-            final plan = _plans[index];
-            final isSelected = _selectedPlanIndex == index;
-
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => _selectPlan(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: EdgeInsets.only(
-                    left: index == 0 ? 0 : AppConstants.spacing8,
-                    right: index == _plans.length - 1 ? 0 : AppConstants.spacing8,
-                  ),
-                  padding: const EdgeInsets.all(AppConstants.spacing12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primaryLight : Colors.transparent,
-                      width: 2,
-                    ),
-                    boxShadow: isSelected ? AppColors.cardShadowLight : null,
-                  ),
-                  child: Column(
-                    children: [
-                      // Badge or spacer
-                      if (plan.badge != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: plan.isPopular
-                                ? AppColors.primaryLight
-                                : theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: plan.isPopular
-                                ? null
-                                : Border.all(color: AppColors.primaryLight),
-                          ),
-                          child: Text(
-                            plan.badge!,
-                            style: AppTextStyles.caption.copyWith(
-                              color: plan.isPopular
-                                  ? Colors.white
-                                  : AppColors.primaryLight,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                        )
-                      else
-                        const SizedBox(height: 24),
-
-                      const SizedBox(height: AppConstants.spacing12),
-
-                      // Title
-                      Text(
-                        plan.title,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondaryLight,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Price
-                      Text(
-                        plan.price,
-                        style: AppTextStyles.title.copyWith(
-                          color: theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      // Period
-                      Text(
-                        plan.period,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondaryLight,
-                          fontSize: 10,
-                        ),
-                      ),
-
-                      // Subtitle
-                      if (plan.subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          plan.subtitle!,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.primaryLight,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
     );
   }
 
@@ -432,20 +280,44 @@ class _PaywallScreenState extends State<PaywallScreen> {
     PremiumProvider premiumProvider,
     bool trialUsed,
   ) {
-    final selectedPlan = _plans[_selectedPlanIndex];
-    String priceText = '${selectedPlan.price}${selectedPlan.period}';
-
     return Column(
       children: [
+        // Coming Soon banner (for paid plans)
+        Container(
+          padding: const EdgeInsets.all(AppConstants.spacing16),
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+            border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: AppColors.primaryLight, size: 20),
+              const SizedBox(width: AppConstants.spacing12),
+              Expanded(
+                child: Text(
+                  'Paid subscriptions coming soon! Try our free 3-day trial now.',
+                  style: AppTextStyles.caption.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppConstants.spacing24),
+
         // Main CTA button
         SizedBox(
           width: double.infinity,
           height: AppConstants.buttonHeight,
           child: ElevatedButton(
-            onPressed: () => _handleUpgrade(premiumProvider, trialUsed),
+            onPressed: trialUsed ? null : () => _handleTrialActivation(premiumProvider),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryLight,
               foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.textSecondaryLight.withValues(alpha: 0.3),
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusButton),
@@ -457,7 +329,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 const Icon(Icons.auto_awesome, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  trialUsed ? 'Upgrade Now' : 'Start 3-Day Free Trial',
+                  trialUsed ? 'Trial Already Used' : 'Start 3-Day Free Trial',
                   style: AppTextStyles.button.copyWith(color: Colors.white),
                 ),
               ],
@@ -467,14 +339,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
         const SizedBox(height: AppConstants.spacing12),
 
-        // Price subtext
+        // Subtext
         Text(
           trialUsed
-              ? '$priceText. Cancel anytime.'
-              : 'then $priceText. Cancel anytime.',
+              ? 'You\'ve already used your free trial.'
+              : 'No credit card required. Cancel anytime.',
           style: AppTextStyles.caption.copyWith(
             color: AppColors.textSecondaryLight,
           ),
+          textAlign: TextAlign.center,
         ),
 
         const SizedBox(height: AppConstants.spacing24),
@@ -483,39 +356,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildTrustBadge(Icons.lock_outline, 'Secure'),
+            _buildTrustBadge(Icons.lock_outline, 'Free'),
             const SizedBox(width: AppConstants.spacing24),
-            _buildTrustBadge(Icons.replay, 'Refund'),
+            _buildTrustBadge(Icons.timer_outlined, '3 Days'),
             const SizedBox(width: AppConstants.spacing24),
             _buildTrustBadge(Icons.cancel_outlined, 'Cancel anytime'),
           ],
-        ),
-
-        const SizedBox(height: AppConstants.spacing24),
-
-        // Restore purchases
-        TextButton(
-          onPressed: () {
-            SnackbarUtils.showInfo(context, 'Purchases restored');
-          },
-          child: Text(
-            'Restore Purchases',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondaryLight,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: AppConstants.spacing8),
-
-        // Terms text
-        Text(
-          'By subscribing you agree to our Terms of Service',
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.textSecondaryLight.withValues(alpha: 0.7),
-            fontSize: 11,
-          ),
         ),
       ],
     );
@@ -536,55 +382,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  void _selectPlan(int index) {
-    setState(() => _selectedPlanIndex = index);
-  }
-
-  Future<void> _handleUpgrade(PremiumProvider premiumProvider, bool trialUsed) async {
-    final selectedPlan = _plans[_selectedPlanIndex];
-
-    if (!trialUsed) {
-      // Activate trial first
-      final success = await premiumProvider.activateTrial();
-      if (success && mounted) {
-        SnackbarUtils.showSuccess(context, 'Premium activated! Enjoy your 3-day free trial');
-        Navigator.pop(context);
-      } else if (mounted) {
-        SnackbarUtils.showError(context, premiumProvider.error ?? 'Failed to activate trial');
-      }
-    } else {
-      // Direct upgrade (simulated for now)
-      final success = await premiumProvider.upgradeToPremium(
-        planType: selectedPlan.id,
-      );
-      if (success && mounted) {
-        SnackbarUtils.showSuccess(context, 'Welcome to Premium!');
-        Navigator.pop(context);
-      } else if (mounted) {
-        SnackbarUtils.showError(context, premiumProvider.error ?? 'Failed to upgrade');
-      }
+  Future<void> _handleTrialActivation(PremiumProvider premiumProvider) async {
+    final success = await premiumProvider.activateTrial();
+    if (success && mounted) {
+      SnackbarUtils.showSuccess(context, 'Premium activated! Enjoy your 3-day free trial');
+      Navigator.pop(context);
+    } else if (mounted) {
+      SnackbarUtils.showError(context, premiumProvider.error ?? 'Failed to activate trial');
     }
   }
-}
-
-class _PlanOption {
-  final String id;
-  final String title;
-  final String price;
-  final String period;
-  final String? subtitle;
-  final String? badge;
-  final bool isPopular;
-
-  _PlanOption({
-    required this.id,
-    required this.title,
-    required this.price,
-    required this.period,
-    this.subtitle,
-    this.badge,
-    this.isPopular = false,
-  });
 }
 
 class _FeatureRow {

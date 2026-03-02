@@ -1,0 +1,28 @@
+# Release Signing Configuration
+# Copy this file to 'key.properties' and fill in your values
+#
+# INSTRUCTIONS:
+# 1. Generate a keystore file:
+#    keytool -genkey -v -keystore ~/prompt-enhancer-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias prompt-enhancer
+#
+# 2. Fill in the values below:
+#    - storePassword: The password for the keystore file
+#    - keyPassword: The password for the key
+#    - keyAlias: The alias name for the key (e.g., prompt-enhancer)
+#    - storeFile: Path to the keystore file (relative to android/ folder or absolute)
+#
+# 3. IMPORTANT: Add key.properties to .gitignore (it should already be there)
+#
+# 4. For Google Play Store, you'll also need to:
+#    - Set up Play App Signing in Google Play Console
+#    - Use the upload key for signing your app bundles
+#
+# SECURITY:
+# - NEVER commit key.properties to version control
+# - Use environment variables or CI/CD secrets for automated builds
+# - Back up your keystore file securely - you CANNOT update your app without it!
+
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=prompt-enhancer
+storeFile=../prompt-enhancer-keystore.jks

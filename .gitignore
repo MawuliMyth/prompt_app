@@ -44,6 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android signing
+android/key.properties
+*.jks
+*.keystore
+
 # Backend environment files
 backend/.env
 backend/node_modules/
