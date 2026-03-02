@@ -2,12 +2,14 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/free_prompt_provider.dart';
 import '../../providers/template_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/daily_limit_provider.dart';
+import '../../providers/connectivity_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
@@ -239,6 +241,13 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     final text = _inputController.text.trim();
     if (text.isEmpty) return;
 
+    // Check connectivity first
+    final connectivityProvider = Provider.of<ConnectivityProvider>(context, listen: false);
+    if (!connectivityProvider.isOnline) {
+      SnackbarUtils.showError(context, 'You are offline. Please check your connection.');
+      return;
+    }
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final freePromptProvider = Provider.of<FreePromptProvider>(context, listen: false);
     final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
@@ -263,6 +272,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
 
     setState(() => _isProcessing = true);
     HapticFeedback.lightImpact();
+    // Announce for accessibility
+    // ignore: deprecated_member_use
+    SemanticsService.announce('Enhancing your prompt', TextDirection.ltr);
 
     String? persona;
     if (premiumProvider.hasPremiumAccess && premiumProvider.userData?.persona != null) {
@@ -290,6 +302,10 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
       }
       // Premium users: no counter to increment
 
+      // Announce for accessibility
+      // ignore: deprecated_member_use
+      SemanticsService.announce('Prompt enhanced successfully', TextDirection.ltr);
+
       if (mounted) {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -305,6 +321,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
       }
     } else {
       if (mounted) {
+        // Announce error for accessibility
+        // ignore: deprecated_member_use
+        SemanticsService.announce('Error: ${result['error']}', TextDirection.ltr);
         SnackbarUtils.showError(context, result['error']);
       }
     }
@@ -511,9 +530,13 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   }
 
   Widget _buildCategoryChip(_CategoryItem category, bool isSelected, bool isSmallScreen) {
-    return GestureDetector(
-      onTap: () => setState(() => _selectedCategory = category.name),
-      child: AnimatedContainer(
+    return Semantics(
+      label: 'Category: ${category.name}',
+      hint: isSelected ? 'Selected' : 'Tap to select',
+      button: true,
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedCategory = category.name),
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
           horizontal: isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16,
@@ -556,11 +579,20 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
           ],
         ),
       ),
+    ),
     );
   }
 
   Widget _buildToneChip(_ToneItem tone, bool isSelected, bool isLocked, bool isSmallScreen) {
-    return GestureDetector(
+    return Semantics(
+      label: 'Tone: ${tone.name}',
+      hint: isLocked
+          ? 'Locked. Tap to unlock with Premium'
+          : isSelected
+              ? 'Selected'
+              : 'Tap to select',
+      button: true,
+      child: GestureDetector(
       onTap: () {
         if (isLocked) {
           LockedFeatureSheet.show(
@@ -612,6 +644,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -690,9 +723,13 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
             child: Row(
               children: [
                 // Mic button
-                GestureDetector(
-                  onTap: _handleRecording,
-                  child: AnimatedBuilder(
+                Semantics(
+                  label: _isRecording ? 'Stop recording' : 'Start recording',
+                  hint: _isRecording ? 'Double tap to stop' : 'Double tap to start',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: _handleRecording,
+                    child: AnimatedBuilder(
                     animation: _pulseController,
                     builder: (context, child) {
                       return Container(
@@ -721,6 +758,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                       );
                     },
                   ),
+                ),
                 ),
 
                 const Spacer(),
@@ -761,10 +799,19 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   Widget _buildEnhanceButton(bool isSmallScreen) {
     final isDisabled = _inputController.text.isEmpty || _isProcessing;
 
-    return AnimatedScale(
-      scale: 1.0,
-      duration: const Duration(milliseconds: 100),
-      child: SizedBox(
+    return Semantics(
+      label: 'Enhance Prompt',
+      hint: isDisabled
+          ? 'Enter some text to enable'
+          : _isProcessing
+              ? 'Processing your prompt'
+              : 'Tap to enhance your prompt',
+      button: true,
+      enabled: !isDisabled,
+      child: AnimatedScale(
+        scale: 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: SizedBox(
         width: double.infinity,
         height: AppConstants.buttonHeight,
         child: ElevatedButton(
@@ -800,6 +847,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                 ),
         ),
       ),
+    ),
     );
   }
 
@@ -949,15 +997,19 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     bool isSmallScreen,
   ) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _inputController.text = textContent;
-          final index = _categories.indexWhere((c) => c.name == category);
-          if (index != -1) _selectedCategory = category;
-        });
-      },
-      child: Container(
+    return Semantics(
+      label: 'Template: $title',
+      hint: 'Tap to use this template',
+      button: true,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _inputController.text = textContent;
+            final index = _categories.indexWhere((c) => c.name == category);
+            if (index != -1) _selectedCategory = category;
+          });
+        },
+        child: Container(
         width: isSmallScreen ? 140 : 160,
         margin: const EdgeInsets.only(right: AppConstants.spacing16),
         padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16),
@@ -1001,6 +1053,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
           ],
         ),
       ),
+    ),
     );
   }
 }

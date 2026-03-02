@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -156,7 +155,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final isSmallScreen = screenWidth < 360;
-    final isCupertino = !kIsWeb && (Platform.isIOS || Platform.isMacOS);
+    final isCupertino = !kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS);
 
     return Scaffold(
       appBar: AdaptiveAppBar(title: 'Templates'),

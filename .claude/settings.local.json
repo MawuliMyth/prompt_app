@@ -15,7 +15,11 @@
       "Bash(dart analyze:*)",
       "Bash(netstat:*)",
       "Bash(dart:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "WebSearch",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

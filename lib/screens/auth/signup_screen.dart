@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -83,7 +81,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     if (!_termsAccepted) {
-      SnackbarUtils.showError(context, 'Please accept terms of service');
+      SnackbarUtils.showError(context, 'Please accept the Terms of Service');
       return;
     }
 
@@ -246,9 +244,16 @@ class _SignupScreenState extends State<SignupScreen> {
                         activeColor: AppColors.primaryLight,
                      ),
                      Expanded(
-                        child: Text(
-                           'I agree to the Terms of Service and Privacy Policy',
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _termsAccepted = !_termsAccepted;
+                            });
+                          },
+                          child: Text(
+                           'I agree to the Terms of Service',
                            style: AppTextStyles.caption.copyWith(color: theme.colorScheme.onSurface),
+                          ),
                         ),
                      )
                    ],
@@ -329,7 +334,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-                if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) ...[
+                if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS)) ...[
                   const SizedBox(height: 16),
                   // Apple Sign In Button
                   SizedBox(
