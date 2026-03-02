@@ -213,8 +213,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAccountTile(ThemeData theme, AuthProvider authProvider, PremiumProvider premiumProvider) {
     // Use Firestore UserModel data as primary source, fallback to Firebase Auth
     final userData = premiumProvider.userData;
-    final displayName = userData?.displayName ?? authProvider.currentUser?.displayName ?? 'User';
-    final email = userData?.email ?? authProvider.currentUser?.email ?? '';
+    final firestoreName = userData?.displayName;
+    final authName = authProvider.currentUser?.displayName;
+    final displayName = (firestoreName?.isNotEmpty == true)
+        ? firestoreName!
+        : (authName?.isNotEmpty == true ? authName! : 'User');
+    final email = (userData?.email?.isNotEmpty == true)
+        ? userData!.email
+        : (authProvider.currentUser?.email ?? '');
     final photoUrl = userData?.photoUrl ?? authProvider.currentUser?.photoURL;
 
     return Container(
