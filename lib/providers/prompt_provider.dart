@@ -167,4 +167,10 @@ class PromptProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 }

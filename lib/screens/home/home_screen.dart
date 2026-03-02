@@ -2,7 +2,10 @@ import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/offline_banner.dart';
+import '../../providers/connectivity_provider.dart';
 import '../history/history_screen.dart';
 import '../favourites/favourites_screen.dart';
 import '../templates/templates_screen.dart';
@@ -38,48 +41,64 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCupertinoTabs(BuildContext context) {
-    return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        activeColor: AppColors.primaryLight,
-        inactiveColor: AppColors.textSecondaryLight,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        border: null,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.house),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.clock),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.star),
-            label: 'Favourites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.doc_text),
-            label: 'Templates',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.chart_bar),
-            label: 'Analytics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
-      tabBuilder: (context, index) {
-        return CupertinoTabView(
-          builder: (context) => _screens[index],
+    return Consumer<ConnectivityProvider>(
+      builder: (context, connectivity, child) {
+        return Stack(
+          children: [
+            CupertinoTabScaffold(
+              tabBar: CupertinoTabBar(
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                activeColor: AppColors.primaryLight,
+                inactiveColor: AppColors.textSecondaryLight,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                border: null,
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.house),
+                    label: 'Home',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.clock),
+                    label: 'History',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.star),
+                    label: 'Favourites',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.doc_text),
+                    label: 'Templates',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.chart_bar),
+                    label: 'Analytics',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.settings),
+                    label: 'Settings',
+                  ),
+                ],
+              ),
+              tabBuilder: (context, index) {
+                return CupertinoTabView(
+                  builder: (context) => _screens[index],
+                );
+              },
+            ),
+            // Offline banner on top
+            if (!connectivity.isOnline)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: OfflineBanner(onRetry: connectivity.checkConnectivity),
+              ),
+          ],
         );
       },
     );
@@ -89,7 +108,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: Consumer<ConnectivityProvider>(
+        builder: (context, connectivity, child) {
+          return Column(
+            children: [
+              if (!connectivity.isOnline)
+                OfflineBanner(onRetry: connectivity.checkConnectivity),
+              Expanded(child: _screens[_currentIndex]),
+            ],
+          );
+        },
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
