@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/widgets/adaptive_widgets.dart';
+import '../../core/utils/snackbar_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/premium_provider.dart';
@@ -354,6 +355,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             isDestructive: true,
             onTap: () => _showSignOutDialog(theme, authProvider),
           ),
+          Divider(height: 1, color: AppColors.borderLight),
+          _buildSettingItem(
+            theme,
+            icon: Icons.delete_forever_outlined,
+            title: 'Delete Account',
+            subtitle: 'Permanently delete your account and data',
+            isDestructive: true,
+            onTap: () => _showDeleteAccountDialog(theme, authProvider),
+          ),
         ],
       ),
     );
@@ -560,6 +570,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       );
+    }
+  }
+
+  void _showDeleteAccountDialog(ThemeData theme, AuthProvider authProvider) {
+    if (PlatformUtils.useCupertino(context)) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text('This will permanently delete your account and all your data. This action cannot be undone.'),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => _handleDeleteAccount(authProvider),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text('This will permanently delete your account and all your data. This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => _handleDeleteAccount(authProvider),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: AppColors.error),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleDeleteAccount(AuthProvider authProvider) async {
+    Navigator.pop(context); // Close the dialog
+
+    final success = await authProvider.deleteAccount();
+
+    if (mounted) {
+      if (success) {
+        SnackbarUtils.showSuccess(context, 'Account deleted successfully');
+      } else {
+        SnackbarUtils.showError(context, authProvider.error ?? 'Failed to delete account');
+      }
     }
   }
 }
