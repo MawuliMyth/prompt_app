@@ -4,34 +4,19 @@ import '../constants/app_text_styles.dart';
 import '../constants/app_constants.dart';
 import '../../screens/paywall/paywall_screen.dart';
 
-/// A bottom sheet that appears when a free user taps on a premium feature
-class LockedFeatureSheet {
-  /// Shows the locked feature bottom sheet
-  ///
-  /// [context] - Build context
-  /// [featureName] - Name of the locked feature (e.g., "Tone Selector")
-  /// [benefit] - One-line benefit description (e.g., "Customize the tone of your prompts")
-  static void show(BuildContext context, String featureName, String benefit) {
+class DailyLimitSheet {
+  static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _LockedFeatureContent(
-        featureName: featureName,
-        benefit: benefit,
-      ),
+      builder: (context) => const _DailyLimitContent(),
     );
   }
 }
 
-class _LockedFeatureContent extends StatelessWidget {
-  final String featureName;
-  final String benefit;
-
-  const _LockedFeatureContent({
-    required this.featureName,
-    required this.benefit,
-  });
+class _DailyLimitContent extends StatelessWidget {
+  const _DailyLimitContent();
 
   @override
   Widget build(BuildContext context) {
@@ -59,28 +44,26 @@ class _LockedFeatureContent extends StatelessWidget {
             ),
           ),
 
-          // Lock icon
+          // Icon
           Container(
-            width: 72,
-            height: 72,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               color: AppColors.primaryLight.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Center(
-              child: Icon(
-                Icons.lock_outline,
-                size: 32,
-                color: AppColors.primaryLight,
-              ),
+            child: const Icon(
+              Icons.hourglass_empty,
+              size: 40,
+              color: AppColors.primaryLight,
             ),
           ),
 
           const SizedBox(height: AppConstants.spacing24),
 
-          // Feature name
+          // Title
           Text(
-            featureName,
+            'Daily Limit Reached',
             style: AppTextStyles.title.copyWith(
               color: theme.colorScheme.onSurface,
             ),
@@ -89,18 +72,33 @@ class _LockedFeatureContent extends StatelessWidget {
 
           const SizedBox(height: AppConstants.spacing8),
 
-          // Benefit
+          // Subtitle
           Text(
-            benefit,
+            'You have used all 10 free prompts today. Your limit resets at midnight.',
             style: AppTextStyles.body.copyWith(
               color: AppColors.textSecondaryLight,
             ),
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: AppConstants.spacing32),
+          const SizedBox(height: AppConstants.spacing24),
 
-          // Unlock button
+          // Divider
+          Divider(color: AppColors.borderLight, height: 1),
+
+          const SizedBox(height: AppConstants.spacing24),
+
+          // Upgrade section
+          Text(
+            'Get unlimited prompts every day',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondaryLight,
+            ),
+          ),
+
+          const SizedBox(height: AppConstants.spacing12),
+
+          // Upgrade button
           SizedBox(
             width: double.infinity,
             height: AppConstants.buttonHeight,
@@ -127,7 +125,7 @@ class _LockedFeatureContent extends StatelessWidget {
                   const Icon(Icons.workspace_premium_outlined, size: 20),
                   const SizedBox(width: AppConstants.spacing8),
                   Text(
-                    'Unlock with Premium',
+                    'Upgrade to Premium',
                     style: AppTextStyles.button.copyWith(color: Colors.white),
                   ),
                 ],
@@ -137,11 +135,11 @@ class _LockedFeatureContent extends StatelessWidget {
 
           const SizedBox(height: AppConstants.spacing12),
 
-          // Maybe later button
+          // Come back tomorrow button
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Maybe Later',
+              'Come back tomorrow',
               style: AppTextStyles.body.copyWith(
                 color: AppColors.textSecondaryLight,
               ),

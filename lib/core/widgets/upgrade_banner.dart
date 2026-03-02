@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
+import '../constants/app_constants.dart';
 import '../../providers/premium_provider.dart';
 import '../../screens/paywall/paywall_screen.dart';
 
-/// A small banner widget that prompts free users to upgrade to premium
+/// A subtle banner widget that prompts free users to upgrade to premium
 class UpgradeBanner extends StatelessWidget {
   const UpgradeBanner({super.key});
 
@@ -21,55 +22,78 @@ class UpgradeBanner extends StatelessWidget {
         return GestureDetector(
           onTap: () => _openPaywall(context),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: EdgeInsets.zero,
+            padding: const EdgeInsets.all(AppConstants.spacing16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryLight.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+              border: Border.all(color: AppColors.borderLight),
+              boxShadow: AppColors.cardShadowLight,
             ),
             child: Row(
               children: [
+                // Left accent border
+                Container(
+                  width: 3,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: AppConstants.spacing16),
+
                 // Icon
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppConstants.spacing8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+                    color: AppColors.primaryLight.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Text('⚡', style: TextStyle(fontSize: 16)),
+                  child: const Icon(
+                    Icons.bolt_outlined,
+                    size: 20,
+                    color: AppColors.primaryLight,
+                  ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: AppConstants.spacing12),
 
                 // Text
                 Expanded(
-                  child: Text(
-                    'Upgrade for unlimited prompts and advanced AI',
-                    style: AppTextStyles.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Upgrade to Premium',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Unlimited prompts and advanced AI',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                const SizedBox(width: 8),
-
                 // Arrow
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white,
-                  size: 14,
+                Container(
+                  padding: const EdgeInsets.all(AppConstants.spacing8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white,
+                    size: 12,
+                  ),
                 ),
               ],
             ),

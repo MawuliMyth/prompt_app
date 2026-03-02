@@ -13,7 +13,9 @@
       "Bash(flutter pub:*)",
       "Bash(file:*)",
       "Bash(dart analyze:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(dart:*)",
+      "Bash(rm:*)"
     ]
   }
 }

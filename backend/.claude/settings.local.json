@@ -8,7 +8,9 @@
       "Bash(flutter analyze:*)",
       "Bash(firebase deploy:*)",
       "Bash(flutter pub:*)",
-      "Bash(\"C:\\\\Users\\\\josep\\\\Documents\\\\flutter_projects\\\\promt_app\\\\backend\\\\render.yaml\":*)"
+      "Bash(\"C:\\\\Users\\\\josep\\\\Documents\\\\flutter_projects\\\\promt_app\\\\backend\\\\render.yaml\":*)",
+      "Bash(git push:*)",
+      "Bash(git:*)"
     ]
   }
 }
