@@ -175,7 +175,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Sign up to get started',
-                  style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                  style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
@@ -271,8 +271,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       alignment: Alignment.center,
                       child: authProvider.isLoading
                         ? Shimmer.fromColors(
-                            baseColor: Colors.white.withOpacity(0.5),
-                            highlightColor: Colors.white.withOpacity(0.8),
+                            baseColor: Colors.white.withValues(alpha: 0.5),
+                            highlightColor: Colors.white.withValues(alpha: 0.8),
                             child: Text(
                               'Creating account...',
                               style: AppTextStyles.button.copyWith(color: Colors.white),
@@ -291,7 +291,7 @@ class _SignupScreenState extends State<SignupScreen> {
                      const Expanded(child: Divider()),
                      Padding(
                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                       child: Text('or continue with', style: AppTextStyles.caption.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                       child: Text('or continue with', style: AppTextStyles.caption.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                      ),
                      const Expanded(child: Divider()),
                   ],

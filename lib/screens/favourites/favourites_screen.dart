@@ -82,10 +82,13 @@ class FavouritesScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+    return CustomScrollView(
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
           Icon(Icons.star_border, size: 80, color: AppColors.dividerLight),
           const SizedBox(height: 24),
           Text(
@@ -97,8 +100,10 @@ class FavouritesScreen extends StatelessWidget {
             'Star a prompt to save it here!',
             style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
           )
-        ],
-      ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -118,18 +123,21 @@ class FavouritesScreen extends StatelessWidget {
   }
 
   Widget _buildGuestEmptyState(BuildContext context, ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+    return CustomScrollView(
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
             Flexible(
               child: Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withOpacity(0.1),
+                  color: AppColors.primaryLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -163,9 +171,11 @@ class FavouritesScreen extends StatelessWidget {
               ),
               child: const Text('Sign In'),
             )
-          ],
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

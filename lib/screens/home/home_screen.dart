@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/utils/platform_utils.dart';
 import '../history/history_screen.dart';
 import '../favourites/favourites_screen.dart';
 import '../templates/templates_screen.dart';
@@ -32,12 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Use CupertinoTabScaffold for iOS
     if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
       return _buildCupertinoTabs(context);
     }
-
-    // Use Material Scaffold for Android/Web
     return _buildMaterialTabs(context);
   }
 
@@ -53,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
         activeColor: AppColors.primaryLight,
         inactiveColor: AppColors.textSecondaryLight,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        border: null,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.house),
@@ -89,54 +86,88 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMaterialTabs(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _currentIndex,
-        selectedItemColor: AppColors.primaryLight,
-        unselectedItemColor: AppColors.textSecondaryLight,
-        showUnselectedLabels: true,
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          border: Border(
+            top: BorderSide(
+              color: AppColors.borderLight,
+              width: 0.5,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.star_outline),
-            activeIcon: Icon(Icons.star),
-            label: 'Favourites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.text_snippet_outlined),
-            activeIcon: Icon(Icons.text_snippet),
-            label: 'Templates',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Analytics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _currentIndex,
+          selectedItemColor: AppColors.primaryLight,
+          unselectedItemColor: AppColors.textSecondaryLight,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          showUnselectedLabels: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.home_outlined, size: 24),
+              activeIcon: _buildActiveIcon(Icons.home, AppColors.primaryLight),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.history_outlined, size: 24),
+              activeIcon: _buildActiveIcon(Icons.history, AppColors.categoryGeneral),
+              label: 'History',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.star_outline, size: 24),
+              activeIcon: _buildActiveIcon(Icons.star, AppColors.categoryImageGeneration),
+              label: 'Favourites',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.text_snippet_outlined, size: 24),
+              activeIcon: _buildActiveIcon(Icons.text_snippet, AppColors.categoryCoding),
+              label: 'Templates',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.bar_chart_outlined, size: 24),
+              activeIcon: _buildActiveIcon(Icons.bar_chart, AppColors.categoryBusiness),
+              label: 'Analytics',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.settings_outlined, size: 24),
+              activeIcon: _buildActiveIcon(Icons.settings, AppColors.textSecondaryLight),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildActiveIcon(IconData icon, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 24, color: AppColors.primaryLight),
+        const SizedBox(height: 2),
+        Container(
+          width: 4,
+          height: 4,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ],
     );
   }
 }

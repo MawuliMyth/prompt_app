@@ -135,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Sign in to continue',
-                  style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                  style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
@@ -233,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
                    const Expanded(child: Divider()),
                    Padding(
                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                     child: Text('or continue with', style: AppTextStyles.caption.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                     child: Text('or continue with', style: AppTextStyles.caption.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                    ),
                    const Expanded(child: Divider()),
                 ],

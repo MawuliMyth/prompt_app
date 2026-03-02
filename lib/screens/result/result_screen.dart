@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/strength_calculator.dart';
 import '../../core/utils/platform_utils.dart';
@@ -31,14 +32,13 @@ class ResultScreen extends StatefulWidget {
   final String originalText;
   final String enhancedPrompt;
   final String category;
-  final PromptModel? existingPrompt; // If provided, skip auto-save (viewing history)
+  final PromptModel? existingPrompt;
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen>
-    with SingleTickerProviderStateMixin {
+class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderStateMixin {
   late int _strengthScore;
   late String _strengthLabel;
   bool _isCopied = false;
@@ -48,11 +48,16 @@ class _ResultScreenState extends State<ResultScreen>
 
   PromptModel? _currentPrompt;
 
-  // Variations state
   final ClaudeService _claudeService = ClaudeService();
   bool _isLoadingVariations = false;
   List<String>? _variations;
   bool _showVariations = false;
+
+  final List<_VariationType> _variationTypes = [
+    _VariationType(name: 'Formal', icon: Icons.work_outline),
+    _VariationType(name: 'Creative', icon: Icons.palette_outlined),
+    _VariationType(name: 'Concise', icon: Icons.compress_outlined),
+  ];
 
   @override
   void initState() {
@@ -64,7 +69,6 @@ class _ResultScreenState extends State<ResultScreen>
     );
     _strengthLabel = StrengthCalculator.getLabel(_strengthScore);
 
-    // If viewing existing prompt, use its favourite status
     _isFavourited = widget.existingPrompt?.isFavourite ?? false;
     _currentPrompt = widget.existingPrompt;
 
@@ -77,7 +81,6 @@ class _ResultScreenState extends State<ResultScreen>
     );
     _progressController.forward();
 
-    // Auto save only if this is a NEW prompt (not viewing history)
     if (widget.existingPrompt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _autoSaveIfAuthenticated();
@@ -112,7 +115,7 @@ class _ResultScreenState extends State<ResultScreen>
       );
       if (mounted) {
         if (success) {
-          SnackbarUtils.showSuccess(context, 'Saved to history!');
+          SnackbarUtils.showSuccess(context, 'Saved to history');
         } else {
           SnackbarUtils.showError(context, promptProvider.error ?? 'Failed to save prompt');
         }
@@ -129,7 +132,6 @@ class _ResultScreenState extends State<ResultScreen>
       return;
     }
 
-    // Ensure we have a prompt to toggle
     if (_currentPrompt == null) {
       SnackbarUtils.showError(context, 'Unable to favourite. Please try again.');
       return;
@@ -147,7 +149,6 @@ class _ResultScreenState extends State<ResultScreen>
     );
 
     if (!success && mounted) {
-      // Revert UI on failure
       setState(() {
         _isFavourited = !newFavouriteStatus;
       });
@@ -158,7 +159,7 @@ class _ResultScreenState extends State<ResultScreen>
     } else if (mounted) {
       SnackbarUtils.showSuccess(
         context,
-        _isFavourited ? 'Added to favourites!' : 'Removed from favourites',
+        _isFavourited ? 'Added to favourites' : 'Removed from favourites',
       );
     }
   }
@@ -166,82 +167,77 @@ class _ResultScreenState extends State<ResultScreen>
   void _showSignupPrompt() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.save_outlined,
-                  size: 40,
-                  color: AppColors.primaryLight,
-                ),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppConstants.radiusBottomSheet),
+          ),
+        ),
+        padding: const EdgeInsets.all(AppConstants.spacing24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.dividerLight,
+                borderRadius: BorderRadius.circular(2),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Sign up to save prompts!',
-                style: AppTextStyles.headingMedium,
-                textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Create a free account to save this prompt and build a library of your favourites.',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
-                textAlign: TextAlign.center,
+              child: const Icon(
+                Icons.save_outlined,
+                size: 40,
+                color: AppColors.primaryLight,
               ),
-              const SizedBox(height: 32),
-              ElevatedButton(
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            Text(
+              'Sign up to save prompts',
+              style: AppTextStyles.title,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppConstants.spacing12),
+            Text(
+              'Create a free account to save this prompt and build a library of your favourites.',
+              style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppConstants.spacing32),
+            SizedBox(
+              width: double.infinity,
+              height: AppConstants.buttonHeight,
+              child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const SignupScreen()),
                   );
                 },
-                style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Container(
-                    height: 56,
-                    alignment: Alignment.center,
-                    child: Text(
-                      'Create Free Account',
-                      style: AppTextStyles.button.copyWith(color: Colors.white),
-                    ),
-                  ),
-                ),
+                child: const Text('Create Free Account'),
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Maybe Later',
-                  style: AppTextStyles.button.copyWith(
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
+            ),
+            const SizedBox(height: AppConstants.spacing12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Maybe Later',
+                style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
               ),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -252,7 +248,7 @@ class _ResultScreenState extends State<ResultScreen>
     });
     HapticFeedback.lightImpact();
     if (mounted) {
-      SnackbarUtils.showSuccess(context, 'Copied to clipboard!');
+      SnackbarUtils.showSuccess(context, 'Copied to clipboard');
     }
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _isCopied = false);
@@ -263,14 +259,13 @@ class _ResultScreenState extends State<ResultScreen>
     await Clipboard.setData(ClipboardData(text: variation));
     HapticFeedback.lightImpact();
     if (mounted) {
-      SnackbarUtils.showSuccess(context, 'Variation copied!');
+      SnackbarUtils.showSuccess(context, 'Variation copied');
     }
   }
 
   Future<void> _loadVariations() async {
     final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
 
-    // Check if premium
     if (!premiumProvider.hasPremiumAccess) {
       LockedFeatureSheet.show(
         context,
@@ -330,297 +325,26 @@ class _ResultScreenState extends State<ResultScreen>
               child: SizedBox(
                 width: contentMaxWidth,
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(isSmallScreen ? 12.0 : 20.0),
+                  padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Section A - Strength Meter (compact)
-                      Container(
-                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              offset: const Offset(0, 4),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: isSmallScreen ? 60 : 80,
-                              height: isSmallScreen ? 60 : 80,
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  AnimatedBuilder(
-                                    animation: _animation,
-                                    builder: (context, child) {
-                                      return CircularProgressIndicator(
-                                        value: _animation.value,
-                                        strokeWidth: isSmallScreen ? 6 : 8,
-                                        backgroundColor: AppColors.dividerLight,
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                              AppColors.primaryLight,
-                                            ),
-                                      );
-                                    },
-                                  ),
-                                  Center(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        '$_strengthScore',
-                                        style: AppTextStyles.headingMedium
-                                            .copyWith(
-                                              color: AppColors.primaryLight,
-                                              fontSize: isSmallScreen ? 18 : 24,
-                                            ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _strengthLabel,
-                                    style: AppTextStyles.headingSmall.copyWith(
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Prompt Strength',
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.textSecondaryLight,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // Strength Meter
+                      _buildStrengthMeter(theme, isSmallScreen),
+                      const SizedBox(height: AppConstants.spacing24),
 
-                      // Section B - Original Card (compact)
-                      Container(
-                        padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.dividerLight),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Original',
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textSecondaryLight,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              widget.originalText,
-                              style: AppTextStyles.body.copyWith(
-                                color: theme.colorScheme.onSurface,
-                                fontSize: isSmallScreen ? 13 : 14,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // Original Card
+                      _buildOriginalCard(theme, isSmallScreen),
+                      const SizedBox(height: AppConstants.spacing16),
 
-                      // Section C - Enhanced Card
-                      Container(
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.primaryLight.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryLight.withValues(alpha: 0.1),
-                              offset: const Offset(0, 4),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight.withValues(alpha: 0.1),
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(14),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.auto_awesome,
-                                    color: AppColors.primaryLight,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Enhanced Prompt ✨',
-                                    style: AppTextStyles.body.copyWith(
-                                      color: AppColors.primaryLight,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                              child: SelectableText(
-                                widget.enhancedPrompt,
-                                style: AppTextStyles.body.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  height: 1.6,
-                                  fontSize: isSmallScreen ? 14 : 15,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // Enhanced Card
+                      _buildEnhancedCard(theme, isSmallScreen),
+                      const SizedBox(height: AppConstants.spacing24),
 
-                      // Section D - Variations (Premium Feature)
-                      Consumer<PremiumProvider>(
-                        builder: (context, premiumProvider, child) {
-                          final hasPremium = premiumProvider.hasPremiumAccess;
+                      // Variations Section
+                      _buildVariationsSection(theme, isSmallScreen),
 
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Variations button
-                              GestureDetector(
-                                onTap: _isLoadingVariations ? null : _loadVariations,
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: hasPremium
-                                          ? AppColors.primaryLight.withValues(alpha: 0.3)
-                                          : AppColors.dividerLight,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      if (_isLoadingVariations)
-                                        const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      else ...[
-                                        Icon(
-                                          hasPremium ? Icons.auto_awesome : Icons.lock_outline,
-                                          size: 18,
-                                          color: hasPremium
-                                              ? AppColors.primaryLight
-                                              : AppColors.textSecondaryLight,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          hasPremium ? 'See 3 Variations ✨' : 'See 3 Variations 🔒',
-                                          style: AppTextStyles.body.copyWith(
-                                            color: hasPremium
-                                                ? AppColors.primaryLight
-                                                : AppColors.textSecondaryLight,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              // Variations cards
-                              if (_showVariations && _variations != null) ...[
-                                const SizedBox(height: 16),
-                                ...List.generate(_variations!.length, (index) {
-                                  final labels = ['Formal 📋', 'Creative 🎨', 'Concise ⚡'];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: GestureDetector(
-                                      onTap: () => _copyVariationToClipboard(_variations![index]),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: theme.cardColor,
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: AppColors.dividerLight),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  labels[index],
-                                                  style: AppTextStyles.caption.copyWith(
-                                                    color: AppColors.primaryLight,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                Icon(
-                                                  Icons.copy,
-                                                  size: 16,
-                                                  color: AppColors.textSecondaryLight,
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              _variations![index],
-                                              style: AppTextStyles.body.copyWith(
-                                                color: theme.colorScheme.onSurface,
-                                                fontSize: isSmallScreen ? 13 : 14,
-                                              ),
-                                              maxLines: 3,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                              ],
-                            ],
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 100), // Space for bottom bar
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
@@ -629,141 +353,412 @@ class _ResultScreenState extends State<ResultScreen>
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(
-          isSmallScreen ? 12 : 20,
-          12,
-          isSmallScreen ? 12 : 20,
-          MediaQuery.of(context).padding.bottom + 12,
-        ),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: theme.colorScheme.onSurface,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 4,
-                  ),
+      bottomNavigationBar: _buildBottomBar(theme, isSmallScreen),
+    );
+  }
+
+  Widget _buildStrengthMeter(ThemeData theme, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        boxShadow: AppColors.cardShadowLight,
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: isSmallScreen ? 64 : 80,
+            height: isSmallScreen ? 64 : 80,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AnimatedBuilder(
+                  animation: _animation,
+                  builder: (context, child) {
+                    return CircularProgressIndicator(
+                      value: _animation.value,
+                      strokeWidth: isSmallScreen ? 5 : 6,
+                      backgroundColor: AppColors.surfaceVariantLight,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
+                    );
+                  },
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.refresh, size: 18),
-                    if (!isSmallScreen) ...[
-                      const SizedBox(width: 4),
-                      const Text('New'),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _handleFavourite,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isFavourited
-                      ? Colors.amber
-                      : AppColors.primaryLight,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 4,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _isFavourited ? Icons.star : Icons.star_border,
-                      size: 18,
+                Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '$_strengthScore',
+                      style: AppTextStyles.heading.copyWith(
+                        color: AppColors.primaryLight,
+                        fontSize: isSmallScreen ? 20 : 28,
+                      ),
                     ),
-                    if (!isSmallScreen) ...[
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          _isFavourited ? 'Favourited' : 'Favourite',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _copyToClipboard,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isCopied
-                      ? Colors.green
-                      : AppColors.primaryLight,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 4,
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(_isCopied ? Icons.check : Icons.copy, size: 18),
-                    if (!isSmallScreen) ...[
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          _isCopied ? 'Copied' : 'Copy',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryLight,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 4,
+          ),
+          const SizedBox(width: AppConstants.spacing20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _strengthLabel,
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.share, size: 18),
-                    if (!isSmallScreen) ...[
-                      const SizedBox(width: 4),
-                      const Flexible(
-                        child: Text('Share', overflow: TextOverflow.ellipsis),
-                      ),
-                    ],
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  'Prompt Strength',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  Widget _buildOriginalCard(ThemeData theme, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.edit_outlined,
+                size: 16,
+                color: AppColors.textSecondaryLight,
+              ),
+              const SizedBox(width: AppConstants.spacing8),
+              Text(
+                'Original',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondaryLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spacing12),
+          Text(
+            widget.originalText,
+            style: AppTextStyles.body.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              fontStyle: FontStyle.italic,
+              fontSize: isSmallScreen ? 13 : 14,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedCard(ThemeData theme, bool isSmallScreen) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        boxShadow: AppColors.cardShadowLight,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppConstants.spacing16),
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(color: AppColors.primaryLight, width: 3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome,
+                  color: AppColors.primaryLight,
+                  size: 18,
+                ),
+                const SizedBox(width: AppConstants.spacing8),
+                Text(
+                  'Enhanced Prompt',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: AppColors.primaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20),
+            child: SelectableText(
+              widget.enhancedPrompt,
+              style: AppTextStyles.body.copyWith(
+                color: theme.colorScheme.onSurface,
+                height: 1.7,
+                fontSize: isSmallScreen ? 14 : 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVariationsSection(ThemeData theme, bool isSmallScreen) {
+    return Consumer<PremiumProvider>(
+      builder: (context, premiumProvider, child) {
+        final hasPremium = premiumProvider.hasPremiumAccess;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Variations button
+            GestureDetector(
+              onTap: _isLoadingVariations ? null : _loadVariations,
+              child: Container(
+                padding: const EdgeInsets.all(AppConstants.spacing16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+                  border: Border.all(
+                    color: hasPremium
+                        ? AppColors.primaryLight.withValues(alpha: 0.3)
+                        : AppColors.borderLight,
+                  ),
+                  boxShadow: AppColors.cardShadowLight,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_isLoadingVariations)
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else ...[
+                      Icon(
+                        hasPremium ? Icons.auto_awesome_outlined : Icons.lock_outline,
+                        size: 18,
+                        color: hasPremium ? AppColors.primaryLight : AppColors.textSecondaryLight,
+                      ),
+                      const SizedBox(width: AppConstants.spacing8),
+                      Text(
+                        hasPremium ? 'See 3 Variations' : 'Unlock Variations',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: hasPremium ? AppColors.primaryLight : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            // Variations cards
+            if (_showVariations && _variations != null) ...[
+              const SizedBox(height: AppConstants.spacing16),
+              ...List.generate(_variations!.length, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
+                  child: GestureDetector(
+                    onTap: () => _copyVariationToClipboard(_variations![index]),
+                    child: Container(
+                      padding: const EdgeInsets.all(AppConstants.spacing16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+                        border: Border.all(color: AppColors.borderLight),
+                        boxShadow: AppColors.cardShadowLight,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _variationTypes[index].icon,
+                                size: 16,
+                                color: AppColors.primaryLight,
+                              ),
+                              const SizedBox(width: AppConstants.spacing8),
+                              Text(
+                                _variationTypes[index].name,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.primaryLight,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                Icons.copy_outlined,
+                                size: 16,
+                                color: AppColors.textSecondaryLight,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppConstants.spacing12),
+                          Text(
+                            _variations![index],
+                            style: AppTextStyles.body.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontSize: isSmallScreen ? 13 : 14,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomBar(ThemeData theme, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing20,
+        AppConstants.spacing12,
+        isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing20,
+        MediaQuery.of(context).padding.bottom + AppConstants.spacing12,
+      ),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        border: Border(
+          top: BorderSide(color: AppColors.borderLight, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.refresh,
+              label: 'New',
+              onPressed: () => Navigator.of(context).pop(),
+              isOutlined: true,
+              isSmallScreen: isSmallScreen,
+            ),
+          ),
+          const SizedBox(width: AppConstants.spacing8),
+          Expanded(
+            child: _buildActionButton(
+              icon: _isFavourited ? Icons.star : Icons.star_border,
+              label: _isFavourited ? 'Saved' : 'Save',
+              onPressed: _handleFavourite,
+              backgroundColor: _isFavourited ? AppColors.warning : AppColors.primaryLight,
+              isSmallScreen: isSmallScreen,
+            ),
+          ),
+          const SizedBox(width: AppConstants.spacing8),
+          Expanded(
+            child: _buildActionButton(
+              icon: _isCopied ? Icons.check : Icons.copy_outlined,
+              label: _isCopied ? 'Copied' : 'Copy',
+              onPressed: _copyToClipboard,
+              backgroundColor: _isCopied ? AppColors.success : AppColors.primaryLight,
+              isSmallScreen: isSmallScreen,
+            ),
+          ),
+          const SizedBox(width: AppConstants.spacing8),
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.share_outlined,
+              label: 'Share',
+              onPressed: () => SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt)),
+              isSmallScreen: isSmallScreen,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    Color? backgroundColor,
+    bool isOutlined = false,
+    bool isSmallScreen = false,
+  }) {
+    final color = backgroundColor ?? AppColors.primaryLight;
+
+    if (isOutlined) {
+      return OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          side: const BorderSide(color: AppColors.borderLight, width: 1.5),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18),
+            if (!isSmallScreen) ...[
+              const SizedBox(width: 4),
+              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18),
+          if (!isSmallScreen) ...[
+            const SizedBox(width: 4),
+            Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _VariationType {
+  final String name;
+  final IconData icon;
+
+  _VariationType({
+    required this.name,
+    required this.icon,
+  });
 }

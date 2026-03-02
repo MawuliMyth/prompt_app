@@ -8,9 +8,9 @@ import '../../providers/premium_provider.dart';
 import '../../data/models/prompt_model.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
-import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../result/result_screen.dart';
@@ -36,16 +36,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       final promptProvider = Provider.of<PromptProvider>(context, listen: false);
-       promptProvider.setSearchQuery('');
-       promptProvider.setCategoryFilter('All');
+      final promptProvider = Provider.of<PromptProvider>(context, listen: false);
+      promptProvider.setSearchQuery('');
+      promptProvider.setCategoryFilter('All');
     });
   }
 
   void _onSearchChanged() {
-    setState(() {}); // Rebuild to update clear button visibility
+    setState(() {});
 
-    // Debounce search to avoid excessive filtering
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       final promptProvider = Provider.of<PromptProvider>(context, listen: false);
@@ -88,163 +87,182 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
 
-    return SafeArea(
-      child: Scaffold(
-        appBar: AdaptiveAppBar(
-           title: 'History',
-           actions: [
-              Consumer<PromptProvider>(
-                builder: (context, promptProvider, _) {
-                  if (authProvider.isAuthenticated && promptProvider.prompts.isNotEmpty) {
-                    return IconButton(
-                       icon: const Icon(Icons.delete_outline),
-                       onPressed: _showClearAllConfirm,
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-           ],
-        ),
-        body: !authProvider.isAuthenticated
+    return Scaffold(
+      appBar: AdaptiveAppBar(
+        title: 'History',
+        actions: [
+          Consumer<PromptProvider>(
+            builder: (context, promptProvider, _) {
+              if (authProvider.isAuthenticated && promptProvider.prompts.isNotEmpty) {
+                return IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _showClearAllConfirm,
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
+      body: !authProvider.isAuthenticated
           ? _buildGuestEmptyState(theme)
           : Consumer2<PromptProvider, PremiumProvider>(
               builder: (context, promptProvider, premiumProvider, _) {
                 final hasPremium = premiumProvider.hasPremiumAccess;
                 final allPrompts = promptProvider.prompts;
 
-                // Limit prompts for free users
                 final displayPrompts = hasPremium
                     ? allPrompts
                     : allPrompts.take(_freeUserHistoryLimit).toList();
                 final isLimited = !hasPremium && allPrompts.length > _freeUserHistoryLimit;
 
                 return promptProvider.isLoading
-                  ? _buildShimmerLoading()
-                  : Column(
-                      children: [
-                        _buildSearchBar(theme, promptProvider),
-                        _buildFilters(theme, promptProvider),
-                        // Show upgrade banner for free users with limited history
-                        if (isLimited) _buildLimitBanner(theme, allPrompts.length),
-                        Expanded(
-                           child: displayPrompts.isEmpty
-                             ? _buildEmptyHistory(theme)
-                             : ListView.builder(
-                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                 itemCount: displayPrompts.length,
-                                 itemBuilder: (context, index) {
-                                    final prompt = displayPrompts[index];
-                                    return PromptHistoryCard(
-                                      prompt: prompt,
-                                      onDelete: () async {
-                                        final success = await promptProvider.deletePrompt(
-                                          authProvider.currentUser,
-                                          prompt.id,
-                                        );
-                                        if (!success && mounted) {
-                                          SnackbarUtils.showError(
-                                            context,
-                                            promptProvider.error ?? 'Failed to delete prompt',
+                    ? _buildShimmerLoading()
+                    : Column(
+                        children: [
+                          _buildSearchBar(theme, promptProvider),
+                          _buildFilters(theme, promptProvider),
+                          if (isLimited) _buildLimitBanner(theme, allPrompts.length),
+                          Expanded(
+                            child: displayPrompts.isEmpty
+                                ? _buildEmptyHistory(theme)
+                                : ListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppConstants.spacing24,
+                                      vertical: AppConstants.spacing8,
+                                    ),
+                                    itemCount: displayPrompts.length,
+                                    itemBuilder: (context, index) {
+                                      final prompt = displayPrompts[index];
+                                      return PromptHistoryCard(
+                                        prompt: prompt,
+                                        onDelete: () async {
+                                          final success = await promptProvider.deletePrompt(
+                                            authProvider.currentUser,
+                                            prompt.id,
                                           );
-                                        }
-                                      },
-                                    );
-                                 },
-                               ),
-                        )
-                      ],
-                    );
+                                          if (!success && mounted) {
+                                            SnackbarUtils.showError(
+                                              context,
+                                              promptProvider.error ?? 'Failed to delete prompt',
+                                            );
+                                          }
+                                        },
+                                      );
+                                    },
+                                  ),
+                          )
+                        ],
+                      );
               },
             ),
-      ),
     );
   }
 
   Widget _buildSearchBar(ThemeData theme, PromptProvider provider) {
-     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: TextField(
-           controller: _searchController,
-           decoration: InputDecoration(
-              hintText: 'Search prompts...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                 ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                         _debounceTimer?.cancel();
-                         _searchController.clear();
-                         provider.setSearchQuery('');
-                      },
-                   )
-                 : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-           ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.spacing24,
+        vertical: AppConstants.spacing12,
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search prompts...',
+          prefixIcon: const Icon(Icons.search_outlined, size: 20),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: () {
+                    _debounceTimer?.cancel();
+                    _searchController.clear();
+                    provider.setSearchQuery('');
+                  },
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.spacing16,
+            vertical: AppConstants.spacing12,
+          ),
         ),
-     );
+      ),
+    );
   }
 
   Widget _buildFilters(ThemeData theme, PromptProvider provider) {
-     return SizedBox(
-        height: 50,
-        child: ListView.builder(
-           scrollDirection: Axis.horizontal,
-           padding: const EdgeInsets.symmetric(horizontal: 20),
-           itemCount: _categories.length,
-           itemBuilder: (context, index) {
-              final cat = _categories[index];
-              final isSelected = provider.selectedCategoryFilter == cat;
+    return SizedBox(
+      height: 44,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing24),
+        itemCount: _categories.length,
+        itemBuilder: (context, index) {
+          final cat = _categories[index];
+          final isSelected = provider.selectedCategoryFilter == cat;
 
-               return Padding(
-                 padding: const EdgeInsets.only(right: 8.0, bottom: 8),
-                 child: FilterChip(
-                    label: Text(cat),
-                    selected: isSelected,
-                    onSelected: (val) {
-                       provider.setCategoryFilter(cat);
-                    },
-                    backgroundColor: theme.colorScheme.surface,
-                    selectedColor: AppColors.primaryLight,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : theme.colorScheme.onSurface,
-                    ),
-                 ),
-               );
-           },
-        )
-     );
+          return Padding(
+            padding: const EdgeInsets.only(right: AppConstants.spacing8, bottom: AppConstants.spacing8),
+            child: FilterChip(
+              label: Text(cat),
+              selected: isSelected,
+              onSelected: (val) {
+                provider.setCategoryFilter(cat);
+              },
+              backgroundColor: theme.colorScheme.surface,
+              selectedColor: AppColors.primaryLight,
+              side: BorderSide(
+                color: isSelected ? AppColors.primaryLight : AppColors.borderLight,
+              ),
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConstants.radiusChip),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildLimitBanner(ThemeData theme, int totalPrompts) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppConstants.spacing24,
+        vertical: AppConstants.spacing8,
+      ),
+      padding: const EdgeInsets.all(AppConstants.spacing16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-        ),
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: AppColors.cardShadowLight,
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppConstants.spacing8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
+              color: AppColors.primaryLight.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.lock_outline, color: Colors.white, size: 18),
+            child: const Icon(
+              Icons.lock_outline,
+              color: AppColors.primaryLight,
+              size: 20,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppConstants.spacing16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Viewing $_freeUserHistoryLimit of $totalPrompts prompts',
-                  style: AppTextStyles.body.copyWith(
-                    color: Colors.white,
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -252,7 +270,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 Text(
                   'Upgrade to Premium for unlimited history',
                   style: AppTextStyles.caption.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                    color: AppColors.textSecondaryLight,
                   ),
                 ),
               ],
@@ -263,19 +281,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
               MaterialPageRoute(builder: (_) => const PaywallScreen()),
             ),
             style: TextButton.styleFrom(
-              backgroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              backgroundColor: AppColors.primaryLight,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.spacing16,
+                vertical: AppConstants.spacing8,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text(
-              'Upgrade',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.primaryLight,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: const Text('Upgrade'),
           ),
         ],
       ),
@@ -284,231 +300,344 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildShimmerLoading() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.spacing24,
+        vertical: AppConstants.spacing8,
+      ),
       itemCount: 5,
       itemBuilder: (context, index) => const Padding(
-        padding: EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.only(bottom: AppConstants.spacing16),
         child: ShimmerCard(height: 120),
       ),
     );
   }
 
   Widget _buildEmptyHistory(ThemeData theme) {
-     return SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-           mainAxisAlignment: MainAxisAlignment.center,
-           children: [
-             Icon(Icons.history_toggle_off, size: 80, color: AppColors.dividerLight),
-             const SizedBox(height: 24),
-             Text(
-                'No prompts found',
-                style: AppTextStyles.headingMedium.copyWith(color: theme.colorScheme.onSurface),
-                textAlign: TextAlign.center,
-             ),
-             const SizedBox(height: 8),
-             Text(
-                'Start creating prompts from the Home tab!',
-                style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-                textAlign: TextAlign.center,
-             )
-           ],
+    return CustomScrollView(
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.all(AppConstants.spacing32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariantLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.history,
+              size: 40,
+              color: AppColors.textSecondaryLight,
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacing24),
+          Text(
+            'No prompts found',
+            style: AppTextStyles.title.copyWith(color: theme.colorScheme.onSurface),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.spacing8),
+          Text(
+            'Start creating prompts from the Home tab',
+            style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+            textAlign: TextAlign.center,
+          )
+        ],
+          ),
         ),
-     );
+      ),
+      ],
+    );
   }
 
   Widget _buildGuestEmptyState(ThemeData theme) {
-      return SingleChildScrollView(
-         padding: const EdgeInsets.all(32.0),
-         child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                 width: 120,
-                 height: 120,
-                 decoration: BoxDecoration(
-                   color: AppColors.primaryLight.withOpacity(0.1),
-                   shape: BoxShape.circle,
-                 ),
-                 child: const Icon(
-                   Icons.history,
-                   size: 60,
-                   color: AppColors.primaryLight,
-                 ),
-               ),
-              const SizedBox(height: 32),
-              Text(
-                'Sign in to view your prompt history',
-                style: AppTextStyles.headingMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Your history connects across all devices and stays safely backed up.',
-                style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                 onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
-                 },
-                 style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                    backgroundColor: AppColors.primaryLight,
-                    foregroundColor: Colors.white,
-                 ),
-                 child: const Text('Sign In'),
-              )
-           ],
-         ),
-      );
+    return CustomScrollView(
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.all(AppConstants.spacing32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.history_outlined,
+              size: 50,
+              color: AppColors.primaryLight,
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacing32),
+          Text(
+            'Sign in to view your prompt history',
+            style: AppTextStyles.title,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.spacing12),
+          Text(
+            'Your history connects across all devices and stays safely backed up.',
+            style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.spacing32),
+          SizedBox(
+            width: double.infinity,
+            height: AppConstants.buttonHeight,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+              child: const Text('Sign In'),
+            ),
+          )
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
 class PromptHistoryCard extends StatelessWidget {
-   final PromptModel prompt;
-   final VoidCallback onDelete;
+  final PromptModel prompt;
+  final VoidCallback onDelete;
 
-   const PromptHistoryCard({super.key, required this.prompt, required this.onDelete});
+  const PromptHistoryCard({
+    super.key,
+    required this.prompt,
+    required this.onDelete,
+  });
 
-   String _getEmojiForCategory(String category) {
-      switch(category) {
-         case 'Image Generation': return '🎨';
-         case 'Coding': return '💻';
-         case 'Writing': return '✍️';
-         case 'Business': return '📊';
-         default: return '🌐';
-      }
-   }
+  IconData _getIconForCategory(String category) {
+    switch (category) {
+      case 'Image Generation':
+        return Icons.palette_outlined;
+      case 'Coding':
+        return Icons.code_outlined;
+      case 'Writing':
+        return Icons.edit_outlined;
+      case 'Business':
+        return Icons.business_center_outlined;
+      default:
+        return Icons.public_outlined;
+    }
+  }
 
-   Color _getScoreColor(int score) {
-      if (score >= 80) return Colors.green;
-      if (score >= 60) return Colors.blue;
-      if (score >= 40) return Colors.orange;
-      return Colors.red;
-   }
+  Color _getColorForCategory(String category) {
+    switch (category) {
+      case 'Image Generation':
+        return AppColors.categoryImageGeneration;
+      case 'Coding':
+        return AppColors.categoryCoding;
+      case 'Writing':
+        return AppColors.categoryWriting;
+      case 'Business':
+        return AppColors.categoryBusiness;
+      default:
+        return AppColors.categoryGeneral;
+    }
+  }
 
-   @override
-   Widget build(BuildContext context) {
-      final theme = Theme.of(context);
+  Color _getScoreColor(int score) {
+    if (score >= 80) return AppColors.success;
+    if (score >= 60) return AppColors.info;
+    if (score >= 40) return AppColors.warning;
+    return AppColors.error;
+  }
 
-      return Dismissible(
-         key: Key(prompt.id),
-         direction: DismissDirection.endToStart,
-         background: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20),
-            decoration: BoxDecoration(
-               color: Colors.red.shade400,
-               borderRadius: BorderRadius.circular(16),
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final categoryColor = _getColorForCategory(prompt.category);
+
+    return Dismissible(
+      key: Key(prompt.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: AppConstants.spacing16),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppConstants.spacing20),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppConstants.spacing12),
+          decoration: BoxDecoration(
+            color: AppColors.error,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.delete_outline,
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppConstants.radiusCard),
             ),
-            child: const Icon(
-               Icons.delete,
-               color: Colors.white,
-               size: 28,
+            title: Text('Delete Prompt?', style: AppTextStyles.title),
+            content: Text(
+              'This action cannot be undone.',
+              style: AppTextStyles.body,
             ),
-         ),
-         confirmDismiss: (direction) async {
-            return await showDialog(
-               context: context,
-               builder: (context) => AlertDialog(
-                  title: Text('Delete Prompt?', style: AppTextStyles.headingMedium),
-                  content: Text('This action cannot be undone.', style: AppTextStyles.body),
-                  actions: [
-                     TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text('Cancel', style: AppTextStyles.button.copyWith(color: AppColors.textSecondaryLight)),
-                     ),
-                     TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: Text('Delete', style: AppTextStyles.button.copyWith(color: Colors.red)),
-                     ),
-                  ],
-               ),
-            );
-         },
-         onDismissed: (direction) {
-            onDelete();
-            ScaffoldMessenger.of(context).showSnackBar(
-               SnackBar(
-                  content: const Text('Prompt deleted'),
-                  backgroundColor: AppColors.primaryLight,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  duration: const Duration(seconds: 2),
-               ),
-            );
-         },
-         child: GestureDetector(
-            onTap: () {
-                Navigator.of(context).push(
-                   MaterialPageRoute(builder: (_) => ResultScreen(
-                      originalText: prompt.originalText,
-                      enhancedPrompt: prompt.enhancedPrompt,
-                      category: prompt.category,
-                      existingPrompt: prompt, // Pass existing prompt to prevent duplicate save
-                   ))
-                );
-            },
-            child: Container(
-               margin: const EdgeInsets.only(bottom: 16),
-               padding: const EdgeInsets.all(16),
-               decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.dividerLight),
-               ),
-               child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                     Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                           Text(AppDateUtils.formatDateTime(prompt.createdAt), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
-                           Row(
-                              children: [
-                                 Text(_getEmojiForCategory(prompt.category), style: const TextStyle(fontSize: 16)),
-                                 const SizedBox(width: 4),
-                                 Text(prompt.category, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
-                              ],
-                           )
-                        ],
-                     ),
-                     const SizedBox(height: 12),
-                     Text(prompt.originalText, style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
-                     const SizedBox(height: 8),
-                     Container(
-                        padding: const EdgeInsets.all(12),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Cancel',
+                  style: AppTextStyles.button.copyWith(color: AppColors.textSecondaryLight),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'Delete',
+                  style: AppTextStyles.button.copyWith(color: AppColors.error),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (direction) {
+        onDelete();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Prompt deleted'),
+            backgroundColor: theme.colorScheme.onSurface,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ResultScreen(
+                originalText: prompt.originalText,
+                enhancedPrompt: prompt.enhancedPrompt,
+                category: prompt.category,
+                existingPrompt: prompt,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppConstants.spacing16),
+          padding: const EdgeInsets.all(AppConstants.spacing16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+            border: Border.all(color: AppColors.borderLight),
+            boxShadow: AppColors.cardShadowLight,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppConstants.spacing8),
                         decoration: BoxDecoration(
-                           color: theme.colorScheme.surface,
-                           borderRadius: BorderRadius.circular(8),
+                          color: categoryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                           children: [
-                              Container(
-                                 width: 32,
-                                 height: 32,
-                                 decoration: BoxDecoration(
-                                    color: _getScoreColor(prompt.strengthScore).withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                 ),
-                                 child: Center(
-                                    child: Text('${prompt.strengthScore}', style: AppTextStyles.caption.copyWith(color: _getScoreColor(prompt.strengthScore), fontWeight: FontWeight.bold)),
-                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                 child: Text(prompt.enhancedPrompt, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight), maxLines: 2, overflow: TextOverflow.ellipsis),
-                              )
-                           ],
+                        child: Icon(
+                          _getIconForCategory(prompt.category),
+                          size: 16,
+                          color: categoryColor,
                         ),
-                     )
-                  ],
-               ),
-            ),
-         ),
-      );
-   }
+                      ),
+                      const SizedBox(width: AppConstants.spacing8),
+                      Text(
+                        prompt.category,
+                        style: AppTextStyles.caption.copyWith(
+                          color: categoryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.spacing8,
+                      vertical: AppConstants.spacing4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getScoreColor(prompt.strengthScore).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 12,
+                          color: _getScoreColor(prompt.strengthScore),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${prompt.strengthScore}',
+                          style: AppTextStyles.caption.copyWith(
+                            color: _getScoreColor(prompt.strengthScore),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              Text(
+                prompt.originalText,
+                style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: AppConstants.spacing8),
+              Text(
+                prompt.enhancedPrompt,
+                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: AppConstants.spacing8),
+              Text(
+                AppDateUtils.formatDateTime(prompt.createdAt),
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondaryLight.withValues(alpha: 0.7),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -1,12 +1,15 @@
 import 'dart:io' show Platform;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/foundation.dart';
+import '../models/user_model.dart';
 
 class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Web OAuth client ID from google-services.json (client_type: 3)
   // This is required for Google Sign-In on Android
@@ -25,6 +28,27 @@ class AuthRepository {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  /// Create or update Firestore user document
+  Future<void> _createOrUpdateUserDocument(User user, {String? displayName}) async {
+    final userRef = _firestore.collection('users').doc(user.uid);
+    final doc = await userRef.get();
+
+    if (!doc.exists) {
+      // Create new user document
+      final userModel = UserModel(
+        uid: user.uid,
+        email: user.email ?? '',
+        displayName: displayName ?? user.displayName ?? '',
+        photoUrl: user.photoURL,
+        createdAt: DateTime.now(),
+      );
+      await userRef.set(userModel.toMap());
+    } else if (displayName != null) {
+      // Update display name if provided
+      await userRef.update({'displayName': displayName});
+    }
+  }
+
   Future<UserCredential> signInWithEmail(String email, String password) async {
     return await _auth.signInWithEmailAndPassword(
       email: email,
@@ -42,6 +66,10 @@ class AuthRepository {
       password: password,
     );
     await credential.user?.updateDisplayName(name);
+    // Create Firestore user document
+    if (credential.user != null) {
+      await _createOrUpdateUserDocument(credential.user!, displayName: name);
+    }
     return credential;
   }
 
@@ -68,6 +96,10 @@ class AuthRepository {
 
       final result = await _auth.signInWithCredential(credential);
       debugPrint('Firebase sign-in successful: ${result.user?.email}');
+      // Create Firestore user document if new user
+      if (result.user != null) {
+        await _createOrUpdateUserDocument(result.user!);
+      }
       return result;
     } catch (e) {
       debugPrint('Google Sign-In error: $e');
@@ -76,7 +108,8 @@ class AuthRepository {
   }
 
   Future<UserCredential?> signInWithApple() async {
-    if (!Platform.isIOS && !Platform.isMacOS) {
+    // Check platform - Apple Sign-In only works on iOS/macOS (not web)
+    if (kIsWeb || (!Platform.isIOS && !Platform.isMacOS)) {
       throw Exception('Apple Sign-In is only supported on iOS and macOS devices.');
     }
 
@@ -100,6 +133,16 @@ class AuthRepository {
 
       final result = await _auth.signInWithCredential(credential);
       debugPrint('Firebase Apple sign-in successful: ${result.user?.email}');
+      // Create Firestore user document if new user
+      if (result.user != null) {
+        // Apple may provide name on first sign-in
+        final givenName = appleCredential.givenName;
+        final familyName = appleCredential.familyName;
+        final displayName = (givenName != null && familyName != null)
+            ? '$givenName $familyName'
+            : null;
+        await _createOrUpdateUserDocument(result.user!, displayName: displayName);
+      }
       return result;
     } catch (e) {
       debugPrint('Apple Sign-In error: $e');
@@ -119,6 +162,10 @@ class AuthRepository {
   Future<void> deleteAccount() async {
     final user = currentUser;
     if (user != null) {
+      final uid = user.uid;
+      // Delete Firestore user data first
+      await _firestore.collection('users').doc(uid).delete();
+      // Then delete Firebase Auth account
       await user.delete();
     }
   }

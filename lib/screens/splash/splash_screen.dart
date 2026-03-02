@@ -211,16 +211,20 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 },
                 itemCount: _onboardingData.length,
                 itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(40.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  return CustomScrollView(
+                    slivers: [
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Padding(
+                          padding: const EdgeInsets.all(40.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
                           width: 150,
                           height: 150,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryLight.withOpacity(0.1),
+                            color: AppColors.primaryLight.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -238,12 +242,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         const SizedBox(height: 16),
                         Text(
                           _onboardingData[index]['subtitle']!,
-                          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                           textAlign: TextAlign.center,
                         ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
-                  );
+                  ],
+                );
                 },
               ),
             ),

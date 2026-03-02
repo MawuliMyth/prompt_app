@@ -55,9 +55,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: _isSuccess ? _buildSuccessState(theme) : _buildInputState(theme, authProvider),
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: _isSuccess ? _buildSuccessState(theme) : _buildInputState(theme, authProvider),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -73,7 +80,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withOpacity(0.1),
+              color: AppColors.primaryLight.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -92,7 +99,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 16),
         Text(
           'Enter your email and we\'ll send you a link to reset your password.',
-          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
@@ -142,7 +149,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -161,7 +168,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 16),
         Text(
           'We\'ve sent a password reset link to\n${_emailController.text}',
-          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
