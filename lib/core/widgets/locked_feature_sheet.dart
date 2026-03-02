@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
+import '../constants/app_constants.dart';
 import '../../screens/paywall/paywall_screen.dart';
 
 /// A bottom sheet that appears when a free user taps on a premium feature
@@ -37,10 +38,12 @@ class _LockedFeatureContent extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppConstants.spacing24),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppConstants.radiusBottomSheet),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -49,7 +52,7 @@ class _LockedFeatureContent extends StatelessWidget {
           Container(
             width: 40,
             height: 4,
-            margin: const EdgeInsets.only(bottom: 24),
+            margin: const EdgeInsets.only(bottom: AppConstants.spacing24),
             decoration: BoxDecoration(
               color: AppColors.dividerLight,
               borderRadius: BorderRadius.circular(2),
@@ -65,22 +68,26 @@ class _LockedFeatureContent extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: Text('🔒', style: TextStyle(fontSize: 32)),
+              child: Icon(
+                Icons.lock_outline,
+                size: 32,
+                color: AppColors.primaryLight,
+              ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: AppConstants.spacing24),
 
           // Feature name
           Text(
             featureName,
-            style: AppTextStyles.headingMedium.copyWith(
+            style: AppTextStyles.title.copyWith(
               color: theme.colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacing8),
 
           // Benefit
           Text(
@@ -91,34 +98,44 @@ class _LockedFeatureContent extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: AppConstants.spacing32),
 
           // Unlock button
-          GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const PaywallScreen(),
+          SizedBox(
+            width: double.infinity,
+            height: AppConstants.buttonHeight,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const PaywallScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryLight,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppConstants.radiusButton),
                 ),
-              );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
-                'Unlock with Premium',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.button.copyWith(color: Colors.white),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.workspace_premium_outlined, size: 20),
+                  const SizedBox(width: AppConstants.spacing8),
+                  Text(
+                    'Unlock with Premium',
+                    style: AppTextStyles.button.copyWith(color: Colors.white),
+                  ),
+                ],
               ),
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: AppConstants.spacing12),
 
           // Maybe later button
           TextButton(
@@ -132,7 +149,7 @@ class _LockedFeatureContent extends StatelessWidget {
           ),
 
           // Bottom padding for safe area
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + AppConstants.spacing8),
         ],
       ),
     );

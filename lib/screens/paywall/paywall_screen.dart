@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../providers/premium_provider.dart';
 
@@ -19,7 +20,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     _PlanOption(
       id: 'monthly',
       title: 'Monthly',
-      price: '\$3.99',
+      price: '\$8.99',
       period: '/month',
       subtitle: null,
       badge: null,
@@ -27,33 +28,32 @@ class _PaywallScreenState extends State<PaywallScreen> {
     _PlanOption(
       id: 'yearly',
       title: 'Yearly',
-      price: '\$29.99',
+      price: '\$59.99',
       period: '/year',
-      subtitle: '\$2.50/month',
-      badge: 'SAVE 37% 🔥',
+      subtitle: '\$5.00/month',
+      badge: 'SAVE 44%',
       isPopular: true,
     ),
     _PlanOption(
       id: 'lifetime',
       title: 'Lifetime',
-      price: '\$49.99',
+      price: '\$89.99',
       period: ' once',
       subtitle: null,
-      badge: 'BEST VALUE ⭐',
+      badge: 'BEST VALUE',
     ),
   ];
 
   final List<_FeatureRow> _features = [
-    _FeatureRow('Daily prompts', '5/day', 'Unlimited'),
-    _FeatureRow('AI Model', 'Standard', 'Advanced ✨'),
-    _FeatureRow('Prompt variations', '❌', '✅'),
-    _FeatureRow('Tone selector', '❌', '✅'),
-    _FeatureRow('Prompt history', 'Last 10', 'Unlimited'),
-    _FeatureRow('Folders', '❌', '✅'),
-    _FeatureRow('Analytics', '❌', '✅'),
-    _FeatureRow('Custom persona', '❌', '✅'),
-    _FeatureRow('Export prompts', '❌', '✅'),
-    _FeatureRow('Ad free', '❌', '✅'),
+    _FeatureRow('Daily prompts', '5/day', 'Unlimited', true, true),
+    _FeatureRow('AI Model', 'Standard', 'Advanced', false, true),
+    _FeatureRow('Prompt variations', false, true),
+    _FeatureRow('Tone selector', false, true),
+    _FeatureRow('Prompt history', 'Last 10', 'Unlimited', true, true),
+    _FeatureRow('Analytics', false, true),
+    _FeatureRow('Custom persona', false, true),
+    _FeatureRow('Export prompts', false, true),
+    _FeatureRow('Ad free', false, true),
   ];
 
   @override
@@ -65,30 +65,34 @@ class _PaywallScreenState extends State<PaywallScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: CustomScrollView(
+          slivers: [
             // Header with gradient
-            _buildHeader(),
+            SliverToBoxAdapter(
+              child: _buildHeader(theme),
+            ),
 
             // Scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.spacing24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Pricing cards
                     _buildPricingCards(theme),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppConstants.spacing32),
 
                     // Feature comparison
                     _buildFeatureComparison(theme),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppConstants.spacing32),
 
                     // Bottom section
-                    _buildBottomSection(premiumProvider, trialUsed),
+                    _buildBottomSection(theme, premiumProvider, trialUsed),
+
+                    const SizedBox(height: AppConstants.spacing24),
                   ],
                 ),
               ),
@@ -99,15 +103,20 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ThemeData theme) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.spacing24,
+        AppConstants.spacing16,
+        AppConstants.spacing24,
+        AppConstants.spacing48,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Column(
@@ -118,7 +127,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppConstants.spacing8),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
@@ -127,18 +136,36 @@ class _PaywallScreenState extends State<PaywallScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          // Crown icon
-          const Text('👑', style: TextStyle(fontSize: 48)),
-          const SizedBox(height: 12),
+
+          const SizedBox(height: AppConstants.spacing24),
+
+          // Premium icon
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.workspace_premium_outlined,
+              color: Colors.white,
+              size: 36,
+            ),
+          ),
+
+          const SizedBox(height: AppConstants.spacing24),
+
           Text(
             'Go Premium',
-            style: AppTextStyles.headingLarge.copyWith(color: Colors.white),
+            style: AppTextStyles.display.copyWith(color: Colors.white),
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: AppConstants.spacing8),
+
           Text(
             'Unlock your full potential',
-            style: AppTextStyles.body.copyWith(
+            style: AppTextStyles.subtitle.copyWith(
               color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
@@ -153,11 +180,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
       children: [
         Text(
           'Choose Your Plan',
-          style: AppTextStyles.headingSmall.copyWith(
+          style: AppTextStyles.title.copyWith(
             color: theme.colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppConstants.spacing16),
         Row(
           children: List.generate(_plans.length, (index) {
             final plan = _plans[index];
@@ -169,49 +196,49 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: EdgeInsets.only(
-                    left: index == 0 ? 0 : 8,
-                    right: index == _plans.length - 1 ? 0 : 8,
+                    left: index == 0 ? 0 : AppConstants.spacing8,
+                    right: index == _plans.length - 1 ? 0 : AppConstants.spacing8,
                   ),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppConstants.spacing12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusCard),
                     border: Border.all(
-                      color: isSelected ? AppColors.primaryLight : AppColors.dividerLight,
-                      width: isSelected ? 2 : 1,
+                      color: isSelected ? AppColors.primaryLight : Colors.transparent,
+                      width: 2,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primaryLight.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
+                    boxShadow: isSelected ? AppColors.cardShadowLight : null,
                   ),
                   child: Column(
                     children: [
-                      // Badge
-                      if (plan.badge != null) ...[
+                      // Badge or spacer
+                      if (plan.badge != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(4),
+                            color: plan.isPopular
+                                ? AppColors.primaryLight
+                                : theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: plan.isPopular
+                                ? null
+                                : Border.all(color: AppColors.primaryLight),
                           ),
                           child: Text(
                             plan.badge!,
                             style: AppTextStyles.caption.copyWith(
-                              color: Colors.white,
-                              fontSize: 8,
+                              color: plan.isPopular
+                                  ? Colors.white
+                                  : AppColors.primaryLight,
                               fontWeight: FontWeight.bold,
+                              fontSize: 9,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                      ] else
-                        const SizedBox(height: 22),
+                        )
+                      else
+                        const SizedBox(height: 24),
+
+                      const SizedBox(height: AppConstants.spacing12),
 
                       // Title
                       Text(
@@ -224,34 +251,32 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       const SizedBox(height: 4),
 
                       // Price
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            plan.price,
-                            style: AppTextStyles.headingMedium.copyWith(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          Text(
-                            plan.period,
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondaryLight,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        plan.price,
+                        style: AppTextStyles.title.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      // Period
+                      Text(
+                        plan.period,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondaryLight,
+                          fontSize: 10,
+                        ),
                       ),
 
                       // Subtitle
                       if (plan.subtitle != null) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           plan.subtitle!,
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.primaryLight,
                             fontSize: 10,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -272,56 +297,47 @@ class _PaywallScreenState extends State<PaywallScreen> {
       children: [
         Text(
           'Compare Plans',
-          style: AppTextStyles.headingSmall.copyWith(
+          style: AppTextStyles.title.copyWith(
             color: theme.colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppConstants.spacing16),
         Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.dividerLight),
+            borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+            boxShadow: AppColors.cardShadowLight,
           ),
           child: Column(
             children: [
               // Header row
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                ),
+                padding: const EdgeInsets.all(AppConstants.spacing16),
                 child: Row(
                   children: [
-                    const Expanded(child: SizedBox()),
+                    const Expanded(
+                      flex: 2,
+                      child: SizedBox(),
+                    ),
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.textSecondaryLight.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'FREE',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.caption.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondaryLight,
-                          ),
+                      child: Text(
+                        'FREE',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.caption.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textSecondaryLight,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
                           gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          'PREMIUM',
+                          'PRO',
                           textAlign: TextAlign.center,
                           style: AppTextStyles.caption.copyWith(
                             fontWeight: FontWeight.bold,
@@ -340,17 +356,22 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 final isLast = index == _features.length - 1;
 
                 return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16),
                   decoration: BoxDecoration(
-                    border: isLast
-                        ? null
-                        : Border(
-                            bottom: BorderSide(color: AppColors.dividerLight),
-                          ),
+                    color: index.isEven
+                        ? theme.colorScheme.surface
+                        : theme.scaffoldBackgroundColor,
+                    borderRadius: isLast
+                        ? const BorderRadius.vertical(
+                            bottom: Radius.circular(AppConstants.radiusCard),
+                          )
+                        : null,
                   ),
                   child: Row(
                     children: [
                       Expanded(
+                        flex: 2,
                         child: Text(
                           feature.name,
                           style: AppTextStyles.caption.copyWith(
@@ -359,23 +380,40 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                       ),
                       Expanded(
-                        child: Text(
-                          feature.freeValue,
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondaryLight,
-                          ),
+                        child: Center(
+                          child: feature.hasCustomFree
+                              ? Text(
+                                  feature.freeValue!,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textSecondaryLight,
+                                    fontSize: 11,
+                                  ),
+                                )
+                              : Icon(
+                                  feature.freeValue == true
+                                      ? Icons.check_circle_outline
+                                      : Icons.remove,
+                                  size: 18,
+                                  color: AppColors.textSecondaryLight,
+                                ),
                         ),
                       ),
-                      const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          feature.premiumValue,
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.primaryLight,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: Center(
+                          child: feature.hasCustomPremium
+                              ? Text(
+                                  feature.premiumValue!,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.primaryLight,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.check_circle,
+                                  size: 18,
+                                  color: AppColors.primaryLight,
+                                ),
                         ),
                       ),
                     ],
@@ -389,38 +427,45 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _buildBottomSection(PremiumProvider premiumProvider, bool trialUsed) {
+  Widget _buildBottomSection(
+    ThemeData theme,
+    PremiumProvider premiumProvider,
+    bool trialUsed,
+  ) {
     final selectedPlan = _plans[_selectedPlanIndex];
     String priceText = '${selectedPlan.price}${selectedPlan.period}';
 
     return Column(
       children: [
         // Main CTA button
-        GestureDetector(
-          onTap: () => _handleUpgrade(premiumProvider, trialUsed),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryLight.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+        SizedBox(
+          width: double.infinity,
+          height: AppConstants.buttonHeight,
+          child: ElevatedButton(
+            onPressed: () => _handleUpgrade(premiumProvider, trialUsed),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryLight,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.auto_awesome, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  trialUsed ? 'Upgrade Now' : 'Start 3-Day Free Trial',
+                  style: AppTextStyles.button.copyWith(color: Colors.white),
                 ),
               ],
-            ),
-            child: Text(
-              trialUsed ? 'Upgrade Now' : 'Start 3-Day Free Trial',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.button.copyWith(color: Colors.white),
             ),
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: AppConstants.spacing12),
 
         // Price subtext
         Text(
@@ -432,27 +477,43 @@ class _PaywallScreenState extends State<PaywallScreen> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: AppConstants.spacing24),
 
         // Trust badges
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildTrustBadge('🔒', 'Secure'),
-            const SizedBox(width: 24),
-            _buildTrustBadge('↩️', 'Refund'),
-            const SizedBox(width: 24),
-            _buildTrustBadge('❌', 'Cancel anytime'),
+            _buildTrustBadge(Icons.lock_outline, 'Secure'),
+            const SizedBox(width: AppConstants.spacing24),
+            _buildTrustBadge(Icons.replay, 'Refund'),
+            const SizedBox(width: AppConstants.spacing24),
+            _buildTrustBadge(Icons.cancel_outlined, 'Cancel anytime'),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: AppConstants.spacing24),
+
+        // Restore purchases
+        TextButton(
+          onPressed: () {
+            SnackbarUtils.showInfo(context, 'Purchases restored');
+          },
+          child: Text(
+            'Restore Purchases',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondaryLight,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: AppConstants.spacing8),
 
         // Terms text
         Text(
           'By subscribing you agree to our Terms of Service',
           style: AppTextStyles.caption.copyWith(
-            color: AppColors.textSecondaryLight,
+            color: AppColors.textSecondaryLight.withValues(alpha: 0.7),
             fontSize: 11,
           ),
         ),
@@ -460,16 +521,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _buildTrustBadge(String emoji, String text) {
+  Widget _buildTrustBadge(IconData icon, String text) {
     return Row(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 14)),
-        const SizedBox(width: 4),
+        Icon(icon, size: 16, color: AppColors.textSecondaryLight),
+        const SizedBox(width: 6),
         Text(
           text,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.textSecondaryLight,
-            fontSize: 11,
           ),
         ),
       ],
@@ -487,7 +547,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       // Activate trial first
       final success = await premiumProvider.activateTrial();
       if (success && mounted) {
-        SnackbarUtils.showSuccess(context, 'Premium activated! Enjoy your 3-day free trial 🎉');
+        SnackbarUtils.showSuccess(context, 'Premium activated! Enjoy your 3-day free trial');
         Navigator.pop(context);
       } else if (mounted) {
         SnackbarUtils.showError(context, premiumProvider.error ?? 'Failed to activate trial');
@@ -498,7 +558,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
         planType: selectedPlan.id,
       );
       if (success && mounted) {
-        SnackbarUtils.showSuccess(context, 'Welcome to Premium! 🎉');
+        SnackbarUtils.showSuccess(context, 'Welcome to Premium!');
         Navigator.pop(context);
       } else if (mounted) {
         SnackbarUtils.showError(context, premiumProvider.error ?? 'Failed to upgrade');
@@ -529,8 +589,16 @@ class _PlanOption {
 
 class _FeatureRow {
   final String name;
-  final String freeValue;
-  final String premiumValue;
+  final dynamic freeValue;
+  final dynamic premiumValue;
+  final bool hasCustomFree;
+  final bool hasCustomPremium;
 
-  _FeatureRow(this.name, this.freeValue, this.premiumValue);
+  _FeatureRow(
+    this.name,
+    this.freeValue,
+    this.premiumValue, [
+    this.hasCustomFree = false,
+    this.hasCustomPremium = false,
+  ]);
 }

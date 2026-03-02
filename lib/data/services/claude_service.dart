@@ -4,6 +4,9 @@ import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
 import 'premium_service.dart';
 
+/// Default timeout for HTTP requests
+const Duration _httpTimeout = Duration(seconds: 30);
+
 class ClaudeService {
   final PremiumService _premiumService = PremiumService();
 

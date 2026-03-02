@@ -16,6 +16,10 @@ class UserModel {
   final bool trialUsed;
   final String? persona; // User's role/profession for personalized prompts
 
+  // Daily limit fields (for free authenticated users)
+  final int dailyPromptsUsed;
+  final DateTime? dailyPromptsResetDate;
+
   UserModel({
     required this.uid,
     required this.email,
@@ -29,6 +33,8 @@ class UserModel {
     this.trialStartDate,
     this.trialUsed = false,
     this.persona,
+    this.dailyPromptsUsed = 0,
+    this.dailyPromptsResetDate,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String documentId) {
@@ -57,6 +63,12 @@ class UserModel {
           : null,
       trialUsed: map['trialUsed'] ?? false,
       persona: map['persona'],
+      dailyPromptsUsed: map['dailyPromptsUsed']?.toInt() ?? 0,
+      dailyPromptsResetDate: map['dailyPromptsResetDate'] != null
+          ? (map['dailyPromptsResetDate'] is Timestamp
+              ? (map['dailyPromptsResetDate'] as Timestamp).toDate()
+              : map['dailyPromptsResetDate'].toDate())
+          : null,
     );
   }
 
@@ -77,6 +89,10 @@ class UserModel {
           : null,
       'trialUsed': trialUsed,
       'persona': persona,
+      'dailyPromptsUsed': dailyPromptsUsed,
+      'dailyPromptsResetDate': dailyPromptsResetDate != null
+          ? Timestamp.fromDate(dailyPromptsResetDate!)
+          : null,
     };
   }
 
@@ -93,6 +109,8 @@ class UserModel {
     DateTime? trialStartDate,
     bool? trialUsed,
     String? persona,
+    int? dailyPromptsUsed,
+    DateTime? dailyPromptsResetDate,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -107,6 +125,8 @@ class UserModel {
       trialStartDate: trialStartDate ?? this.trialStartDate,
       trialUsed: trialUsed ?? this.trialUsed,
       persona: persona,
+      dailyPromptsUsed: dailyPromptsUsed ?? this.dailyPromptsUsed,
+      dailyPromptsResetDate: dailyPromptsResetDate ?? this.dailyPromptsResetDate,
     );
   }
 

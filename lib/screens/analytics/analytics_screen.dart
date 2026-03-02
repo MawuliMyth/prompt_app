@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/widgets/adaptive_widgets.dart';
-import '../../core/widgets/locked_feature_sheet.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/prompt_provider.dart';
@@ -18,8 +18,7 @@ class AnalyticsScreen extends StatefulWidget {
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
-class _AnalyticsScreenState extends State<AnalyticsScreen>
-    with SingleTickerProviderStateMixin {
+class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProviderStateMixin {
   late AnimationController _countController;
   late Animation<double> _countAnimation;
 
@@ -41,10 +40,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
 
   void _loadData() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final promptProvider = Provider.of<PromptProvider>(context, listen: false);
-
     if (authProvider.isAuthenticated) {
-      // Data is already loaded via the provider
       _countController.forward();
     }
   }
@@ -62,12 +58,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     final premiumProvider = Provider.of<PremiumProvider>(context);
     final promptProvider = Provider.of<PromptProvider>(context);
 
-    // Show locked screen for non-premium users
     if (!premiumProvider.hasPremiumAccess) {
       return _buildLockedScreen(theme);
     }
 
-    // Show sign-in prompt for guests
     if (!authProvider.isAuthenticated) {
       return _buildSignInPrompt(theme);
     }
@@ -78,39 +72,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     return Scaffold(
       appBar: AdaptiveAppBar(title: 'Analytics'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppConstants.spacing24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Total Prompts
             _buildStatCard(
               theme,
-              icon: '📝',
+              icon: Icons.edit_note_outlined,
               title: 'Total Prompts',
               value: analytics.totalPrompts.toString(),
               color: AppColors.primaryLight,
               showAnimation: true,
             ),
-
-            const SizedBox(height: 16),
-
-            // Row: Avg Strength & Favourite Rate
+            const SizedBox(height: AppConstants.spacing16),
             Row(
               children: [
                 Expanded(
                   child: _buildCircularStatCard(
                     theme,
-                    icon: '💪',
+                    icon: Icons.auto_awesome_outlined,
                     title: 'Avg Strength',
                     value: analytics.avgStrength,
                     suffix: '%',
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppConstants.spacing16),
                 Expanded(
                   child: _buildCircularStatCard(
                     theme,
-                    icon: '⭐',
+                    icon: Icons.star_outline,
                     title: 'Favourite Rate',
                     value: analytics.favouriteRate,
                     suffix: '%',
@@ -118,30 +108,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 ),
               ],
             ),
-
-            const SizedBox(height: 16),
-
-            // Streak
+            const SizedBox(height: AppConstants.spacing16),
             _buildStatCard(
               theme,
-              icon: '🔥',
+              icon: Icons.local_fire_department_outlined,
               title: 'Current Streak',
               value: '${analytics.streak} days',
               subtitle: analytics.streak > 0 ? 'Keep it going!' : 'Start your streak today!',
-              color: Colors.orange,
+              color: AppColors.warning,
             ),
-
-            const SizedBox(height: 16),
-
-            // Most Used Category
+            const SizedBox(height: AppConstants.spacing16),
             _buildCategoryBarChart(theme, analytics),
-
-            const SizedBox(height: 16),
-
-            // Weekly Comparison
+            const SizedBox(height: AppConstants.spacing16),
             _buildWeeklyComparison(theme, analytics),
-
-            const SizedBox(height: 100), // Bottom padding
+            const SizedBox(height: 100),
           ],
         ),
       ),
@@ -153,43 +133,36 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       appBar: AdaptiveAppBar(title: 'Analytics'),
       body: Stack(
         children: [
-          // Blurred preview
           Opacity(
             opacity: 0.3,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppConstants.spacing24),
               child: Column(
                 children: [
-                  _buildPlaceholderCard(theme, '📝', 'Total Prompts', '---'),
-                  const SizedBox(height: 16),
+                  _buildPlaceholderCard(theme, Icons.edit_note_outlined, 'Total Prompts', '---'),
+                  const SizedBox(height: AppConstants.spacing16),
                   Row(
                     children: [
-                      Expanded(child: _buildPlaceholderCard(theme, '💪', 'Avg Strength', '--')),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildPlaceholderCard(theme, '⭐', 'Fav Rate', '--')),
+                      Expanded(child: _buildPlaceholderCard(theme, Icons.auto_awesome_outlined, 'Avg Strength', '--')),
+                      const SizedBox(width: AppConstants.spacing16),
+                      Expanded(child: _buildPlaceholderCard(theme, Icons.star_outline, 'Fav Rate', '--')),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  _buildPlaceholderCard(theme, '🔥', 'Streak', '--'),
+                  const SizedBox(height: AppConstants.spacing16),
+                  _buildPlaceholderCard(theme, Icons.local_fire_department_outlined, 'Streak', '--'),
                 ],
               ),
             ),
           ),
-
-          // Lock overlay
           Center(
-            child: Container(
-              margin: const EdgeInsets.all(32),
-              padding: const EdgeInsets.all(32),
+            child: SingleChildScrollView(
+              child: Container(
+                margin: const EdgeInsets.all(AppConstants.spacing32),
+                padding: const EdgeInsets.all(AppConstants.spacing32),
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+                boxShadow: AppColors.cardShadowLight,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -201,45 +174,36 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       color: AppColors.primaryLight.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Center(
-                      child: Text('🔒', style: TextStyle(fontSize: 36)),
+                    child: const Icon(
+                      Icons.lock_outline,
+                      size: 36,
+                      color: AppColors.primaryLight,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppConstants.spacing24),
                   Text(
                     'Analytics',
-                    style: AppTextStyles.headingMedium.copyWith(
-                      color: theme.colorScheme.onSurface,
-                    ),
+                    style: AppTextStyles.title.copyWith(color: theme.colorScheme.onSurface),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.spacing8),
                   Text(
                     'Track your prompt usage, strength scores, and productivity streaks.',
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
+                    style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const PaywallScreen()),
-                    ),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(16),
+                  const SizedBox(height: AppConstants.spacing32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: AppConstants.buttonHeight,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PaywallScreen()),
                       ),
-                      child: Text(
-                        'Unlock with Premium',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.button.copyWith(color: Colors.white),
-                      ),
+                      child: const Text('Unlock with Premium'),
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           ),
@@ -252,9 +216,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     return Scaffold(
       appBar: AdaptiveAppBar(title: 'Analytics'),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppConstants.spacing32),
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
@@ -264,47 +229,46 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   color: AppColors.primaryLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Center(
-                  child: Text('📊', style: TextStyle(fontSize: 36)),
+                child: const Icon(
+                  Icons.bar_chart_outlined,
+                  size: 36,
+                  color: AppColors.primaryLight,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppConstants.spacing24),
               Text(
                 'Sign in to view analytics',
-                style: AppTextStyles.headingMedium.copyWith(
-                  color: theme.colorScheme.onSurface,
-                ),
+                style: AppTextStyles.title.copyWith(color: theme.colorScheme.onSurface),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacing8),
               Text(
                 'Create an account to track your prompt history and productivity.',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
+                style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
                 textAlign: TextAlign.center,
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildPlaceholderCard(ThemeData theme, String icon, String title, String value) {
+  Widget _buildPlaceholderCard(ThemeData theme, IconData icon, String title, String value) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppConstants.spacing16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.dividerLight),
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         children: [
-          Text(icon, style: const TextStyle(fontSize: 28)),
-          const SizedBox(height: 8),
+          Icon(icon, size: 28, color: AppColors.textSecondaryLight),
+          const SizedBox(height: AppConstants.spacing8),
           Text(title, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
           const SizedBox(height: 4),
-          Text(value, style: AppTextStyles.headingMedium.copyWith(color: theme.colorScheme.onSurface)),
+          Text(value, style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface)),
         ],
       ),
     );
@@ -312,7 +276,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
 
   Widget _buildStatCard(
     ThemeData theme, {
-    required String icon,
+    required IconData icon,
     required String title,
     required String value,
     String? subtitle,
@@ -320,11 +284,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     bool showAnimation = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppConstants.spacing16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.dividerLight),
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: AppColors.cardShadowLight,
       ),
       child: Row(
         children: [
@@ -335,9 +300,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(child: Text(icon, style: const TextStyle(fontSize: 28))),
+            child: Icon(icon, size: 28, color: color),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppConstants.spacing16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,14 +321,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                         value.contains(RegExp(r'[a-zA-Z]'))
                             ? '$displayValue ${value.split(' ').skip(1).join(' ')}'
                             : displayValue.toString(),
-                        style: AppTextStyles.headingLarge.copyWith(color: theme.colorScheme.onSurface),
+                        style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface),
                       );
                     },
                   )
                 else
                   Text(
                     value,
-                    style: AppTextStyles.headingLarge.copyWith(color: theme.colorScheme.onSurface),
+                    style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface),
                   ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
@@ -382,22 +347,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
 
   Widget _buildCircularStatCard(
     ThemeData theme, {
-    required String icon,
+    required IconData icon,
     required String title,
     required int value,
     required String suffix,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppConstants.spacing16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.dividerLight),
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: AppColors.cardShadowLight,
       ),
       child: Column(
         children: [
-          Text(icon, style: const TextStyle(fontSize: 24)),
-          const SizedBox(height: 12),
+          Icon(icon, size: 24, color: AppColors.primaryLight),
+          const SizedBox(height: AppConstants.spacing12),
           SizedBox(
             width: 60,
             height: 60,
@@ -407,22 +373,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 CircularProgressIndicator(
                   value: value / 100,
                   strokeWidth: 6,
-                  backgroundColor: AppColors.dividerLight,
+                  backgroundColor: AppColors.surfaceVariantLight,
                   valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
                 ),
                 Center(
                   child: Text(
                     '$value$suffix',
-                    style: AppTextStyles.headingSmall.copyWith(
+                    style: AppTextStyles.subtitle.copyWith(
                       color: AppColors.primaryLight,
                       fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacing8),
           Text(title, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
         ],
       ),
@@ -431,29 +398,33 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
 
   Widget _buildCategoryBarChart(ThemeData theme, _AnalyticsData analytics) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppConstants.spacing16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.dividerLight),
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: AppColors.cardShadowLight,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('📊', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
-              Text('Categories', style: AppTextStyles.headingSmall.copyWith(color: theme.colorScheme.onSurface)),
+              Icon(Icons.bar_chart_outlined, size: 20, color: AppColors.textSecondaryLight),
+              const SizedBox(width: AppConstants.spacing8),
+              Text(
+                'Categories',
+                style: AppTextStyles.subtitle.copyWith(color: theme.colorScheme.onSurface),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.spacing16),
           ...analytics.categoryCounts.entries.map((entry) {
             final percentage = analytics.totalPrompts > 0
                 ? (entry.value / analytics.totalPrompts * 100).toInt()
                 : 0;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -461,7 +432,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(entry.key, style: AppTextStyles.caption),
-                      Text('${entry.value}', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
+                      Text(
+                        '${entry.value}',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -469,7 +443,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percentage / 100,
-                      backgroundColor: AppColors.dividerLight,
+                      backgroundColor: AppColors.surfaceVariantLight,
                       valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
                       minHeight: 8,
                     ),
@@ -485,62 +459,72 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
 
   Widget _buildWeeklyComparison(ThemeData theme, _AnalyticsData analytics) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppConstants.spacing16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.dividerLight),
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: AppColors.cardShadowLight,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('📅', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
-              Text('This Week vs Last Week', style: AppTextStyles.headingSmall.copyWith(color: theme.colorScheme.onSurface)),
+              Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.textSecondaryLight),
+              const SizedBox(width: AppConstants.spacing8),
+              Text(
+                'This Week vs Last Week',
+                style: AppTextStyles.subtitle.copyWith(color: theme.colorScheme.onSurface),
+              ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppConstants.spacing20),
           Row(
             children: [
               Expanded(
                 child: Column(
                   children: [
-                    Text('Last Week', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
-                    const SizedBox(height: 8),
+                    Text(
+                      'Last Week',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                    ),
+                    const SizedBox(height: AppConstants.spacing8),
                     Container(
                       height: 80,
                       decoration: BoxDecoration(
-                        color: AppColors.dividerLight,
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.surfaceVariantLight,
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
                         child: Text(
                           '${analytics.lastWeekPrompts}',
-                          style: AppTextStyles.headingMedium.copyWith(color: theme.colorScheme.onSurface),
+                          style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppConstants.spacing16),
               Expanded(
                 child: Column(
                   children: [
-                    Text('This Week', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
-                    const SizedBox(height: 8),
+                    Text(
+                      'This Week',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                    ),
+                    const SizedBox(height: AppConstants.spacing8),
                     Container(
                       height: 80,
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
                         child: Text(
                           '${analytics.thisWeekPrompts}',
-                          style: AppTextStyles.headingMedium.copyWith(color: Colors.white),
+                          style: AppTextStyles.heading.copyWith(color: Colors.white),
                         ),
                       ),
                     ),
@@ -550,17 +534,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             ],
           ),
           if (analytics.thisWeekPrompts != analytics.lastWeekPrompts) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppConstants.spacing12),
             Center(
-              child: Text(
-                analytics.thisWeekPrompts > analytics.lastWeekPrompts
-                    ? '↑ ${analytics.thisWeekPrompts - analytics.lastWeekPrompts} more than last week!'
-                    : '↓ ${analytics.lastWeekPrompts - analytics.thisWeekPrompts} fewer than last week',
-                style: AppTextStyles.caption.copyWith(
-                  color: analytics.thisWeekPrompts > analytics.lastWeekPrompts
-                      ? Colors.green
-                      : Colors.orange,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    analytics.thisWeekPrompts > analytics.lastWeekPrompts
+                        ? Icons.trending_up
+                        : Icons.trending_down,
+                    size: 16,
+                    color: analytics.thisWeekPrompts > analytics.lastWeekPrompts
+                        ? AppColors.success
+                        : AppColors.warning,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    analytics.thisWeekPrompts > analytics.lastWeekPrompts
+                        ? '${analytics.thisWeekPrompts - analytics.lastWeekPrompts} more than last week'
+                        : '${analytics.lastWeekPrompts - analytics.thisWeekPrompts} fewer than last week',
+                    style: AppTextStyles.caption.copyWith(
+                      color: analytics.thisWeekPrompts > analytics.lastWeekPrompts
+                          ? AppColors.success
+                          : AppColors.warning,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -582,25 +581,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       );
     }
 
-    // Total prompts
     final totalPrompts = prompts.length;
-
-    // Average strength
     final avgStrength = prompts.isEmpty
         ? 0
         : (prompts.map((p) => p.strengthScore).reduce((a, b) => a + b) / prompts.length).round();
 
-    // Favourite rate
     final favouriteCount = prompts.where((p) => p.isFavourite).length;
     final favouriteRate = totalPrompts > 0 ? ((favouriteCount / totalPrompts) * 100).round() : 0;
 
-    // Category counts
     final categoryCounts = <String, int>{};
     for (final prompt in prompts) {
       categoryCounts[prompt.category] = (categoryCounts[prompt.category] ?? 0) + 1;
     }
 
-    // Weekly comparison
     final now = DateTime.now();
     final thisWeekStart = now.subtract(Duration(days: now.weekday - 1));
     final lastWeekStart = thisWeekStart.subtract(const Duration(days: 7));
@@ -610,7 +603,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     final lastWeekPrompts = prompts.where((p) =>
         p.createdAt.isAfter(lastWeekStart) && p.createdAt.isBefore(thisWeekStart)).length;
 
-    // Streak calculation
     int streak = 0;
     final uniqueDays = <DateTime>{};
     for (final prompt in prompts) {

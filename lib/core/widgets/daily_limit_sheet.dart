@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
+import '../constants/app_constants.dart';
 import '../../screens/paywall/paywall_screen.dart';
 
-/// A bottom sheet that appears when a free user reaches their daily prompt limit
 class DailyLimitSheet {
-  /// Shows the daily limit reached bottom sheet
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -24,10 +23,12 @@ class _DailyLimitContent extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppConstants.spacing24),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppConstants.radiusBottomSheet),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -36,82 +37,109 @@ class _DailyLimitContent extends StatelessWidget {
           Container(
             width: 40,
             height: 4,
-            margin: const EdgeInsets.only(bottom: 24),
+            margin: const EdgeInsets.only(bottom: AppConstants.spacing24),
             decoration: BoxDecoration(
               color: AppColors.dividerLight,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
 
-          // Limit icon
+          // Icon
           Container(
-            width: 72,
-            height: 72,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               color: AppColors.primaryLight.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Center(
-              child: Text('⏰', style: TextStyle(fontSize: 32)),
+            child: const Icon(
+              Icons.hourglass_empty,
+              size: 40,
+              color: AppColors.primaryLight,
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: AppConstants.spacing24),
 
           // Title
           Text(
             'Daily Limit Reached',
-            style: AppTextStyles.headingMedium.copyWith(
+            style: AppTextStyles.title.copyWith(
               color: theme.colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.spacing8),
 
-          // Description
+          // Subtitle
           Text(
-            "You've used all your free prompts for today. Upgrade to Premium for unlimited prompts!",
+            'You have used all 10 free prompts today. Your limit resets at midnight.',
             style: AppTextStyles.body.copyWith(
               color: AppColors.textSecondaryLight,
             ),
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: AppConstants.spacing24),
+
+          // Divider
+          Divider(color: AppColors.borderLight, height: 1),
+
+          const SizedBox(height: AppConstants.spacing24),
+
+          // Upgrade section
+          Text(
+            'Get unlimited prompts every day',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondaryLight,
+            ),
+          ),
+
+          const SizedBox(height: AppConstants.spacing12),
 
           // Upgrade button
-          GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const PaywallScreen(),
+          SizedBox(
+            width: double.infinity,
+            height: AppConstants.buttonHeight,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const PaywallScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryLight,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppConstants.radiusButton),
                 ),
-              );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
-                'Upgrade to Premium',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.button.copyWith(color: Colors.white),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.workspace_premium_outlined, size: 20),
+                  const SizedBox(width: AppConstants.spacing8),
+                  Text(
+                    'Upgrade to Premium',
+                    style: AppTextStyles.button.copyWith(color: Colors.white),
+                  ),
+                ],
               ),
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: AppConstants.spacing12),
 
-          // Maybe later button
+          // Come back tomorrow button
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Come Back Tomorrow',
+              'Come back tomorrow',
               style: AppTextStyles.body.copyWith(
                 color: AppColors.textSecondaryLight,
               ),
@@ -119,7 +147,7 @@ class _DailyLimitContent extends StatelessWidget {
           ),
 
           // Bottom padding for safe area
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + AppConstants.spacing8),
         ],
       ),
     );

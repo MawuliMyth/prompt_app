@@ -9,6 +9,7 @@ import 'providers/prompt_provider.dart';
 import 'providers/free_prompt_provider.dart';
 import 'providers/template_provider.dart';
 import 'providers/premium_provider.dart';
+import 'providers/daily_limit_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,7 @@ void main() async {
         ),
         ChangeNotifierProvider(create: (_) => FreePromptProvider()..loadCount()),
         ChangeNotifierProvider(create: (_) => TemplateProvider()),
+        ChangeNotifierProvider(create: (_) => DailyLimitProvider()),
       ],
       child: PromptApp(firebaseInitialized: firebaseInitialized),
     ),

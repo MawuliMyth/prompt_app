@@ -91,7 +91,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   void dispose() {
     _inputController.dispose();
     _pulseController.dispose();
-    _audioRecorderService.dispose();
+    // AudioRecorderService.dispose() is async - fire and forget
+    // This is safe because the recorder will be closed eventually
+    _audioRecorderService.dispose().ignore();
     super.dispose();
   }
 
