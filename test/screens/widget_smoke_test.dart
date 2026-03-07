@@ -195,8 +195,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Go Premium'), findsOneWidget);
-      expect(find.text('Unlimited prompt refinement'), findsOneWidget);
-      expect(find.text('Start 3-day free trial'), findsOneWidget);
+      expect(find.text('Choose your plan'), findsOneWidget);
+      expect(find.text('Compare plans'), findsOneWidget);
+      expect(find.text('Start 3-Day Free Trial'), findsOneWidget);
     });
 
     testWidgets('Settings screen renders guest account prompt', (tester) async {
