@@ -13,6 +13,7 @@ import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/daily_limit_sheet.dart';
 import '../../core/widgets/locked_feature_sheet.dart';
 import '../../core/widgets/page_header.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../data/services/claude_service.dart';
 import '../../providers/app_config_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -301,6 +302,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                       children: categories.map((category) {
                         final selected = category.id == _selectedCategoryId;
                         return ChoiceChip(
+                          showCheckmark: false,
                           label: Text(category.label),
                           avatar: Icon(
                             resolveIcon(
@@ -471,13 +473,12 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                           ? null
                           : _enhancePrompt,
                       child: _isProcessing
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                          ? const ShimmerPulse(
+                              width: 96,
+                              height: 16,
+                              borderRadius: 999,
+                              baseColor: Color(0x66FFFFFF),
+                              highlightColor: Color(0xAAFFFFFF),
                             )
                           : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,

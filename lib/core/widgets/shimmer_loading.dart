@@ -3,7 +3,6 @@ import 'package:shimmer/shimmer.dart';
 
 /// Shimmer loading widget for skeleton loading effects
 class ShimmerLoading extends StatelessWidget {
-
   const ShimmerLoading({
     super.key,
     this.width = double.infinity,
@@ -35,7 +34,6 @@ class ShimmerLoading extends StatelessWidget {
 
 /// Shimmer button loading state
 class ShimmerButton extends StatelessWidget {
-
   const ShimmerButton({
     super.key,
     this.width = double.infinity,
@@ -65,11 +63,7 @@ class ShimmerButton extends StatelessWidget {
 
 /// Shimmer card for list items
 class ShimmerCard extends StatelessWidget {
-
-  const ShimmerCard({
-    super.key,
-    this.height = 120,
-  });
+  const ShimmerCard({super.key, this.height = 120});
   final double height;
 
   @override
@@ -133,12 +127,7 @@ class ShimmerCard extends StatelessWidget {
 
 /// Shimmer loading overlay for buttons
 class ShimmerButtonLoader extends StatelessWidget {
-
-  const ShimmerButtonLoader({
-    super.key,
-    required this.text,
-    this.height = 56,
-  });
+  const ShimmerButtonLoader({super.key, required this.text, this.height = 56});
   final String text;
   final double height;
 
@@ -156,6 +145,42 @@ class ShimmerButtonLoader extends StatelessWidget {
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class ShimmerPulse extends StatelessWidget {
+  const ShimmerPulse({
+    super.key,
+    this.width = 24,
+    this.height = 24,
+    this.borderRadius = 999,
+    this.baseColor,
+    this.highlightColor,
+  });
+
+  final double width;
+  final double height;
+  final double borderRadius;
+  final Color? baseColor;
+  final Color? highlightColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Shimmer.fromColors(
+      baseColor: baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+      highlightColor:
+          highlightColor ?? (isDark ? Colors.grey[700]! : Colors.grey[100]!),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
     );

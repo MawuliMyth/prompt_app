@@ -49,6 +49,43 @@ function normalizeTone(tone = 'Auto') {
   return match?.label || tone || 'Auto';
 }
 
+function isRetryableAnthropicError(error) {
+  const status = error?.status || error?.statusCode || error?.cause?.status;
+  return status === 429 || status === 529;
+}
+
+function createUpstreamBusyError() {
+  const error = new Error(
+    'The AI service is busy right now. Please try again in a moment.',
+  );
+  error.status = 503;
+  error.code = 'upstream-busy';
+  return error;
+}
+
+async function runAnthropicRequest(requestFactory) {
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await requestFactory();
+    } catch (error) {
+      if (!isRetryableAnthropicError(error) || attempt === maxAttempts) {
+        console.error('Anthropic request failed:', error?.status || error?.statusCode, error?.message);
+        if (isRetryableAnthropicError(error)) {
+          throw createUpstreamBusyError();
+        }
+        throw error;
+      }
+
+      const delayMs = 400 * attempt;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw createUpstreamBusyError();
+}
+
 /**
  * Generate system prompt based on category, tone, and persona
  * @param {string} category - The prompt category
@@ -99,17 +136,19 @@ async function enhancePrompt(roughPrompt, category = 'General', isPremium = fals
 
   console.log(`Using model: ${model} (isPremium: ${isPremium}, tone: ${resolvedTone})`);
 
-  const message = await anthropic.messages.create({
-    model: model,
-    max_tokens: 1024,
-    system: getSystemPrompt(category, resolvedTone, persona),
-    messages: [
-      {
-        role: 'user',
-        content: roughPrompt.trim()
-      }
-    ]
-  });
+  const message = await runAnthropicRequest(() =>
+    anthropic.messages.create({
+      model: model,
+      max_tokens: 1024,
+      system: getSystemPrompt(category, resolvedTone, persona),
+      messages: [
+        {
+          role: 'user',
+          content: roughPrompt.trim()
+        }
+      ]
+    })
+  );
 
   // Extract text from Claude's response
   const textBlock = message.content.find(block => block.type === 'text');
@@ -144,17 +183,19 @@ For the category "${resolvedCategory}": ${categoryInstructions[resolvedCategory]
 IMPORTANT: Return ONLY a valid JSON array with exactly 3 strings. No explanations, no labels, just the prompts in order [formal, creative, concise].
 Example output: ["First variation...", "Second variation...", "Third variation..."]`;
 
-  const message = await anthropic.messages.create({
-    model: model,
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: roughPrompt.trim()
-      }
-    ]
-  });
+  const message = await runAnthropicRequest(() =>
+    anthropic.messages.create({
+      model: model,
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: roughPrompt.trim()
+        }
+      ]
+    })
+  );
 
   // Extract text from Claude's response
   const textBlock = message.content.find(block => block.type === 'text');

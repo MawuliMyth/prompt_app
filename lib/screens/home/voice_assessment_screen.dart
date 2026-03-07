@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/page_header.dart';
 import '../../data/services/audio_recorder_service.dart';
 import '../../data/services/transcription_service.dart';
@@ -209,13 +210,12 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                       ),
                       alignment: Alignment.center,
                       child: _isProcessing
-                          ? const SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                          ? const ShimmerPulse(
+                              width: 34,
+                              height: 34,
+                              borderRadius: 999,
+                              baseColor: Color(0x66FFFFFF),
+                              highlightColor: Color(0xAAFFFFFF),
                             )
                           : Icon(
                               _isRecording

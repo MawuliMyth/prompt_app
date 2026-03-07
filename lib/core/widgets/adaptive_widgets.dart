@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../utils/platform_utils.dart';
+import 'shimmer_loading.dart';
 
 /// Adaptive AppBar - Material on Android, Cupertino on iOS
 class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
-
   const AdaptiveAppBar({
     super.key,
     required this.title,
@@ -46,7 +46,9 @@ class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(
         title,
-        style: AppTextStyles.headingLarge.copyWith(color: AppColors.primaryLight),
+        style: AppTextStyles.headingLarge.copyWith(
+          color: AppColors.primaryLight,
+        ),
       ),
       actions: actions,
       leading: leading,
@@ -61,7 +63,6 @@ class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 /// Adaptive Elevated Button
 class AdaptiveButton extends StatelessWidget {
-
   const AdaptiveButton({
     super.key,
     required this.label,
@@ -121,18 +122,15 @@ class AdaptiveButton extends StatelessWidget {
             : backgroundColor ?? AppColors.primaryLight,
         foregroundColor: foregroundColor ?? Colors.white,
         padding: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
+          ? const ShimmerPulse(
+              width: 56,
+              height: 14,
+              borderRadius: 999,
+              baseColor: Color(0x66FFFFFF),
+              highlightColor: Color(0xAAFFFFFF),
             )
           : Row(
               mainAxisSize: MainAxisSize.min,
@@ -141,7 +139,12 @@ class AdaptiveButton extends StatelessWidget {
                   Icon(icon, size: 18),
                   const SizedBox(width: 8),
                 ],
-                Text(label, style: AppTextStyles.button.copyWith(color: foregroundColor ?? Colors.white)),
+                Text(
+                  label,
+                  style: AppTextStyles.button.copyWith(
+                    color: foregroundColor ?? Colors.white,
+                  ),
+                ),
               ],
             ),
     );
@@ -150,7 +153,6 @@ class AdaptiveButton extends StatelessWidget {
 
 /// Adaptive Text Field
 class AdaptiveTextField extends StatelessWidget {
-
   const AdaptiveTextField({
     super.key,
     this.controller,
@@ -222,10 +224,15 @@ class AdaptiveTextField extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             prefix: prefixIcon != null
-                ? Padding(padding: const EdgeInsets.only(left: 12), child: prefixIcon)
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: prefixIcon,
+                  )
                 : null,
             suffix: suffixIcon,
-            style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface),
+            style: AppTextStyles.body.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ],
       );
@@ -299,13 +306,20 @@ class AdaptiveDialog {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(cancelText, style: AppTextStyles.button.copyWith(color: AppColors.textSecondaryLight)),
+            child: Text(
+              cancelText,
+              style: AppTextStyles.button.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               confirmText,
-              style: AppTextStyles.button.copyWith(color: isDestructive ? Colors.red : AppColors.primaryLight),
+              style: AppTextStyles.button.copyWith(
+                color: isDestructive ? Colors.red : AppColors.primaryLight,
+              ),
             ),
           ),
         ],
@@ -316,7 +330,6 @@ class AdaptiveDialog {
 
 /// Adaptive Progress Indicator
 class AdaptiveProgressIndicator extends StatelessWidget {
-
   const AdaptiveProgressIndicator({super.key, this.size, this.color});
   final double? size;
   final Color? color;
@@ -326,18 +339,20 @@ class AdaptiveProgressIndicator extends StatelessWidget {
     final isCupertino = PlatformUtils.useCupertino(context);
 
     if (isCupertino) {
-      return CupertinoActivityIndicator(
-        radius: (size ?? 20) / 2,
-        color: color,
-      );
+      return CupertinoActivityIndicator(radius: (size ?? 20) / 2, color: color);
     }
 
     return SizedBox(
       width: size ?? 20,
       height: size ?? 20,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(color ?? AppColors.primaryLight),
+      child: ShimmerPulse(
+        width: size ?? 20,
+        height: size ?? 20,
+        borderRadius: 999,
+        baseColor: (color ?? AppColors.primaryLight).withValues(alpha: 0.28),
+        highlightColor: (color ?? AppColors.primaryLight).withValues(
+          alpha: 0.6,
+        ),
       ),
     );
   }
@@ -345,7 +360,6 @@ class AdaptiveProgressIndicator extends StatelessWidget {
 
 /// Adaptive Segment Control (for filters)
 class AdaptiveSegmentControl<T extends Object> extends StatelessWidget {
-
   const AdaptiveSegmentControl({
     super.key,
     required this.segments,
@@ -384,7 +398,6 @@ class AdaptiveSegmentControl<T extends Object> extends StatelessWidget {
 
 /// Adaptive List Tile
 class AdaptiveListTile extends StatelessWidget {
-
   const AdaptiveListTile({
     super.key,
     this.leading,
@@ -409,32 +422,54 @@ class AdaptiveListTile extends StatelessWidget {
     if (isCupertino) {
       return CupertinoListTile(
         leading: leading,
-        title: Text(title, style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface)),
+        title: Text(
+          title,
+          style: AppTextStyles.body.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
         subtitle: subtitle != null
-            ? Text(subtitle!, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight))
+            ? Text(
+                subtitle!,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+              )
             : null,
-        trailing: trailing ?? (onTap != null ? const CupertinoListTileChevron() : null),
+        trailing:
+            trailing ??
+            (onTap != null ? const CupertinoListTileChevron() : null),
         onTap: onTap,
-        padding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding:
+            contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       );
     }
 
     return ListTile(
       leading: leading,
-      title: Text(title, style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface)),
+      title: Text(
+        title,
+        style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface),
+      ),
       subtitle: subtitle != null
-          ? Text(subtitle!, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight))
+          ? Text(
+              subtitle!,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
+            )
           : null,
       trailing: trailing,
       onTap: onTap,
-      contentPadding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 24),
+      contentPadding:
+          contentPadding ?? const EdgeInsets.symmetric(horizontal: 24),
     );
   }
 }
 
 /// Adaptive Scaffold
 class AdaptiveScaffold extends StatelessWidget {
-
   const AdaptiveScaffold({
     super.key,
     this.appBar,

@@ -14,6 +14,7 @@ import '../../core/utils/strength_calculator.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/locked_feature_sheet.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../data/models/prompt_model.dart';
 import '../../data/services/ai_handoff_service.dart';
 import '../../data/services/claude_service.dart';
@@ -699,10 +700,10 @@ class _ResultScreenState extends State<ResultScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (_isLoadingVariations)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                      const ShimmerPulse(
+                        width: 92,
+                        height: 16,
+                        borderRadius: 999,
                       )
                     else ...[
                       Icon(
@@ -1058,6 +1059,7 @@ class _AiTargetTile extends StatelessWidget {
     }
   }
 }
+
 class _VariationType {
   _VariationType({required this.name, required this.icon});
   final String name;
