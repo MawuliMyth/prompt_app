@@ -93,9 +93,9 @@ class _SignupScreenState extends State<SignupScreen> {
     final success = await authProvider.signUpWithEmail(name, email, password);
 
     if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -104,10 +104,10 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _handleGoogleSignIn() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
-     if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+    if (success && mounted) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -116,10 +116,10 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _handleAppleSignIn() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithApple();
-     if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+    if (success && mounted) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -154,7 +154,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: Center(
-                       child: Text(
+                      child: Text(
                         'P',
                         style: AppTextStyles.headingLarge.copyWith(
                           color: Colors.white,
@@ -167,17 +167,21 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 32),
                 Text(
                   'Create Account',
-                  style: AppTextStyles.headingLarge.copyWith(color: theme.colorScheme.onSurface),
+                  style: AppTextStyles.headingLarge.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Sign up to get started',
-                  style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                  style: AppTextStyles.body.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                 TextFormField(
+                TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
                     hintText: 'Full Name',
@@ -204,14 +208,18 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: _validateEmail,
                 ),
                 const SizedBox(height: 16),
-                 TextFormField(
+                TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
                       onPressed: () {
                         setState(() {
                           _obscurePassword = !_obscurePassword;
@@ -221,8 +229,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   validator: _validatePassword,
                 ),
-                  const SizedBox(height: 16),
-                 TextFormField(
+                const SizedBox(height: 16),
+                TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscurePassword,
                   decoration: const InputDecoration(
@@ -233,84 +241,109 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 24),
                 Row(
-                   children: [
-                     Checkbox(
-                        value: _termsAccepted,
-                        onChanged: (val) {
-                           setState(() {
-                              _termsAccepted = val ?? false;
-                           });
+                  children: [
+                    Checkbox(
+                      value: _termsAccepted,
+                      onChanged: (val) {
+                        setState(() {
+                          _termsAccepted = val ?? false;
+                        });
+                      },
+                      activeColor: AppColors.primaryLight,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _termsAccepted = !_termsAccepted;
+                          });
                         },
-                        activeColor: AppColors.primaryLight,
-                     ),
-                     Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _termsAccepted = !_termsAccepted;
-                            });
-                          },
-                          child: Text(
-                           'I agree to the Terms of Service',
-                           style: AppTextStyles.caption.copyWith(color: theme.colorScheme.onSurface),
+                        child: Text(
+                          'I agree to the Terms of Service',
+                          style: AppTextStyles.caption.copyWith(
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
-                     )
-                   ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: authProvider.isLoading ? null : _handleSignup,
-                  style: ElevatedButton.styleFrom(
-                     padding: EdgeInsets.zero,
-                  ),
-                   child: Ink(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      child: authProvider.isLoading
-                        ? Shimmer.fromColors(
-                            baseColor: Colors.white.withValues(alpha: 0.5),
-                            highlightColor: Colors.white.withValues(alpha: 0.8),
-                            child: Text(
-                              'Creating account...',
-                              style: AppTextStyles.button.copyWith(color: Colors.white),
-                            ),
-                          )
-                        : Text(
-                          'Create Account',
-                          style: AppTextStyles.button.copyWith(color: Colors.white),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: authProvider.isLoading ? null : _handleSignup,
+                    style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
                         ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: authProvider.isLoading
+                            ? Shimmer.fromColors(
+                                baseColor: Colors.white.withValues(alpha: 0.5),
+                                highlightColor: Colors.white.withValues(
+                                  alpha: 0.8,
+                                ),
+                                child: Text(
+                                  'Creating account...',
+                                  style: AppTextStyles.button.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                'Create Account',
+                                style: AppTextStyles.button.copyWith(
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
                 Row(
                   children: [
-                     const Expanded(child: Divider()),
-                     Padding(
-                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                       child: Text('or continue with', style: AppTextStyles.caption.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
-                     ),
-                     const Expanded(child: Divider()),
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'or continue with',
+                        style: AppTextStyles.caption.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
                   ],
                 ),
                 const SizedBox(height: 24),
                 // Google Sign In Button
                 SizedBox(
+                  width: double.infinity,
                   height: 56,
                   child: OutlinedButton(
-                    onPressed: authProvider.isLoading ? null : _handleGoogleSignIn,
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : _handleGoogleSignIn,
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: theme.brightness == Brightness.light ? Colors.white : AppColors.surfaceDark,
+                      backgroundColor: theme.brightness == Brightness.light
+                          ? Colors.white
+                          : AppColors.surfaceDark,
                       foregroundColor: theme.colorScheme.onSurface,
-                      side: BorderSide(color: theme.brightness == Brightness.light ? Colors.grey[300]! : Colors.grey[700]!),
+                      side: BorderSide(
+                        color: theme.brightness == Brightness.light
+                            ? Colors.grey[300]!
+                            : Colors.grey[700]!,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -334,13 +367,18 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-                if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS)) ...[
+                if (!kIsWeb &&
+                    (defaultTargetPlatform == TargetPlatform.iOS ||
+                        defaultTargetPlatform == TargetPlatform.macOS)) ...[
                   const SizedBox(height: 16),
                   // Apple Sign In Button
                   SizedBox(
+                    width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: authProvider.isLoading ? null : _handleAppleSignIn,
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : _handleAppleSignIn,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
@@ -373,18 +411,26 @@ class _SignupScreenState extends State<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Flexible(
-                      child: Text('Already have an account? ', style: AppTextStyles.body, overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        'Already have an account? ',
+                        style: AppTextStyles.body,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     Flexible(
                       child: GestureDetector(
                         onTap: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
                           );
                         },
                         child: Text(
                           'Sign In',
-                          style: AppTextStyles.button.copyWith(color: AppColors.primaryLight),
+                          style: AppTextStyles.button.copyWith(
+                            color: AppColors.primaryLight,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

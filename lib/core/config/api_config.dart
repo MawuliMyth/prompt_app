@@ -1,61 +1,32 @@
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
-/// API configuration for the Node.js backend
-///
-/// URLs are configurable via environment variables:
-/// - Development: Uses platform-specific localhost (10.0.2.2 for Android emulator)
-/// - Production: Set via --dart-define=API_URL=https://your-api.com
 class ApiConfig {
   ApiConfig._();
 
-  /// Default production URL (Render backend)
   static const String _defaultProductionUrl =
       'https://prompt-app-05kv.onrender.com';
-
-  /// Production URL from environment variable (set via --dart-define)
   static const String _productionUrl = String.fromEnvironment('API_URL');
+  static const bool _useLocalApi = bool.fromEnvironment('USE_LOCAL_API');
 
-  /// Local development URL - platform aware
   static String get localhostUrl {
     if (kIsWeb) return 'http://localhost:3001';
-    if (!kIsWeb && Platform.isAndroid) {
-      // Android emulator needs 10.0.2.2 to reach host machine
-      return 'http://10.0.2.2:3001';
-    }
+    if (Platform.isAndroid) return 'http://10.0.2.2:3001';
     return 'http://localhost:3001';
   }
 
-  /// Base URL for API calls
-  /// Uses --dart-define URL if set, localhost in debug, production URL in release
   static String get baseUrl {
-    if (_productionUrl.isNotEmpty == true) return _productionUrl;
-    if (!kReleaseMode) return localhostUrl;
+    if (_productionUrl.isNotEmpty) return _productionUrl;
+    if (_useLocalApi) return localhostUrl;
     return _defaultProductionUrl;
   }
 
-  /// Full API endpoint path
   static String get apiEndpoint => '$baseUrl/api';
-
-  /// Transcription endpoint
   static String get transcribeEndpoint => '$apiEndpoint/transcribe';
-
-  /// Prompt enhancement endpoint
   static String get enhanceEndpoint => '$apiEndpoint/enhance';
-
-  /// Prompt variations endpoint (premium feature)
   static String get variationsEndpoint => '$apiEndpoint/variations';
-
-  /// Trial activation endpoint
   static String get activateTrialEndpoint => '$apiEndpoint/trial/activate';
-
-  /// Account deletion endpoint
   static String get deleteAccountEndpoint => '$apiEndpoint/account';
-
-  /// Health check endpoint
+  static String get appConfigEndpoint => '$apiEndpoint/app-config';
   static String get healthEndpoint => '$baseUrl/health';
-
-  /// Check if running in production mode
-  static bool get isProduction =>
-      _productionUrl.isNotEmpty == true || kReleaseMode;
 }

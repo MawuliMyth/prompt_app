@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -35,6 +36,16 @@ class ClaudeService {
       // Ignore JSON parsing failures and fall back to the default message.
     }
     return fallbackMessage;
+  }
+
+  String _transportErrorMessage(Object error) {
+    if (error is SocketException) {
+      return 'Unable to reach the server. Check your internet connection or API URL.';
+    }
+    if (error is http.ClientException) {
+      return 'Unable to connect to the server. Check your backend URL and try again.';
+    }
+    return 'Network request failed. Please try again.';
   }
 
   /// Enhance a rough prompt using Claude API via Node backend
@@ -108,17 +119,18 @@ class ClaudeService {
       }
       return {
         'success': false,
-        'error':
-            'Request timed out. Please check your connection and try again.',
+        'error': 'The server took too long to respond. Please try again.',
       };
     } on http.ClientException catch (e) {
       if (kDebugMode) {
         debugPrint('Network error during enhancement: $e');
       }
-      return {
-        'success': false,
-        'error': 'Network error. Please check your connection.',
-      };
+      return {'success': false, 'error': _transportErrorMessage(e)};
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        debugPrint('Socket error during enhancement: $e');
+      }
+      return {'success': false, 'error': _transportErrorMessage(e)};
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Enhancement error: $e');
@@ -190,17 +202,18 @@ class ClaudeService {
       }
       return {
         'success': false,
-        'error':
-            'Request timed out. Please check your connection and try again.',
+        'error': 'The server took too long to respond. Please try again.',
       };
     } on http.ClientException catch (e) {
       if (kDebugMode) {
         debugPrint('Network error during variations: $e');
       }
-      return {
-        'success': false,
-        'error': 'Network error. Please check your connection.',
-      };
+      return {'success': false, 'error': _transportErrorMessage(e)};
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        debugPrint('Socket error during variations: $e');
+      }
+      return {'success': false, 'error': _transportErrorMessage(e)};
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Variations error: $e');

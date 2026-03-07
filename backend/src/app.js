@@ -6,6 +6,7 @@ function createApp({
   transcribeAudio,
   enhancePrompt,
   generateVariations,
+  getAppConfig,
   activateTrialForUser,
   checkEnhanceAccess,
   checkVariationAccess,
@@ -100,6 +101,13 @@ function createApp({
 
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  app.get('/api/app-config', (req, res) => {
+    res.json({
+      success: true,
+      config: getAppConfig(),
+    });
   });
 
   app.post(

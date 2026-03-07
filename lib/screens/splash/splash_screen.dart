@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_screen.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
-
   const SplashScreen({super.key, required this.firebaseInitialized});
   final bool firebaseInitialized;
 
@@ -14,7 +14,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showOnboarding = false;
@@ -29,12 +30,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     },
     {
       'title': 'AI Does The Magic',
-      'subtitle': 'We instantly transform your rough idea into a professional prompt.',
+      'subtitle':
+          'We instantly transform your rough idea into a professional prompt.',
       'icon': 'auto_awesome',
     },
     {
       'title': 'Use It Anywhere',
-      'subtitle': 'Copy your perfect prompt and paste it into any AI tool you love.',
+      'subtitle':
+          'Copy your perfect prompt and paste it into any AI tool you love.',
       'icon': 'content_copy',
     },
   ];
@@ -86,9 +89,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   void _navigateToHome() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   Future<void> _completeOnboarding() async {
@@ -111,10 +114,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   IconData _getIconData(String iconName) {
     switch (iconName) {
-      case 'mic': return Icons.mic;
-      case 'auto_awesome': return Icons.auto_awesome;
-      case 'content_copy': return Icons.content_copy;
-      default: return Icons.info;
+      case 'mic':
+        return Icons.mic;
+      case 'auto_awesome':
+        return Icons.auto_awesome;
+      case 'content_copy':
+        return Icons.content_copy;
+      default:
+        return Icons.info;
     }
   }
 
@@ -149,9 +156,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return Scaffold(
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
-        child: _showOnboarding
-            ? _buildOnboarding(theme)
-            : _buildSplashLogo(),
+        child: _showOnboarding ? _buildOnboarding(theme) : _buildSplashLogo(),
       ),
     );
   }
@@ -198,7 +203,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               alignment: Alignment.topRight,
               child: TextButton(
                 onPressed: _completeOnboarding,
-                child: Text('Skip', style: AppTextStyles.button.copyWith(color: AppColors.textSecondaryLight)),
+                child: Text(
+                  'Skip',
+                  style: AppTextStyles.button.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ),
               ),
             ),
             Expanded(
@@ -219,38 +229,46 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           padding: const EdgeInsets.all(40.0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
+                            children: [
+                              Container(
+                                width: 150,
+                                height: 150,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _getIconData(_onboardingData[index]['icon']!),
+                                  size: 80,
+                                  color: AppColors.primaryLight,
+                                ),
+                              ),
+                              const SizedBox(height: 48),
+                              Text(
+                                _onboardingData[index]['title']!,
+                                style: AppTextStyles.headingLarge.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _onboardingData[index]['subtitle']!,
+                                style: AppTextStyles.body.copyWith(
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            _getIconData(_onboardingData[index]['icon']!),
-                            size: 80,
-                            color: AppColors.primaryLight,
-                          ),
-                        ),
-                        const SizedBox(height: 48),
-                        Text(
-                          _onboardingData[index]['title']!,
-                          style: AppTextStyles.headingLarge.copyWith(color: theme.colorScheme.onSurface),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _onboardingData[index]['subtitle']!,
-                          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                          textAlign: TextAlign.center,
-                        ),
-                          ],
                         ),
                       ),
-                    ),
-                  ],
-                );
+                    ],
+                  );
                 },
               ),
             ),
@@ -268,7 +286,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         height: 8,
                         width: _currentPage == index ? 24 : 8,
                         decoration: BoxDecoration(
-                          color: _currentPage == index ? AppColors.primaryLight : AppColors.dividerLight,
+                          color: _currentPage == index
+                              ? AppColors.primaryLight
+                              : AppColors.dividerLight,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -277,7 +297,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   ElevatedButton(
                     onPressed: _nextPage,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      minimumSize: const Size(0, AppConstants.buttonHeight),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
                     ),
@@ -289,10 +313,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                         child: Text(
-                          _currentPage == _onboardingData.length - 1 ? 'Get Started' : 'Next',
-                          style: AppTextStyles.button.copyWith(color: Colors.white),
+                          _currentPage == _onboardingData.length - 1
+                              ? 'Get Started'
+                              : 'Next',
+                          style: AppTextStyles.button.copyWith(
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),

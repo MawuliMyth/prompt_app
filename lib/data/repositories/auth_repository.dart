@@ -15,12 +15,14 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../../core/config/api_config.dart';
+import '../../firebase_options.dart';
 
 class AuthRepository {
-
   AuthRepository() {
-    // Configure GoogleSignIn with serverClientId for Android
-    _googleSignIn = GoogleSignIn(serverClientId: _googleWebClientId);
+    _googleSignIn = GoogleSignIn(
+      serverClientId: _googleWebClientId,
+      clientId: _iosClientId,
+    );
   }
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,6 +31,7 @@ class AuthRepository {
   // This is required for Google Sign-In on Android
   static const String _googleWebClientId =
       '436678880838-goq9ki04q9mvq0vm7svoagt8lvaek6bo.apps.googleusercontent.com';
+  static final String? _iosClientId = DefaultFirebaseOptions.ios.iosClientId;
 
   late final GoogleSignIn _googleSignIn;
 

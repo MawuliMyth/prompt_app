@@ -1,641 +1,292 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/widgets/adaptive_widgets.dart';
-import '../../core/utils/snackbar_utils.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/page_header.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../providers/premium_provider.dart';
-import '../paywall/paywall_screen.dart';
+import '../../providers/theme_provider.dart';
 import '../auth/login_screen.dart';
+import '../paywall/paywall_screen.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final authProvider = Provider.of<AuthProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final premiumProvider = Provider.of<PremiumProvider>(context);
+    final authProvider = context.watch<AuthProvider>();
+    final premiumProvider = context.watch<PremiumProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
 
     return Scaffold(
-      appBar: const AdaptiveAppBar(title: 'Settings'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppConstants.spacing24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 160),
           children: [
-            // Premium Status Card
-            if (premiumProvider.hasPremiumAccess)
-              _buildPremiumCard(theme)
-            else
-              _buildUpgradeCard(theme),
-
-            const SizedBox(height: AppConstants.spacing32),
-
-            // Theme Section
-            _buildSectionHeader('Appearance'),
-            const SizedBox(height: AppConstants.spacing12),
-            _buildThemeSelector(theme, themeProvider),
-
-            const SizedBox(height: AppConstants.spacing32),
-
-            // Account Section
-            _buildSectionHeader('Account'),
-            const SizedBox(height: AppConstants.spacing12),
-            if (authProvider.isAuthenticated)
-              _buildAccountInfo(theme, authProvider)
-            else
-              _buildSignInPrompt(theme),
-
-            const SizedBox(height: AppConstants.spacing32),
-
-            // App Info
-            _buildSectionHeader('About'),
-            const SizedBox(height: AppConstants.spacing12),
-            _buildAppInfo(theme),
-
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: AppTextStyles.caption.copyWith(
-        color: AppColors.textSecondaryLight,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
-      ),
-    );
-  }
-
-  Widget _buildPremiumCard(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing20),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppConstants.spacing12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
+            const PageHeader(
+              title: 'Settings',
+              subtitle: 'Preferences, account, and app details.',
             ),
-            child: const Icon(
-              Icons.workspace_premium,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: AppConstants.spacing16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Premium Active',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Enjoy all premium features',
-                  style: AppTextStyles.caption.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUpgradeCard(ThemeData theme) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const PaywallScreen()),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(AppConstants.spacing20),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-          border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
-          boxShadow: AppColors.cardShadowLight,
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppConstants.spacing12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.auto_awesome_outlined,
-                color: AppColors.primaryLight,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: AppConstants.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Upgrade to Premium',
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
+            const SizedBox(height: AppConstants.spacing20),
+            GestureDetector(
+              onTap: premiumProvider.hasPremiumAccess
+                  ? null
+                  : () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const PaywallScreen()),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Unlock all features and unlimited prompts',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondaryLight,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector(ThemeData theme, ThemeProvider themeProvider) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        children: [
-          _buildThemeOption(
-            theme,
-            icon: Icons.brightness_auto_outlined,
-            title: 'System',
-            subtitle: 'Follow system settings',
-            value: ThemeMode.system,
-            themeProvider: themeProvider,
-          ),
-          const Divider(height: 1, color: AppColors.borderLight),
-          _buildThemeOption(
-            theme,
-            icon: Icons.light_mode_outlined,
-            title: 'Light',
-            subtitle: 'Always use light theme',
-            value: ThemeMode.light,
-            themeProvider: themeProvider,
-          ),
-          const Divider(height: 1, color: AppColors.borderLight),
-          _buildThemeOption(
-            theme,
-            icon: Icons.dark_mode_outlined,
-            title: 'Dark',
-            subtitle: 'Always use dark theme',
-            value: ThemeMode.dark,
-            themeProvider: themeProvider,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeOption(
-    ThemeData theme, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required ThemeMode value,
-    required ThemeProvider themeProvider,
-  }) {
-    final isSelected = themeProvider.themeMode == value;
-
-    return InkWell(
-      onTap: () => themeProvider.setTheme(value),
-      borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacing16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppConstants.spacing8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryLight.withValues(alpha: 0.1)
-                    : AppColors.surfaceVariantLight,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: isSelected
-                    ? AppColors.primaryLight
-                    : AppColors.textSecondaryLight,
-              ),
-            ),
-            const SizedBox(width: AppConstants.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.primaryLight,
-                size: 24,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccountInfo(ThemeData theme, AuthProvider authProvider) {
-    final user = authProvider.currentUser;
-    final displayName = user?.displayName ?? 'User';
-    final email = user?.email ?? '';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppConstants.spacing16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppColors.primaryLight.withValues(alpha: 0.1),
-                  child: Text(
-                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                    style: AppTextStyles.heading.copyWith(
-                      color: AppColors.primaryLight,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppConstants.spacing16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      if (email.isNotEmpty)
-                        Text(
-                          email,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondaryLight,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: AppColors.borderLight),
-          _buildSettingItem(
-            theme,
-            icon: Icons.logout,
-            title: 'Sign Out',
-            subtitle: 'Sign out of your account',
-            isDestructive: true,
-            onTap: () => _showSignOutDialog(theme, authProvider),
-          ),
-          const Divider(height: 1, color: AppColors.borderLight),
-          _buildSettingItem(
-            theme,
-            icon: Icons.delete_forever_outlined,
-            title: 'Delete Account',
-            subtitle: 'Permanently delete your account and data',
-            isDestructive: true,
-            onTap: () => _showDeleteAccountDialog(theme, authProvider),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSignInPrompt(ThemeData theme) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to login screen
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(AppConstants.spacing20),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppConstants.spacing12),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariantLight,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.person_outline,
-                color: AppColors.textSecondaryLight,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: AppConstants.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Not signed in',
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Sign in to sync your data across devices',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingItem(
-    ThemeData theme, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    bool isDestructive = false,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacing16),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isDestructive ? AppColors.error : AppColors.textSecondaryLight,
-            ),
-            const SizedBox(width: AppConstants.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body.copyWith(
-                      color: isDestructive ? AppColors.error : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppInfo(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppConstants.spacing12),
+              child: Container(
+                padding: const EdgeInsets.all(AppConstants.spacing20),
                 decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: premiumProvider.hasPremiumAccess
+                      ? AppColors.premiumGradient
+                      : AppColors.darkGradient,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusCard),
                 ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: AppConstants.spacing16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      'Prompt Enhancer',
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            premiumProvider.hasPremiumAccess
+                                ? 'Premium active'
+                                : 'Upgrade to Premium',
+                            style: AppTextStyles.heading.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: AppConstants.spacing8),
+                          Text(
+                            premiumProvider.hasPremiumAccess
+                                ? 'Unlocked tones, deeper prompt shaping, and pro insights.'
+                                : 'Unlock premium tones, deeper refinement, and richer insights.',
+                            style: AppTextStyles.body.copyWith(
+                              color: Colors.white.withValues(alpha: 0.82),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      'Version 1.0.0',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondaryLight,
+                    const SizedBox(width: AppConstants.spacing16),
+                    Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.workspace_premium_rounded,
+                        color: Colors.white,
+                        size: 28,
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            _SettingsGroup(
+              title: 'Appearance',
+              child: Column(
+                children: [
+                  _ThemeOptionTile(
+                    label: 'System',
+                    subtitle: 'Follow the device appearance',
+                    selected: themeProvider.themeMode == ThemeMode.system,
+                    onTap: () => themeProvider.setTheme(ThemeMode.system),
+                  ),
+                  _ThemeOptionTile(
+                    label: 'Light',
+                    subtitle: 'Bright surfaces and soft contrast',
+                    selected: themeProvider.themeMode == ThemeMode.light,
+                    onTap: () => themeProvider.setTheme(ThemeMode.light),
+                  ),
+                  _ThemeOptionTile(
+                    label: 'Dark',
+                    subtitle: 'Low-glare surfaces and muted edges',
+                    selected: themeProvider.themeMode == ThemeMode.dark,
+                    onTap: () => themeProvider.setTheme(ThemeMode.dark),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            _SettingsGroup(
+              title: 'Account',
+              child: authProvider.isAuthenticated
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppConstants.spacing16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            authProvider.currentUser?.displayName ??
+                                'Signed in',
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: AppConstants.spacing4),
+                          Text(
+                            authProvider.currentUser?.email ?? '',
+                            style: AppTextStyles.body.copyWith(
+                              color: theme.hintColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListTile(
+                      title: Text(
+                        'Sign in to sync your prompts',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Save history and access your prompts across devices.',
+                        style: AppTextStyles.body.copyWith(
+                          color: theme.hintColor,
+                        ),
+                      ),
+                      trailing: ElevatedButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        ),
+                        child: const Text('Sign in'),
+                      ),
+                    ),
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            _SettingsGroup(
+              title: 'About',
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.spacing16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusControl,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: AppConstants.spacing16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Prompt v1',
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppConstants.spacing4),
+                        Text(
+                          'A friendlier way to shape better prompts.',
+                          style: AppTextStyles.body.copyWith(
+                            color: theme.hintColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  void _showSignOutDialog(ThemeData theme, AuthProvider authProvider) {
-    if (PlatformUtils.useCupertino(context)) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                Navigator.pop(context);
-                authProvider.signOut();
-              },
-              child: const Text('Sign Out'),
-            ),
-          ],
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.sectionLabel.copyWith(
+            color: Theme.of(context).hintColor,
+          ),
         ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                authProvider.signOut();
-              },
-              child: const Text(
-                'Sign Out',
-                style: TextStyle(color: AppColors.error),
-              ),
-            ),
-          ],
+        const SizedBox(height: AppConstants.spacing12),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: child,
         ),
-      );
-    }
-  }
-
-  void _showDeleteAccountDialog(ThemeData theme, AuthProvider authProvider) {
-    if (PlatformUtils.useCupertino(context)) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text('This will permanently delete your account and all your data. This action cannot be undone.'),
-          actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () => _handleDeleteAccount(authProvider),
-              child: const Text('Delete'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text('This will permanently delete your account and all your data. This action cannot be undone.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => _handleDeleteAccount(authProvider),
-              child: const Text(
-                'Delete',
-                style: TextStyle(color: AppColors.error),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleDeleteAccount(AuthProvider authProvider) async {
-    Navigator.pop(context); // Close the dialog
-
-    final success = await authProvider.deleteAccount();
-
-    if (mounted) {
-      if (success) {
-        SnackbarUtils.showSuccess(context, 'Account deleted successfully');
-      } else {
-        SnackbarUtils.showError(context, authProvider.error ?? 'Failed to delete account');
-      }
-    }
+      ],
+    );
   }
 }
 
-class PlatformUtils {
-  static bool useCupertino(BuildContext context) {
-    final platform = Theme.of(context).platform;
-    return platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+class _ThemeOptionTile extends StatelessWidget {
+  const _ThemeOptionTile({
+    required this.label,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primaryLight.withValues(alpha: 0.14)
+              : Theme.of(context).dividerColor.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(AppConstants.radiusControl),
+        ),
+        child: Icon(
+          selected ? Icons.check_rounded : Icons.circle_outlined,
+          size: 18,
+          color: selected
+              ? AppColors.primaryLight
+              : Theme.of(context).hintColor,
+        ),
+      ),
+      title: Text(label, style: AppTextStyles.subtitle),
+      subtitle: Text(
+        subtitle,
+        style: AppTextStyles.body.copyWith(color: Theme.of(context).hintColor),
+      ),
+    );
   }
 }

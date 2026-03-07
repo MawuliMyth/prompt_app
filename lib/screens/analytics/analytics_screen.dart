@@ -1,660 +1,368 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/widgets/adaptive_widgets.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/page_header.dart';
+import '../../data/models/prompt_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/prompt_provider.dart';
-import '../../data/models/prompt_model.dart';
 import '../paywall/paywall_screen.dart';
 
-class AnalyticsScreen extends StatefulWidget {
+class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
-
-  @override
-  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
-}
-
-class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _countController;
-  late Animation<double> _countAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _countController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    _countAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _countController, curve: Curves.easeOutCubic),
-    );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
-  }
-
-  void _loadData() {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.isAuthenticated) {
-      _countController.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _countController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final authProvider = Provider.of<AuthProvider>(context);
-    final premiumProvider = Provider.of<PremiumProvider>(context);
-    final promptProvider = Provider.of<PromptProvider>(context);
+    final authProvider = context.watch<AuthProvider>();
+    final premiumProvider = context.watch<PremiumProvider>();
+    final promptProvider = context.watch<PromptProvider>();
 
-    if (!premiumProvider.hasPremiumAccess) {
-      return _buildLockedScreen(theme);
-    }
-
-    if (!authProvider.isAuthenticated) {
-      return _buildSignInPrompt(theme);
+    if (!authProvider.isAuthenticated || !premiumProvider.hasPremiumAccess) {
+      return _AnalyticsLockedState(signedIn: authProvider.isAuthenticated);
     }
 
     final prompts = promptProvider.prompts;
-    final analytics = _calculateAnalytics(prompts);
+    final avgStrength = prompts.isEmpty
+        ? 0
+        : prompts.map((item) => item.strengthScore).reduce((a, b) => a + b) /
+              prompts.length;
+    final favourites = prompts.where((item) => item.isFavourite).length;
+    final categoryCounts = _buildCategoryCounts(prompts);
+    final weeklyPoints = _buildWeeklyPoints(prompts);
 
     return Scaffold(
-      appBar: const AdaptiveAppBar(title: 'Analytics'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppConstants.spacing24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 160),
           children: [
-            _buildStatCard(
-              theme,
-              icon: Icons.edit_note_outlined,
-              title: 'Total Prompts',
-              value: analytics.totalPrompts.toString(),
-              color: AppColors.primaryLight,
-              showAnimation: true,
+            const PageHeader(
+              title: 'Insights',
+              subtitle: 'A visual summary of how you refine prompts.',
             ),
-            const SizedBox(height: AppConstants.spacing16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCircularStatCard(
-                    theme,
-                    icon: Icons.auto_awesome_outlined,
-                    title: 'Avg Strength',
-                    value: analytics.avgStrength,
-                    suffix: '%',
-                  ),
-                ),
-                const SizedBox(width: AppConstants.spacing16),
-                Expanded(
-                  child: _buildCircularStatCard(
-                    theme,
-                    icon: Icons.star_outline,
-                    title: 'Favourite Rate',
-                    value: analytics.favouriteRate,
-                    suffix: '%',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppConstants.spacing16),
-            _buildStatCard(
-              theme,
-              icon: Icons.local_fire_department_outlined,
-              title: 'Current Streak',
-              value: '${analytics.streak} days',
-              subtitle: analytics.streak > 0 ? 'Keep it going!' : 'Start your streak today!',
-              color: AppColors.warning,
-            ),
-            const SizedBox(height: AppConstants.spacing16),
-            _buildCategoryBarChart(theme, analytics),
-            const SizedBox(height: AppConstants.spacing16),
-            _buildWeeklyComparison(theme, analytics),
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLockedScreen(ThemeData theme) {
-    return Scaffold(
-      appBar: const AdaptiveAppBar(title: 'Analytics'),
-      body: Stack(
-        children: [
-          Opacity(
-            opacity: 0.3,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppConstants.spacing24),
-              child: Column(
-                children: [
-                  _buildPlaceholderCard(theme, Icons.edit_note_outlined, 'Total Prompts', '---'),
-                  const SizedBox(height: AppConstants.spacing16),
-                  Row(
-                    children: [
-                      Expanded(child: _buildPlaceholderCard(theme, Icons.auto_awesome_outlined, 'Avg Strength', '--')),
-                      const SizedBox(width: AppConstants.spacing16),
-                      Expanded(child: _buildPlaceholderCard(theme, Icons.star_outline, 'Fav Rate', '--')),
-                    ],
-                  ),
-                  const SizedBox(height: AppConstants.spacing16),
-                  _buildPlaceholderCard(theme, Icons.local_fire_department_outlined, 'Streak', '--'),
-                ],
-              ),
-            ),
-          ),
-          Center(
-            child: SingleChildScrollView(
-              child: Container(
-                margin: const EdgeInsets.all(AppConstants.spacing32),
-                padding: const EdgeInsets.all(AppConstants.spacing32),
+            const SizedBox(height: AppConstants.spacing20),
+            Container(
+              padding: const EdgeInsets.all(AppConstants.spacing20),
               decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
+                gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-                boxShadow: AppColors.cardShadowLight,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              child: Row(
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.lock_outline,
-                      size: 36,
-                      color: AppColors.primaryLight,
+                  Expanded(
+                    child: _StatBlock(
+                      label: 'Prompts',
+                      value: '${prompts.length}',
+                      onDark: true,
                     ),
                   ),
-                  const SizedBox(height: AppConstants.spacing24),
-                  Text(
-                    'Analytics',
-                    style: AppTextStyles.title.copyWith(color: theme.colorScheme.onSurface),
+                  Expanded(
+                    child: _StatBlock(
+                      label: 'Avg Strength',
+                      value: '${avgStrength.round()}%',
+                      onDark: true,
+                    ),
                   ),
-                  const SizedBox(height: AppConstants.spacing8),
-                  Text(
-                    'Track your prompt usage, strength scores, and productivity streaks.',
-                    style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppConstants.spacing32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: AppConstants.buttonHeight,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const PaywallScreen()),
-                      ),
-                      child: const Text('Unlock with Premium'),
+                  Expanded(
+                    child: _StatBlock(
+                      label: 'Saved',
+                      value: '$favourites',
+                      onDark: true,
                     ),
                   ),
                 ],
-                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSignInPrompt(ThemeData theme) {
-    return Scaffold(
-      appBar: const AdaptiveAppBar(title: 'Analytics'),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.spacing32),
-            child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.bar_chart_outlined,
-                  size: 36,
-                  color: AppColors.primaryLight,
-                ),
+            const SizedBox(height: AppConstants.spacing20),
+            Container(
+              height: 240,
+              padding: const EdgeInsets.all(AppConstants.spacing20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+                border: Border.all(color: theme.dividerColor),
               ),
-              const SizedBox(height: AppConstants.spacing24),
-              Text(
-                'Sign in to view analytics',
-                style: AppTextStyles.title.copyWith(color: theme.colorScheme.onSurface),
-              ),
-              const SizedBox(height: AppConstants.spacing8),
-              Text(
-                'Create an account to track your prompt history and productivity.',
-                style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-                textAlign: TextAlign.center,
-              ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderCard(ThemeData theme, IconData icon, String title, String value) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 28, color: AppColors.textSecondaryLight),
-          const SizedBox(height: AppConstants.spacing8),
-          Text(title, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
-          const SizedBox(height: 4),
-          Text(value, style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    ThemeData theme, {
-    required IconData icon,
-    required String title,
-    required String value,
-    String? subtitle,
-    required Color color,
-    bool showAnimation = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: AppColors.cardShadowLight,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 28, color: color),
-          ),
-          const SizedBox(width: AppConstants.spacing16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
-                ),
-                const SizedBox(height: 4),
-                if (showAnimation)
-                  AnimatedBuilder(
-                    animation: _countAnimation,
-                    builder: (context, child) {
-                      final displayValue = (_countAnimation.value * int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''))!).toInt();
-                      return Text(
-                        value.contains(RegExp(r'[a-zA-Z]'))
-                            ? '$displayValue ${value.split(' ').skip(1).join(' ')}'
-                            : displayValue.toString(),
-                        style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface),
-                      );
-                    },
-                  )
-                else
-                  Text(
-                    value,
-                    style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface),
-                  ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.caption.copyWith(color: color),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCircularStatCard(
-    ThemeData theme, {
-    required IconData icon,
-    required String title,
-    required int value,
-    required String suffix,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: AppColors.cardShadowLight,
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 24, color: AppColors.primaryLight),
-          const SizedBox(height: AppConstants.spacing12),
-          SizedBox(
-            width: 60,
-            height: 60,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                CircularProgressIndicator(
-                  value: value / 100,
-                  strokeWidth: 6,
-                  backgroundColor: AppColors.surfaceVariantLight,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
-                ),
-                Center(
-                  child: Text(
-                    '$value$suffix',
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: AppColors.primaryLight,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacing8),
-          Text(title, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryBarChart(ThemeData theme, _AnalyticsData analytics) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: AppColors.cardShadowLight,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.bar_chart_outlined, size: 20, color: AppColors.textSecondaryLight),
-              const SizedBox(width: AppConstants.spacing8),
-              Text(
-                'Categories',
-                style: AppTextStyles.subtitle.copyWith(color: theme.colorScheme.onSurface),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppConstants.spacing16),
-          ...analytics.categoryCounts.entries.map((entry) {
-            final percentage = analytics.totalPrompts > 0
-                ? (entry.value / analytics.totalPrompts * 100).toInt()
-                : 0;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(entry.key, style: AppTextStyles.caption),
-                      Text(
-                        '${entry.value}',
-                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
-                      ),
-                    ],
+                  Text(
+                    'Weekly momentum',
+                    style: AppTextStyles.heading.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: percentage / 100,
-                      backgroundColor: AppColors.surfaceVariantLight,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
-                      minHeight: 8,
+                  const SizedBox(height: AppConstants.spacing8),
+                  Text(
+                    'A lightweight view of your recent prompt activity.',
+                    style: AppTextStyles.body.copyWith(color: theme.hintColor),
+                  ),
+                  const SizedBox(height: AppConstants.spacing20),
+                  Expanded(
+                    child: CustomPaint(
+                      painter: _LineGraphPainter(
+                        points: weeklyPoints,
+                        lineColor: AppColors.primaryLight,
+                        fillColor: AppColors.primaryLight.withValues(
+                          alpha: 0.12,
+                        ),
+                        gridColor: theme.dividerColor,
+                      ),
+                      child: const SizedBox.expand(),
                     ),
                   ),
                 ],
               ),
-            );
-          }),
-        ],
+            ),
+            const SizedBox(height: AppConstants.spacing20),
+            ...categoryCounts.entries.map((entry) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
+                child: Container(
+                  padding: const EdgeInsets.all(AppConstants.spacing20),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusCard,
+                    ),
+                    border: Border.all(color: theme.dividerColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          entry.key,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${entry.value}',
+                        style: AppTextStyles.heading.copyWith(
+                          color: AppColors.primaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildWeeklyComparison(ThemeData theme, _AnalyticsData analytics) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: AppColors.cardShadowLight,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.textSecondaryLight),
-              const SizedBox(width: AppConstants.spacing8),
-              Text(
-                'This Week vs Last Week',
-                style: AppTextStyles.subtitle.copyWith(color: theme.colorScheme.onSurface),
+  Map<String, int> _buildCategoryCounts(List<PromptModel> prompts) {
+    final counts = <String, int>{};
+    for (final prompt in prompts) {
+      counts[prompt.category] = (counts[prompt.category] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  List<double> _buildWeeklyPoints(List<PromptModel> prompts) {
+    final now = DateTime.now();
+    final counts = List<int>.filled(7, 0);
+    for (final prompt in prompts) {
+      final difference = now.difference(prompt.createdAt).inDays;
+      if (difference >= 0 && difference < 7) {
+        counts[6 - difference] += 1;
+      }
+    }
+    final maxCount = counts.reduce(math.max);
+    if (maxCount == 0) {
+      return const [0.2, 0.34, 0.28, 0.48, 0.44, 0.62, 0.58];
+    }
+    return counts.map((item) => item / maxCount).toList();
+  }
+}
+
+class _AnalyticsLockedState extends StatelessWidget {
+  const _AnalyticsLockedState({required this.signedIn});
+
+  final bool signedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 160),
+          children: [
+            const PageHeader(
+              title: 'Insights',
+              subtitle: 'See how your prompt writing evolves over time.',
+            ),
+            const SizedBox(height: AppConstants.spacing20),
+            Container(
+              padding: const EdgeInsets.all(AppConstants.spacing24),
+              decoration: BoxDecoration(
+                gradient: AppColors.darkGradient,
+                borderRadius: BorderRadius.circular(AppConstants.radiusCard),
               ),
-            ],
-          ),
-          const SizedBox(height: AppConstants.spacing20),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      'Last Week',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
-                    ),
-                    const SizedBox(height: AppConstants.spacing8),
-                    Container(
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariantLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${analytics.lastWeekPrompts}',
-                          style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppConstants.spacing16),
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      'This Week',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
-                    ),
-                    const SizedBox(height: AppConstants.spacing8),
-                    Container(
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${analytics.thisWeekPrompts}',
-                          style: AppTextStyles.heading.copyWith(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (analytics.thisWeekPrompts != analytics.lastWeekPrompts) ...[
-            const SizedBox(height: AppConstants.spacing12),
-            Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    analytics.thisWeekPrompts > analytics.lastWeekPrompts
-                        ? Icons.trending_up
-                        : Icons.trending_down,
-                    size: 16,
-                    color: analytics.thisWeekPrompts > analytics.lastWeekPrompts
-                        ? AppColors.success
-                        : AppColors.warning,
-                  ),
-                  const SizedBox(width: 4),
                   Text(
-                    analytics.thisWeekPrompts > analytics.lastWeekPrompts
-                        ? '${analytics.thisWeekPrompts - analytics.lastWeekPrompts} more than last week'
-                        : '${analytics.lastWeekPrompts - analytics.thisWeekPrompts} fewer than last week',
-                    style: AppTextStyles.caption.copyWith(
-                      color: analytics.thisWeekPrompts > analytics.lastWeekPrompts
-                          ? AppColors.success
-                          : AppColors.warning,
+                    signedIn
+                        ? 'Unlock premium insights'
+                        : 'Sign in to unlock insights',
+                    style: AppTextStyles.heading.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: AppConstants.spacing8),
+                  Text(
+                    signedIn
+                        ? 'Track patterns, prompt strength, and category usage with a more visual analytics view.'
+                        : 'Create an account first, then upgrade for the full insight view.',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.white.withValues(alpha: 0.82),
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spacing20),
+                  Container(
+                    height: 180,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusCard,
+                      ),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.query_stats_rounded,
+                        color: Colors.white,
+                        size: 60,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spacing20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PaywallScreen(),
+                        ),
+                      ),
+                      child: Text(signedIn ? 'Unlock Premium' : 'See Premium'),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-        ],
+        ),
       ),
-    );
-  }
-
-  _AnalyticsData _calculateAnalytics(List<PromptModel> prompts) {
-    if (prompts.isEmpty) {
-      return _AnalyticsData(
-        totalPrompts: 0,
-        avgStrength: 0,
-        favouriteRate: 0,
-        streak: 0,
-        categoryCounts: {},
-        thisWeekPrompts: 0,
-        lastWeekPrompts: 0,
-      );
-    }
-
-    final totalPrompts = prompts.length;
-    final avgStrength = prompts.isEmpty
-        ? 0
-        : (prompts.map((p) => p.strengthScore).reduce((a, b) => a + b) / prompts.length).round();
-
-    final favouriteCount = prompts.where((p) => p.isFavourite).length;
-    final favouriteRate = totalPrompts > 0 ? ((favouriteCount / totalPrompts) * 100).round() : 0;
-
-    final categoryCounts = <String, int>{};
-    for (final prompt in prompts) {
-      categoryCounts[prompt.category] = (categoryCounts[prompt.category] ?? 0) + 1;
-    }
-
-    final now = DateTime.now();
-    final thisWeekStart = now.subtract(Duration(days: now.weekday - 1));
-    final lastWeekStart = thisWeekStart.subtract(const Duration(days: 7));
-
-    final thisWeekPrompts = prompts.where((p) =>
-        p.createdAt.isAfter(thisWeekStart) && p.createdAt.isBefore(now)).length;
-    final lastWeekPrompts = prompts.where((p) =>
-        p.createdAt.isAfter(lastWeekStart) && p.createdAt.isBefore(thisWeekStart)).length;
-
-    int streak = 0;
-    final uniqueDays = <DateTime>{};
-    for (final prompt in prompts) {
-      final date = DateTime(prompt.createdAt.year, prompt.createdAt.month, prompt.createdAt.day);
-      uniqueDays.add(date);
-    }
-    final sortedDays = uniqueDays.toList()..sort((a, b) => b.compareTo(a));
-
-    if (sortedDays.isNotEmpty) {
-      final today = DateTime(now.year, now.month, now.day);
-      final yesterday = today.subtract(const Duration(days: 1));
-
-      if (sortedDays.first == today || sortedDays.first == yesterday) {
-        streak = 1;
-        for (int i = 1; i < sortedDays.length; i++) {
-          final expectedPrev = sortedDays[i - 1].subtract(const Duration(days: 1));
-          if (sortedDays[i] == expectedPrev) {
-            streak++;
-          } else {
-            break;
-          }
-        }
-      }
-    }
-
-    return _AnalyticsData(
-      totalPrompts: totalPrompts,
-      avgStrength: avgStrength,
-      favouriteRate: favouriteRate,
-      streak: streak,
-      categoryCounts: categoryCounts,
-      thisWeekPrompts: thisWeekPrompts,
-      lastWeekPrompts: lastWeekPrompts,
     );
   }
 }
 
-class _AnalyticsData {
-
-  _AnalyticsData({
-    required this.totalPrompts,
-    required this.avgStrength,
-    required this.favouriteRate,
-    required this.streak,
-    required this.categoryCounts,
-    required this.thisWeekPrompts,
-    required this.lastWeekPrompts,
+class _StatBlock extends StatelessWidget {
+  const _StatBlock({
+    required this.label,
+    required this.value,
+    this.onDark = false,
   });
-  final int totalPrompts;
-  final int avgStrength;
-  final int favouriteRate;
-  final int streak;
-  final Map<String, int> categoryCounts;
-  final int thisWeekPrompts;
-  final int lastWeekPrompts;
+
+  final String label;
+  final String value;
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.display.copyWith(
+            fontSize: 28,
+            color: onDark
+                ? Colors.white
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: AppConstants.spacing4),
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: onDark
+                ? Colors.white.withValues(alpha: 0.74)
+                : Theme.of(context).hintColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LineGraphPainter extends CustomPainter {
+  _LineGraphPainter({
+    required this.points,
+    required this.lineColor,
+    required this.fillColor,
+    required this.gridColor,
+  });
+
+  final List<double> points;
+  final Color lineColor;
+  final Color fillColor;
+  final Color gridColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 1;
+    for (var i = 1; i < 4; i++) {
+      final y = size.height * (i / 4);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    if (points.isEmpty) return;
+
+    final path = Path();
+    final fillPath = Path();
+    final step = size.width / (points.length - 1);
+
+    for (var i = 0; i < points.length; i++) {
+      final x = step * i;
+      final y = size.height - (size.height * points[i].clamp(0.0, 1.0));
+      if (i == 0) {
+        path.moveTo(x, y);
+        fillPath.moveTo(x, size.height);
+        fillPath.lineTo(x, y);
+      } else {
+        path.lineTo(x, y);
+        fillPath.lineTo(x, y);
+      }
+    }
+    fillPath.lineTo(size.width, size.height);
+    fillPath.close();
+
+    canvas.drawPath(fillPath, Paint()..color = fillColor);
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = lineColor
+        ..strokeWidth = 4
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineGraphPainter oldDelegate) {
+    return oldDelegate.points != points;
+  }
 }

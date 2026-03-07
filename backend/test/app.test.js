@@ -18,6 +18,14 @@ function buildApp(overrides = {}) {
     enhancePrompt: async (prompt, category, isPremium, tone, persona) =>
       `${prompt}|${category}|${isPremium}|${tone}|${persona}`,
     generateVariations: async () => ['one', 'two', 'three'],
+    getAppConfig: () => ({
+      categories: [{ id: 'general', label: 'General' }],
+      tones: [],
+      templateCategories: [],
+      templates: [],
+      homeFeatures: [],
+      visualAssets: [],
+    }),
     activateTrialForUser: async () => {},
     checkEnhanceAccess: async () => ({
       type: 'guest',
@@ -45,6 +53,15 @@ test('health endpoint returns ok', async () => {
 
   assert.equal(response.body.status, 'ok');
   assert.ok(response.body.timestamp);
+});
+
+test('app config endpoint returns config payload', async () => {
+  const app = buildApp();
+
+  const response = await request(app).get('/api/app-config').expect(200);
+
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.config.categories[0].id, 'general');
 });
 
 test('enhance rejects empty prompt', async () => {

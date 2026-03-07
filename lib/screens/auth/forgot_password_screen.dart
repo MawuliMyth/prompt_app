@@ -68,7 +68,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               hasScrollBody: false,
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: _isSuccess ? _buildSuccessState(theme) : _buildInputState(theme, authProvider),
+                child: _isSuccess
+                    ? _buildSuccessState(theme)
+                    : _buildInputState(theme, authProvider),
               ),
             ),
           ],
@@ -100,13 +102,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 24),
         Text(
           'Reset Password',
-          style: AppTextStyles.headingLarge.copyWith(color: theme.colorScheme.onSurface),
+          style: AppTextStyles.headingLarge.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Text(
           'Enter your email and we\'ll send you a link to reset your password.',
-          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+          style: AppTextStyles.body.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
@@ -119,27 +125,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
         const SizedBox(height: 32),
-        ElevatedButton(
-          onPressed: authProvider.isLoading ? null : _handleReset,
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-          ),
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: authProvider.isLoading ? null : _handleReset,
+            style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              height: 56,
-              alignment: Alignment.center,
-              child: authProvider.isLoading
-                  ? const ShimmerButtonLoader(text: 'Sending...')
-                  : Text(
-                      'Send Reset Link',
-                      style: AppTextStyles.button.copyWith(color: Colors.white),
-                    ),
+              child: Container(
+                height: 56,
+                alignment: Alignment.center,
+                child: authProvider.isLoading
+                    ? const ShimmerButtonLoader(text: 'Sending...')
+                    : Text(
+                        'Send Reset Link',
+                        style: AppTextStyles.button.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
             ),
           ),
         ),
@@ -169,34 +178,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 24),
         Text(
           'Email Sent!',
-          style: AppTextStyles.headingLarge.copyWith(color: theme.colorScheme.onSurface),
+          style: AppTextStyles.headingLarge.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Text(
           'We\'ve sent a password reset link to\n${_emailController.text}',
-          style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+          style: AppTextStyles.body.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: const Size(double.infinity, 56),
-          ),
-          child: Ink(
-            decoration: BoxDecoration(
-               color: AppColors.backgroundLight,
-               border: Border.all(color: AppColors.primaryLight),
-               borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              height: 56,
-              alignment: Alignment.center,
-              child: Text(
-                'Back to Login',
-                 style: AppTextStyles.button.copyWith(color: AppColors.primaryLight),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
+            child: Ink(
+              decoration: BoxDecoration(
+                color: AppColors.backgroundLight,
+                border: Border.all(color: AppColors.primaryLight),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                height: 56,
+                alignment: Alignment.center,
+                child: Text(
+                  'Back to Login',
+                  style: AppTextStyles.button.copyWith(
+                    color: AppColors.primaryLight,
+                  ),
+                ),
               ),
             ),
           ),

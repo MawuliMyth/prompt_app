@@ -4,50 +4,61 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  // Display: Poppins Bold 32sp, letterSpacing -0.5
-  static final TextStyle display = GoogleFonts.poppins(
-    fontWeight: FontWeight.bold,
-    fontSize: 32,
+  static final TextStyle display = GoogleFonts.manrope(
+    fontWeight: FontWeight.w700,
+    fontSize: 40,
+    letterSpacing: -1.4,
+    height: 1.02,
+  );
+
+  static final TextStyle heading = GoogleFonts.manrope(
+    fontWeight: FontWeight.w600,
+    fontSize: 20,
     letterSpacing: -0.5,
+    height: 1.1,
   );
 
-  // Heading: Poppins SemiBold 24sp, letterSpacing -0.3
-  static final TextStyle heading = GoogleFonts.poppins(
+  static final TextStyle title = GoogleFonts.manrope(
     fontWeight: FontWeight.w600,
-    fontSize: 24,
-    letterSpacing: -0.3,
+    fontSize: 17,
+    letterSpacing: -0.2,
   );
 
-  // Title: Poppins SemiBold 18sp
-  static final TextStyle title = GoogleFonts.poppins(
-    fontWeight: FontWeight.w600,
-    fontSize: 18,
-  );
-
-  // Subtitle: Poppins Medium 16sp
-  static final TextStyle subtitle = GoogleFonts.poppins(
+  static final TextStyle subtitle = GoogleFonts.manrope(
     fontWeight: FontWeight.w500,
     fontSize: 16,
+    letterSpacing: -0.2,
   );
 
-  // Body: Poppins Regular 14sp, height 1.5
-  static final TextStyle body = GoogleFonts.poppins(
+  static final TextStyle body = GoogleFonts.manrope(
     fontWeight: FontWeight.w400,
     fontSize: 14,
-    height: 1.5,
+    height: 1.45,
   );
 
-  // Caption: Poppins Regular 12sp, color 60% opacity
-  static final TextStyle caption = GoogleFonts.poppins(
+  static final TextStyle caption = GoogleFonts.manrope(
     fontWeight: FontWeight.w400,
     fontSize: 12,
+    letterSpacing: 0.1,
   );
 
-  // Button: Poppins SemiBold 15sp, letterSpacing 0.3
-  static final TextStyle button = GoogleFonts.poppins(
+  static final TextStyle button = GoogleFonts.manrope(
     fontWeight: FontWeight.w600,
     fontSize: 15,
     letterSpacing: 0.3,
+  );
+
+  static final TextStyle heroGreeting = GoogleFonts.manrope(
+    fontWeight: FontWeight.w700,
+    fontSize: 40,
+    letterSpacing: -1.3,
+    height: 1.04,
+  );
+
+  static final TextStyle sectionLabel = GoogleFonts.manrope(
+    fontWeight: FontWeight.w600,
+    fontSize: 13,
+    letterSpacing: 0.2,
   );
 
   // Legacy aliases for backward compatibility

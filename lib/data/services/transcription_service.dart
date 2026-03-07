@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +11,22 @@ import '../../core/config/api_config.dart';
 /// Uploads audio files to the backend which uses Groq Whisper API
 class TranscriptionService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  String _parseError(String responseBody, String fallback) {
+    try {
+      final data = jsonDecode(responseBody) as Map<String, dynamic>;
+      return data['error'] as String? ?? fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  String _transportErrorMessage(Object error) {
+    if (error is SocketException) {
+      return 'Unable to reach the server. Check your internet connection or API URL.';
+    }
+    return 'Unable to connect to the transcription service.';
+  }
 
   /// Transcribe audio bytes to text
   ///
@@ -41,7 +59,9 @@ class TranscriptionService {
       debugPrint('Audio size: ${audioBytes.length} bytes');
 
       // Send request
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
       final responseBody = await streamedResponse.stream.bytesToString();
 
       debugPrint(
@@ -49,12 +69,7 @@ class TranscriptionService {
       );
 
       if (streamedResponse.statusCode != 200) {
-        try {
-          final errorData = jsonDecode(responseBody) as Map<String, dynamic>;
-          throw Exception(errorData['error'] ?? 'Transcription failed');
-        } catch (_) {
-          throw Exception('Transcription failed');
-        }
+        throw Exception(_parseError(responseBody, 'Transcription failed'));
       }
 
       final data = jsonDecode(responseBody);
@@ -66,9 +81,14 @@ class TranscriptionService {
       } else {
         throw Exception(data['error'] ?? 'Transcription failed');
       }
+    } on TimeoutException {
+      throw Exception('The server took too long to respond. Please try again.');
     } on http.ClientException catch (e) {
       debugPrint('Network error during transcription: $e');
-      throw Exception('Network error. Please check your connection.');
+      throw Exception(_transportErrorMessage(e));
+    } on SocketException catch (e) {
+      debugPrint('Socket error during transcription: $e');
+      throw Exception(_transportErrorMessage(e));
     } catch (e) {
       debugPrint('Transcription error: $e');
       if (e is Exception) {

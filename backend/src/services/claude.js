@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import 'dotenv/config';
+import { getAppConfig } from '../config/appConfig.js';
 
 // Initialize Anthropic client with API key from environment
 // Supports both ANTHROPIC_API_KEY (SDK default) and CLAUDE_API_KEY (custom)
@@ -32,6 +33,22 @@ const toneInstructions = {
   'Technical': 'Use precise technical language appropriate for expert-level understanding.'
 };
 
+function normalizeCategory(category = 'General') {
+  const categories = getAppConfig().categories;
+  const match = categories.find(
+    (item) => item.id === category || item.label === category,
+  );
+  return match?.label || category || 'General';
+}
+
+function normalizeTone(tone = 'Auto') {
+  const tones = getAppConfig().tones;
+  const match = tones.find(
+    (item) => item.id === tone || item.label === tone,
+  );
+  return match?.label || tone || 'Auto';
+}
+
 /**
  * Generate system prompt based on category, tone, and persona
  * @param {string} category - The prompt category
@@ -40,14 +57,16 @@ const toneInstructions = {
  * @returns {string} - System prompt for Claude
  */
 function getSystemPrompt(category, tone = 'Auto', persona = null) {
+  const resolvedCategory = normalizeCategory(category);
+  const resolvedTone = normalizeTone(tone);
   let personaContext = '';
   if (persona && persona.trim()) {
     personaContext = `\n\nUser context: ${persona.trim()}. Keep this in mind when enhancing prompts - tailor the output to be relevant to this user's profession or role.`;
   }
 
   let toneInstruction = '';
-  if (tone && tone !== 'Auto' && toneInstructions[tone]) {
-    toneInstruction = `\n\nTone requirement: ${toneInstructions[tone]}`;
+  if (resolvedTone && resolvedTone !== 'Auto' && toneInstructions[resolvedTone]) {
+    toneInstruction = `\n\nTone requirement: ${toneInstructions[resolvedTone]}`;
   }
 
   return `You are a world-class prompt engineering expert with deep knowledge of how to communicate effectively with AI models including ChatGPT, Claude, Gemini, Midjourney, and others.
@@ -60,7 +79,7 @@ STRICT RULES:
 3. Add specificity, context, structure, and clarity that the user implied but didn't explicitly state.
 4. Remove all filler words, hesitations, and informal language.
 5. Make the prompt actionable and specific.
-6. For the category "${category || 'General'}": ${categoryInstructions[category] || categoryInstructions['General']}${toneInstruction}
+6. For the category "${resolvedCategory}": ${categoryInstructions[resolvedCategory] || categoryInstructions['General']}${toneInstruction}
 
 Transform the following rough input into a professional prompt:`;
 }
@@ -75,14 +94,15 @@ Transform the following rough input into a professional prompt:`;
  * @returns {Promise<string>} - Enhanced prompt
  */
 async function enhancePrompt(roughPrompt, category = 'General', isPremium = false, tone = 'Auto', persona = null) {
+  const resolvedTone = normalizeTone(tone);
   const model = isPremium ? MODEL_CONFIG.premium : MODEL_CONFIG.free;
 
-  console.log(`Using model: ${model} (isPremium: ${isPremium}, tone: ${tone})`);
+  console.log(`Using model: ${model} (isPremium: ${isPremium}, tone: ${resolvedTone})`);
 
   const message = await anthropic.messages.create({
     model: model,
     max_tokens: 1024,
-    system: getSystemPrompt(category, tone, persona),
+    system: getSystemPrompt(category, resolvedTone, persona),
     messages: [
       {
         role: 'user',
@@ -109,6 +129,7 @@ async function enhancePrompt(roughPrompt, category = 'General', isPremium = fals
  */
 async function generateVariations(roughPrompt, category = 'General', isPremium = false) {
   const model = isPremium ? MODEL_CONFIG.premium : MODEL_CONFIG.free;
+  const resolvedCategory = normalizeCategory(category);
 
   console.log(`Generating variations with model: ${model}`);
 
@@ -118,7 +139,7 @@ async function generateVariations(roughPrompt, category = 'General', isPremium =
 2. CREATIVE: Imaginative, expressive, unique angle - encourages artistic or innovative outputs
 3. CONCISE: Short, sharp, maximum impact with minimum words - gets straight to the point
 
-For the category "${category}": ${categoryInstructions[category] || categoryInstructions['General']}
+For the category "${resolvedCategory}": ${categoryInstructions[resolvedCategory] || categoryInstructions['General']}
 
 IMPORTANT: Return ONLY a valid JSON array with exactly 3 strings. No explanations, no labels, just the prompts in order [formal, creative, concise].
 Example output: ["First variation...", "Second variation...", "Third variation..."]`;

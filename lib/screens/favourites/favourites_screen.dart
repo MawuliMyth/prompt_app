@@ -25,57 +25,72 @@ class FavouritesScreen extends StatelessWidget {
         body: !authProvider.isAuthenticated
             ? _buildGuestEmptyState(context, theme)
             : promptProvider.isLoading
-                ? _buildShimmerLoading()
-                : promptProvider.favouritePrompts.isEmpty
-                    ? _buildEmptyState(theme)
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        itemCount: promptProvider.favouritePrompts.length,
-                        itemBuilder: (context, index) {
-                          final prompt = promptProvider.favouritePrompts[index];
-                          return Stack(
-                            children: [
-                               PromptHistoryCard(
-                                 prompt: prompt,
-                                 onDelete: () async {
-                                   final success = await promptProvider.deletePrompt(authProvider.currentUser, prompt.id);
-                                   if (!success && context.mounted) {
-                                     SnackbarUtils.showError(
-                                       context,
-                                       promptProvider.error ?? 'Failed to delete prompt',
-                                     );
-                                   }
-                                 },
-                               ),
-                               Positioned(
-                                  top: 16,
-                                  right: 16,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(Icons.star, color: Colors.amber, size: 20),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                      onPressed: () async {
-                                        final success = await promptProvider.toggleFavourite(authProvider.currentUser, prompt);
-                                        if (!success && context.mounted) {
-                                          SnackbarUtils.showError(
-                                            context,
-                                            promptProvider.error ?? 'Failed to update favourite',
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ),
-                               )
-                            ],
+            ? _buildShimmerLoading()
+            : promptProvider.favouritePrompts.isEmpty
+            ? _buildEmptyState(theme)
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                itemCount: promptProvider.favouritePrompts.length,
+                itemBuilder: (context, index) {
+                  final prompt = promptProvider.favouritePrompts[index];
+                  return Stack(
+                    children: [
+                      PromptHistoryCard(
+                        prompt: prompt,
+                        onDelete: () async {
+                          final success = await promptProvider.deletePrompt(
+                            authProvider.currentUser,
+                            prompt.id,
                           );
+                          if (!success && context.mounted) {
+                            SnackbarUtils.showError(
+                              context,
+                              promptProvider.error ?? 'Failed to delete prompt',
+                            );
+                          }
                         },
                       ),
+                      Positioned(
+                        top: 16,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 20,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () async {
+                              final success = await promptProvider
+                                  .toggleFavourite(
+                                    authProvider.currentUser,
+                                    prompt,
+                                  );
+                              if (!success && context.mounted) {
+                                SnackbarUtils.showError(
+                                  context,
+                                  promptProvider.error ??
+                                      'Failed to update favourite',
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
       ),
     );
   }
@@ -88,17 +103,25 @@ class FavouritesScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-          const Icon(Icons.star_border, size: 80, color: AppColors.dividerLight),
-          const SizedBox(height: 24),
-          Text(
-            'No favourites yet',
-            style: AppTextStyles.headingMedium.copyWith(color: theme.colorScheme.onSurface),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Star a prompt to save it here!',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-          )
+              const Icon(
+                Icons.star_border,
+                size: 80,
+                color: AppColors.dividerLight,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'No favourites yet',
+                style: AppTextStyles.headingMedium.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Star a prompt to save it here!',
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+              ),
             ],
           ),
         ),
@@ -131,45 +154,51 @@ class FavouritesScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-            Flexible(
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+                Flexible(
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.star_border,
+                      size: 60,
+                      color: AppColors.primaryLight,
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.star_border,
-                  size: 60,
-                  color: AppColors.primaryLight,
+                const SizedBox(height: 32),
+                Text(
+                  'Sign in to see favourites',
+                  style: AppTextStyles.headingMedium,
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Sign in to see favourites',
-              style: AppTextStyles.headingMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Create an account to keep your favourite prompts handy across all your devices.',
-              style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                backgroundColor: AppColors.primaryLight,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Sign In'),
-            )
+                const SizedBox(height: 12),
+                Text(
+                  'Create an account to keep your favourite prompts handy across all your devices.',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryLight,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Sign In'),
+                  ),
+                ),
               ],
             ),
           ),

@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { createApp } from './app.js';
+import { getAppConfig } from './config/appConfig.js';
 import { transcribeAudio } from './services/groq.js';
 import { enhancePrompt, generateVariations } from './services/claude.js';
 import {
@@ -21,6 +22,7 @@ const app = createApp({
   transcribeAudio,
   enhancePrompt,
   generateVariations,
+  getAppConfig,
   activateTrialForUser,
   checkEnhanceAccess,
   checkVariationAccess,

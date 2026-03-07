@@ -5,12 +5,14 @@ import 'firebase_options.dart';
 import 'app.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/app_config_provider.dart';
 import 'providers/prompt_provider.dart';
 import 'providers/free_prompt_provider.dart';
 import 'providers/template_provider.dart';
 import 'providers/premium_provider.dart';
 import 'providers/daily_limit_provider.dart';
 import 'providers/connectivity_provider.dart';
+import 'providers/shell_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,9 @@ void main() async {
 
   bool firebaseInitialized = false;
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     firebaseInitialized = true;
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
@@ -34,6 +38,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()..loadTheme()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ShellProvider()),
+        ChangeNotifierProvider(create: (_) => AppConfigProvider()..load()),
         ChangeNotifierProxyProvider<AuthProvider, PremiumProvider>(
           create: (_) => PremiumProvider(),
           update: (context, auth, premium) {
@@ -48,7 +54,9 @@ void main() async {
             return prompt;
           },
         ),
-        ChangeNotifierProvider(create: (_) => FreePromptProvider()..loadCount()),
+        ChangeNotifierProvider(
+          create: (_) => FreePromptProvider()..loadCount(),
+        ),
         ChangeNotifierProvider(create: (_) => TemplateProvider()),
         ChangeNotifierProvider(create: (_) => DailyLimitProvider()),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),

@@ -4,14 +4,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/widgets/offline_banner.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../providers/connectivity_provider.dart';
-import '../history/history_screen.dart';
-import '../favourites/favourites_screen.dart';
-import '../templates/templates_screen.dart';
+import '../../providers/shell_provider.dart';
 import '../analytics/analytics_screen.dart';
+import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
+import '../templates/templates_screen.dart';
 import 'home_view.dart';
+import 'prompt_composer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,182 +23,276 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  int _lastComposerToken = 0;
 
-  final List<Widget> _screens = [
-    const HomeView(),
-    const HistoryScreen(),
-    const FavouritesScreen(),
-    const TemplatesScreen(),
-    const AnalyticsScreen(),
-    const SettingsScreen(),
+  static const List<Widget> _screens = [
+    HomeView(),
+    HistoryScreen(),
+    TemplatesScreen(),
+    AnalyticsScreen(),
+    SettingsScreen(),
   ];
+
+  void _maybeOpenComposer(BuildContext context, ShellProvider shellProvider) {
+    final request = shellProvider.pendingComposerRequest;
+    if (request == null || request.token == _lastComposerToken) {
+      return;
+    }
+
+    _lastComposerToken = request.token;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      shellProvider.clearComposerRequest();
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        PlatformUtils.adaptivePageRoute(
+          PromptComposerScreen(
+            initialText: request.initialText,
+            initialCategoryId: request.categoryId,
+          ),
+        ),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) {
-      return _buildCupertinoTabs(context);
-    }
-    return _buildMaterialTabs(context);
-  }
-
-  Widget _buildCupertinoTabs(BuildContext context) {
-    return Consumer<ConnectivityProvider>(
-      builder: (context, connectivity, child) {
-        return Stack(
-          children: [
-            CupertinoTabScaffold(
-              tabBar: CupertinoTabBar(
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                activeColor: AppColors.primaryLight,
-                inactiveColor: AppColors.textSecondaryLight,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                border: null,
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.house),
-                    label: 'Home',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.clock),
-                    label: 'History',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.star),
-                    label: 'Favourites',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.doc_text),
-                    label: 'Templates',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.chart_bar),
-                    label: 'Analytics',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(CupertinoIcons.settings),
-                    label: 'Settings',
-                  ),
-                ],
-              ),
-              tabBuilder: (context, index) {
-                return CupertinoTabView(
-                  builder: (context) => _screens[index],
-                );
-              },
-            ),
-            // Offline banner on top
-            if (!connectivity.isOnline)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: OfflineBanner(onRetry: connectivity.checkConnectivity),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildMaterialTabs(BuildContext context) {
-    final theme = Theme.of(context);
+    final shellProvider = context.watch<ShellProvider>();
+    _maybeOpenComposer(context, shellProvider);
 
     return Scaffold(
-      body: Consumer<ConnectivityProvider>(
-        builder: (context, connectivity, child) {
-          return Column(
+      extendBody: true,
+      body: Stack(
+        children: [
+          Consumer<ConnectivityProvider>(
+            builder: (context, connectivity, child) {
+              return IndexedStack(
+                index: shellProvider.currentIndex,
+                children: _screens.map((screen) {
+                  return Column(
+                    children: [
+                      Expanded(child: screen),
+                      SizedBox(height: connectivity.isOnline ? 128 : 152),
+                    ],
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          const _FloatingShell(),
+        ],
+      ),
+    );
+  }
+}
+
+class _FloatingShell extends StatelessWidget {
+  const _FloatingShell();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final shellProvider = context.watch<ShellProvider>();
+    final connectivity = context.watch<ConnectivityProvider>();
+    final isCupertino = !kIsWeb && (Platform.isIOS || Platform.isMacOS);
+
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               if (!connectivity.isOnline)
-                OfflineBanner(onRetry: connectivity.checkConnectivity),
-              Expanded(child: _screens[_currentIndex]),
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusControl,
+                    ),
+                  ),
+                  child: const Text(
+                    'Offline mode. Some actions may be unavailable.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                decoration: BoxDecoration(
+                  color: theme.brightness == Brightness.dark
+                      ? AppColors.floatingSurfaceDark
+                      : AppColors.surfaceLight.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.radiusFloating,
+                  ),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
+                  ),
+                  boxShadow: theme.brightness == Brightness.dark
+                      ? AppColors.cardShadowDark
+                      : AppColors.cardShadowLight,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _ShellItem(
+                            label: 'Home',
+                            icon: isCupertino
+                                ? CupertinoIcons.house
+                                : Icons.home_outlined,
+                            selectedIcon: isCupertino
+                                ? CupertinoIcons.house_fill
+                                : Icons.home_rounded,
+                            selected: shellProvider.currentIndex == 0,
+                            onTap: () => shellProvider.selectTab(0),
+                          ),
+                          _ShellItem(
+                            label: 'History',
+                            icon: isCupertino
+                                ? CupertinoIcons.clock
+                                : Icons.history_outlined,
+                            selectedIcon: isCupertino
+                                ? CupertinoIcons.clock_fill
+                                : Icons.history_rounded,
+                            selected: shellProvider.currentIndex == 1,
+                            onTap: () => shellProvider.selectTab(1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: GestureDetector(
+                        onTap: shellProvider.openComposer,
+                        child: Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            shape: BoxShape.circle,
+                            boxShadow: theme.brightness == Brightness.dark
+                                ? AppColors.cardShadowDark
+                                : AppColors.cardShadowLight,
+                          ),
+                          child: Icon(
+                            isCupertino
+                                ? CupertinoIcons.sparkles
+                                : Icons.auto_awesome_rounded,
+                            color: Colors.white,
+                            size: AppConstants.iconSizeNav,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _ShellItem(
+                            label: 'Templates',
+                            icon: isCupertino
+                                ? CupertinoIcons.square_grid_2x2
+                                : Icons.grid_view_rounded,
+                            selectedIcon: isCupertino
+                                ? CupertinoIcons.square_grid_2x2_fill
+                                : Icons.grid_view_rounded,
+                            selected: shellProvider.currentIndex == 2,
+                            onTap: () => shellProvider.selectTab(2),
+                          ),
+                          _ShellItem(
+                            label: 'Insights',
+                            icon: isCupertino
+                                ? CupertinoIcons.chart_bar
+                                : Icons.bar_chart_rounded,
+                            selectedIcon: isCupertino
+                                ? CupertinoIcons.chart_bar_fill
+                                : Icons.bar_chart_rounded,
+                            selected: shellProvider.currentIndex == 3,
+                            onTap: () => shellProvider.selectTab(3),
+                          ),
+                          _ShellItem(
+                            label: 'Settings',
+                            icon: isCupertino
+                                ? CupertinoIcons.settings
+                                : Icons.settings_outlined,
+                            selectedIcon: isCupertino
+                                ? CupertinoIcons.settings
+                                : Icons.settings_rounded,
+                            selected: shellProvider.currentIndex == 4,
+                            onTap: () => shellProvider.selectTab(4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          );
-        },
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          border: const Border(
-            top: BorderSide(
-              color: AppColors.borderLight,
-              width: 0.5,
-            ),
           ),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          currentIndex: _currentIndex,
-          selectedItemColor: AppColors.primaryLight,
-          unselectedItemColor: AppColors.textSecondaryLight,
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          showUnselectedLabels: true,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined, size: 24),
-              activeIcon: _buildActiveIcon(Icons.home, AppColors.primaryLight),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.history_outlined, size: 24),
-              activeIcon: _buildActiveIcon(Icons.history, AppColors.categoryGeneral),
-              label: 'History',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.star_outline, size: 24),
-              activeIcon: _buildActiveIcon(Icons.star, AppColors.categoryImageGeneration),
-              label: 'Favourites',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.text_snippet_outlined, size: 24),
-              activeIcon: _buildActiveIcon(Icons.text_snippet, AppColors.categoryCoding),
-              label: 'Templates',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.bar_chart_outlined, size: 24),
-              activeIcon: _buildActiveIcon(Icons.bar_chart, AppColors.categoryBusiness),
-              label: 'Analytics',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined, size: 24),
-              activeIcon: _buildActiveIcon(Icons.settings, AppColors.textSecondaryLight),
-              label: 'Settings',
-            ),
-          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildActiveIcon(IconData icon, Color color) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 24, color: AppColors.primaryLight),
-        const SizedBox(height: 2),
-        Container(
-          width: 4,
-          height: 4,
-          decoration: const BoxDecoration(
-            color: AppColors.primaryLight,
-            shape: BoxShape.circle,
-          ),
+class _ShellItem extends StatelessWidget {
+  const _ShellItem({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 62,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              selected ? selectedIcon : icon,
+              size: AppConstants.iconSizeNav,
+              color: selected ? AppColors.primaryLight : theme.hintColor,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: selected ? theme.colorScheme.onSurface : theme.hintColor,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

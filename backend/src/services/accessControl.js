@@ -20,7 +20,11 @@ function getDateKey(date = new Date()) {
 }
 
 function hashIp(ip) {
-  const salt = process.env.GUEST_USAGE_SALT || 'prompt-app-guest-usage';
+  const envSalt = process.env.GUEST_USAGE_SALT;
+  if (!envSalt && process.env.NODE_ENV === 'production') {
+    throw new Error('GUEST_USAGE_SALT is required in production');
+  }
+  const salt = envSalt || 'prompt-app-local-salt';
   return crypto.createHash('sha256').update(`${salt}:${ip}`).digest('hex');
 }
 
