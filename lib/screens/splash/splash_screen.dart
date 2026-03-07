@@ -164,7 +164,7 @@ class _SplashScreenState extends State<SplashScreen>
       key: const ValueKey('splash'),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+          colors: [AppColors.primaryLight, AppColors.accentLight],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -304,9 +304,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     child: Ink(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-                        ),
+                        gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Container(

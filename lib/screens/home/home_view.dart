@@ -140,14 +140,17 @@ class HomeView extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppConstants.spacing16),
-                Row(
-                  children: quickTemplates.map((template) {
-                    final isLast = template == quickTemplates.last;
-                    return Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          right: isLast ? 0 : AppConstants.spacing12,
-                        ),
+                SizedBox(
+                  height: 112,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: quickTemplates.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(width: AppConstants.spacing12),
+                    itemBuilder: (context, index) {
+                      final template = quickTemplates[index];
+                      return SizedBox(
+                        width: 180,
                         child: _QuickTemplateTile(
                           template: template,
                           onTap: () {
@@ -157,9 +160,9 @@ class HomeView extends StatelessWidget {
                             );
                           },
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -444,6 +447,8 @@ class _FeatureCard extends StatelessWidget {
             ],
             Text(
               feature.title,
+              maxLines: large ? 2 : 1,
+              overflow: TextOverflow.ellipsis,
               style: (large ? AppTextStyles.display : AppTextStyles.heading)
                   .copyWith(
                     color: theme.colorScheme.onSurface,
