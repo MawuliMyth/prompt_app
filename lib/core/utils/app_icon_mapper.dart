@@ -32,6 +32,8 @@ IconData resolveIcon(String iconKey, {bool cupertino = false}) {
           : Icons.grid_view_rounded;
     case 'mic':
       return cupertino ? CupertinoIcons.mic : Icons.mic_none_rounded;
+    case 'chart':
+      return cupertino ? CupertinoIcons.chart_bar : Icons.show_chart_rounded;
     default:
       return cupertino
           ? CupertinoIcons.circle_grid_hex

@@ -208,9 +208,6 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
     if (!authProvider.isAuthenticated) {
       return '${freePromptProvider.used} / ${FreePromptProvider.maxFreePrompts} guest prompts used';
     }
-    if (premiumProvider.hasPremiumAccess) {
-      return 'Unlimited premium prompts available';
-    }
     return '${dailyLimitProvider.dailyPromptsUsed} / ${dailyLimitProvider.dailyLimit} prompts used today';
   }
 
@@ -245,29 +242,31 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                       onBack: () => Navigator.of(context).pop(),
                     ),
                     const SizedBox(height: AppConstants.spacing20),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(AppConstants.spacing16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.radiusCard,
+                    if (!premiumProvider.hasPremiumAccess) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppConstants.spacing16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusCard,
+                          ),
+                          border: Border.all(color: theme.dividerColor),
                         ),
-                        border: Border.all(color: theme.dividerColor),
+                        child: Text(
+                          _usageLabel(
+                            authProvider,
+                            premiumProvider,
+                            freePromptProvider,
+                            dailyLimitProvider,
+                          ),
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
                       ),
-                      child: Text(
-                        _usageLabel(
-                          authProvider,
-                          premiumProvider,
-                          freePromptProvider,
-                          dailyLimitProvider,
-                        ),
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacing20),
+                      const SizedBox(height: AppConstants.spacing20),
+                    ],
                     TextField(
                       controller: _controller,
                       maxLines: 12,
@@ -338,14 +337,6 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                             color: theme.hintColor,
                           ),
                         ),
-                        if (!premiumProvider.hasPremiumAccess) ...[
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.lock_outline_rounded,
-                            size: 14,
-                            color: theme.hintColor,
-                          ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: AppConstants.spacing12),
@@ -370,49 +361,78 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                             }
                             setState(() => _selectedToneId = tone.id);
                           },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? AppColors.primaryLight
-                                  : theme.colorScheme.surface,
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.radiusChip,
-                              ),
-                              border: Border.all(color: theme.dividerColor),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  locked
-                                      ? Icons.lock_outline_rounded
-                                      : resolveIcon(
-                                          tone.iconKey,
-                                          cupertino: isCupertino,
-                                        ),
-                                  size: 16,
-                                  color: selected
-                                      ? Colors.white
-                                      : locked
-                                      ? theme.hintColor
-                                      : theme.colorScheme.onSurface,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  tone.label,
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: selected
-                                        ? Colors.white
-                                        : theme.colorScheme.onSurface,
-                                    fontWeight: FontWeight.w600,
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? AppColors.primaryLight
+                                      : theme.colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.radiusChip,
+                                  ),
+                                  border: Border.all(color: theme.dividerColor),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      resolveIcon(
+                                        tone.iconKey,
+                                        cupertino: isCupertino,
+                                      ),
+                                      size: 16,
+                                      color: selected
+                                          ? Colors.white
+                                          : locked
+                                          ? theme.hintColor
+                                          : theme.colorScheme.onSurface,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      tone.label,
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: selected
+                                            ? Colors.white
+                                            : locked
+                                            ? theme.hintColor
+                                            : theme.colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (tone.premiumOnly)
+                                Positioned(
+                                  top: -7,
+                                  right: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.premiumGradient,
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      'PRO',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
+                            ],
                           ),
                         );
                       }).toList(),
@@ -476,7 +496,6 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                           ? const ShimmerPulse(
                               width: 96,
                               height: 16,
-                              borderRadius: 999,
                               baseColor: Color(0x66FFFFFF),
                               highlightColor: Color(0xAAFFFFFF),
                             )

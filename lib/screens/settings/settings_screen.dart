@@ -114,14 +114,14 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   _ThemeOptionTile(
                     label: 'Light',
-                    subtitle: 'Bright surfaces and soft contrast',
+                    subtitle: null,
                     icon: Icons.light_mode_rounded,
                     selected: themeProvider.themeMode == ThemeMode.light,
                     onTap: () => themeProvider.setTheme(ThemeMode.light),
                   ),
                   _ThemeOptionTile(
                     label: 'Dark',
-                    subtitle: 'Low-glare surfaces and muted edges',
+                    subtitle: null,
                     icon: Icons.dark_mode_rounded,
                     selected: themeProvider.themeMode == ThemeMode.dark,
                     onTap: () => themeProvider.setTheme(ThemeMode.dark),
@@ -340,7 +340,7 @@ class _ThemeOptionTile extends StatelessWidget {
   });
 
   final String label;
-  final String subtitle;
+  final String? subtitle;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
@@ -367,10 +367,14 @@ class _ThemeOptionTile extends StatelessWidget {
         ),
       ),
       title: Text(label, style: AppTextStyles.subtitle),
-      subtitle: Text(
-        subtitle,
-        style: AppTextStyles.body.copyWith(color: Theme.of(context).hintColor),
-      ),
+      subtitle: subtitle == null
+          ? null
+          : Text(
+              subtitle!,
+              style: AppTextStyles.body.copyWith(
+                color: Theme.of(context).hintColor,
+              ),
+            ),
     );
   }
 }

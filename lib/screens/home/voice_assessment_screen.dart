@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
@@ -23,11 +24,14 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   final AudioRecorderService _audioRecorderService = AudioRecorderService();
   final TranscriptionService _transcriptionService = TranscriptionService();
   late final AnimationController _orbController;
+  static const Duration _minimumRecordingDuration = Duration(seconds: 1);
 
   bool _isRecording = false;
   bool _isProcessing = false;
+  bool _isTransitioningRecorder = false;
   String _caption = 'Go ahead, I\'m listening...';
   String _transcript = '';
+  DateTime? _recordingStartedAt;
 
   @override
   void initState() {
@@ -46,6 +50,8 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   }
 
   Future<void> _toggleRecording() async {
+    if (_isTransitioningRecorder) return;
+
     if (!context.read<ConnectivityProvider>().isOnline) {
       SnackbarUtils.showError(
         context,
@@ -55,6 +61,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
     }
 
     if (_isRecording) {
+      _isTransitioningRecorder = true;
       setState(() {
         _isRecording = false;
         _isProcessing = true;
@@ -62,6 +69,24 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       });
 
       final audioBytes = await _audioRecorderService.stopRecording();
+      final startedAt = _recordingStartedAt;
+      _recordingStartedAt = null;
+      _isTransitioningRecorder = false;
+
+      if (startedAt != null &&
+          DateTime.now().difference(startedAt) < _minimumRecordingDuration) {
+        if (!mounted) return;
+        setState(() {
+          _isProcessing = false;
+          _caption = 'Hold the mic a little longer, then try again.';
+        });
+        SnackbarUtils.showError(
+          context,
+          'Recording was too short. Hold the mic for a moment before stopping.',
+        );
+        return;
+      }
+
       if (audioBytes == null) {
         if (mounted) {
           setState(() {
@@ -69,6 +94,19 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
             _caption = 'We could not capture that. Try again.';
           });
         }
+        return;
+      }
+
+      if (audioBytes.length < 1024) {
+        if (!mounted) return;
+        setState(() {
+          _isProcessing = false;
+          _caption = 'We could not capture enough audio. Try again.';
+        });
+        SnackbarUtils.showError(
+          context,
+          'The recording was too short or invalid. Try speaking for a bit longer.',
+        );
         return;
       }
 
@@ -96,17 +134,17 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       return;
     }
 
+    _isTransitioningRecorder = true;
     final hasPermission = await _audioRecorderService.initialize();
     if (!hasPermission) {
+      _isTransitioningRecorder = false;
       if (!mounted) return;
-      SnackbarUtils.showError(
-        context,
-        'Microphone access is required before voice capture can start.',
-      );
+      await _handlePermissionFailure();
       return;
     }
 
     final path = await _audioRecorderService.startRecording();
+    _isTransitioningRecorder = false;
     if (path == null) {
       if (!mounted) return;
       SnackbarUtils.showError(context, 'Failed to start recording.');
@@ -117,6 +155,41 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       _isRecording = true;
       _caption = 'Listening... speak naturally.';
     });
+    _recordingStartedAt = DateTime.now();
+  }
+
+  Future<void> _handlePermissionFailure() async {
+    final permissionState = _audioRecorderService.lastPermissionState;
+    if (permissionState == RecorderPermissionState.permanentlyDenied) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Microphone access needed'),
+          content: const Text(
+            'Prompt needs microphone access to capture your voice. Open Settings and allow microphone access for the app.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Not now'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await openAppSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    SnackbarUtils.showError(
+      context,
+      'Microphone access is required before voice capture can start.',
+    );
   }
 
   @override
@@ -213,7 +286,6 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                           ? const ShimmerPulse(
                               width: 34,
                               height: 34,
-                              borderRadius: 999,
                               baseColor: Color(0x66FFFFFF),
                               highlightColor: Color(0xAAFFFFFF),
                             )

@@ -14,6 +14,7 @@ import '../../providers/app_config_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/shell_provider.dart';
+import '../analytics/analytics_screen.dart';
 import '../paywall/paywall_screen.dart';
 import 'voice_assessment_screen.dart';
 
@@ -29,12 +30,28 @@ class HomeView extends StatelessWidget {
     final shellProvider = context.read<ShellProvider>();
     final isCupertino = !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
-    String displayName = authProvider.currentUser?.displayName ?? 'there';
+    String displayName = authProvider.currentUser?.displayName?.trim() ?? '';
+    if (displayName.isEmpty) {
+      displayName = authProvider.currentUser?.email?.split('@').first ?? '';
+    }
     if (displayName.contains(' ')) {
       displayName = displayName.split(' ').first;
     }
 
     final quickTemplates = configProvider.quickTemplates.take(3).toList();
+    final homeFeatures = [
+      ...configProvider.homeFeatures.take(3),
+      if (premiumProvider.hasPremiumAccess)
+        HomeFeatureConfig(
+          id: 'analytics',
+          title: 'Analytics',
+          subtitle: 'See patterns in your prompt flow and usage.',
+          iconKey: 'chart',
+          imageAssetKey: 'analytics',
+          actionType: 'analytics',
+          visualSize: 'medium',
+        ),
+    ];
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -47,27 +64,11 @@ class HomeView extends StatelessWidget {
                 Row(
                   children: [
                     const Spacer(),
-                    GestureDetector(
+                    _HomeStatusIdentity(
+                      authProvider: authProvider,
+                      premiumProvider: premiumProvider,
+                      displayName: displayName,
                       onTap: () => shellProvider.selectTab(3),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: premiumProvider.hasPremiumAccess
-                              ? AppColors.premiumGradient
-                              : AppColors.primaryGradient,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          displayName.isEmpty
-                              ? 'P'
-                              : displayName[0].toUpperCase(),
-                          style: AppTextStyles.title.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -81,20 +82,20 @@ class HomeView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppConstants.spacing24),
-                _PremiumStatusCard(
-                  isPremium: premiumProvider.hasPremiumAccess,
-                  trialUsed: premiumProvider.trialUsed,
-                  onTap: premiumProvider.hasPremiumAccess
-                      ? null
-                      : () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const PaywallScreen(),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: AppConstants.spacing24),
+                if (!premiumProvider.hasPremiumAccess) ...[
+                  _PremiumStatusCard(
+                    isPremium: premiumProvider.hasPremiumAccess,
+                    trialUsed: premiumProvider.trialUsed,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PaywallScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spacing24),
+                ],
                 _FeatureMosaic(
-                  features: configProvider.homeFeatures,
+                  features: homeFeatures,
                   onAction: (feature) async {
                     switch (feature.actionType) {
                       case 'voice':
@@ -107,6 +108,13 @@ class HomeView extends StatelessWidget {
                         if (transcript != null && context.mounted) {
                           shellProvider.openComposer(initialText: transcript);
                         }
+                        break;
+                      case 'analytics':
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AnalyticsScreen(),
+                          ),
+                        );
                         break;
                       case 'templates':
                         shellProvider.selectTab(2);
@@ -169,16 +177,21 @@ class HomeView extends StatelessWidget {
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 126),
                 child: Container(
                   height: 62,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: BoxDecoration(
                     color: theme.brightness == Brightness.dark
                         ? AppColors.floatingSurfaceDark
-                        : AppColors.floatingSurfaceLight,
+                        : AppColors.surfaceLight.withValues(alpha: 0.96),
                     borderRadius: BorderRadius.circular(
                       AppConstants.radiusFloating,
+                    ),
+                    border: Border.all(
+                      color: theme.brightness == Brightness.dark
+                          ? AppColors.borderDark.withValues(alpha: 0.8)
+                          : AppColors.borderLight.withValues(alpha: 0.85),
                     ),
                     boxShadow: theme.brightness == Brightness.dark
                         ? AppColors.cardShadowDark
@@ -192,13 +205,13 @@ class HomeView extends StatelessWidget {
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'What do you want help writing?',
+                              'Write your prompts',
                               style: AppTextStyles.body.copyWith(
                                 color: theme.brightness == Brightness.dark
                                     ? AppColors.floatingOnDark.withValues(
                                         alpha: 0.7,
                                       )
-                                    : AppColors.floatingOnLight.withValues(
+                                    : AppColors.textPrimaryLight.withValues(
                                         alpha: 0.7,
                                       ),
                               ),
@@ -222,7 +235,11 @@ class HomeView extends StatelessWidget {
                           width: 34,
                           height: 34,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : AppColors.primaryLight.withValues(
+                                    alpha: 0.12,
+                                  ),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -230,7 +247,9 @@ class HomeView extends StatelessWidget {
                                 ? CupertinoIcons.mic
                                 : Icons.mic_none_rounded,
                             size: 18,
-                            color: Colors.white,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.white
+                                : AppColors.primaryLight,
                           ),
                         ),
                       ),
@@ -242,6 +261,114 @@ class HomeView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HomeStatusIdentity extends StatelessWidget {
+  const _HomeStatusIdentity({
+    required this.authProvider,
+    required this.premiumProvider,
+    required this.displayName,
+    required this.onTap,
+  });
+
+  final AuthProvider authProvider;
+  final PremiumProvider premiumProvider;
+  final String displayName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (!authProvider.isAuthenticated) {
+      return Text(
+        'GUEST MODE',
+        style: AppTextStyles.sectionLabel.copyWith(
+          color: theme.hintColor,
+          letterSpacing: 1.1,
+        ),
+      );
+    }
+
+    final avatar = _ProfileAvatar(
+      photoUrl: authProvider.currentUser?.photoURL,
+      fallbackLabel: displayName.isEmpty ? 'P' : displayName[0].toUpperCase(),
+      premium: premiumProvider.hasPremiumAccess,
+    );
+
+    if (!premiumProvider.hasPremiumAccess) {
+      return GestureDetector(onTap: onTap, child: avatar);
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Text(
+              'PREMIUM',
+              style: AppTextStyles.caption.copyWith(
+                color: theme.hintColor,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.9,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppConstants.spacing12),
+          avatar,
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.photoUrl,
+    required this.fallbackLabel,
+    required this.premium,
+  });
+
+  final String? photoUrl;
+  final String fallbackLabel;
+  final bool premium;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: premium ? AppColors.premiumGradient : AppColors.primaryGradient,
+      ),
+      alignment: Alignment.center,
+      child: photoUrl != null && photoUrl!.isNotEmpty
+          ? ClipOval(
+              child: Image.network(
+                photoUrl!,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Text(
+                  fallbackLabel,
+                  style: AppTextStyles.title.copyWith(color: Colors.white),
+                ),
+              ),
+            )
+          : Text(
+              fallbackLabel,
+              style: AppTextStyles.title.copyWith(color: Colors.white),
+            ),
     );
   }
 }
@@ -326,6 +453,72 @@ class _FeatureMosaic extends StatelessWidget {
   Widget build(BuildContext context) {
     if (features.isEmpty) return const SizedBox.shrink();
 
+    if (features.length >= 4) {
+      final primary = features.first;
+      final analytics = features.firstWhere(
+        (feature) => feature.id == 'analytics',
+        orElse: () => features[1],
+      );
+      final voice = features.firstWhere(
+        (feature) => feature.id == 'voice',
+        orElse: () => features[1],
+      );
+      final templates = features.firstWhere(
+        (feature) => feature.id == 'templates',
+        orElse: () => features[2],
+      );
+
+      final leftColumn = [primary, analytics];
+      final rightColumn = [voice, templates];
+
+      return SizedBox(
+        height: 290,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                children: leftColumn.map((feature) {
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: feature == leftColumn.last
+                            ? 0
+                            : AppConstants.spacing12,
+                      ),
+                      child: _FeatureCard(
+                        feature: feature,
+                        onTap: () => onAction(feature),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(width: AppConstants.spacing12),
+            Expanded(
+              child: Column(
+                children: rightColumn.map((feature) {
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: feature == rightColumn.last
+                            ? 0
+                            : AppConstants.spacing12,
+                      ),
+                      child: _FeatureCard(
+                        feature: feature,
+                        onTap: () => onAction(feature),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final primary = features.first;
     final secondary = features.skip(1).take(2).toList();
 
@@ -350,10 +543,9 @@ class _FeatureMosaic extends StatelessWidget {
                   return Expanded(
                     child: Padding(
                       padding: EdgeInsets.only(
-                        bottom:
-                            feature == secondary.first && secondary.length > 1
-                            ? AppConstants.spacing12
-                            : 0,
+                        bottom: feature == secondary.last
+                            ? 0
+                            : AppConstants.spacing12,
                       ),
                       child: _FeatureCard(
                         feature: feature,
@@ -386,13 +578,10 @@ class _FeatureCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isCupertino = !kIsWeb && (Platform.isIOS || Platform.isMacOS);
-    final color = resolveVisualStyle(
-      feature.id == 'refine'
-          ? 'lime'
-          : feature.id == 'voice'
-          ? 'mint'
-          : 'blush',
-    );
+    final onCardColor = theme.brightness == Brightness.dark
+        ? Colors.white
+        : AppColors.textPrimaryLight;
+    final color = _featureColor(theme, feature.id);
 
     return GestureDetector(
       onTap: onTap,
@@ -418,7 +607,7 @@ class _FeatureCard extends StatelessWidget {
                     child: Icon(
                       resolveIcon(feature.iconKey, cupertino: isCupertino),
                       size: 18,
-                      color: theme.colorScheme.onSurface,
+                      color: onCardColor,
                     ),
                   ),
                   const Spacer(),
@@ -427,48 +616,67 @@ class _FeatureCard extends StatelessWidget {
                         ? CupertinoIcons.arrow_up_right
                         : Icons.arrow_outward_rounded,
                     size: 22,
-                    color: theme.colorScheme.onSurface,
+                    color: onCardColor,
                   ),
                 ],
               ),
               const Spacer(),
             ] else ...[
-              Align(
-                alignment: Alignment.topRight,
-                child: Icon(
-                  isCupertino
-                      ? CupertinoIcons.arrow_up_right
-                      : Icons.arrow_outward_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurface,
-                ),
+              Row(
+                children: [
+                  const Spacer(),
+                  Icon(
+                    isCupertino
+                        ? CupertinoIcons.arrow_up_right
+                        : Icons.arrow_outward_rounded,
+                    size: 20,
+                    color: onCardColor,
+                  ),
+                ],
               ),
-              const Spacer(),
+              const Spacer(flex: 2),
             ],
             Text(
               feature.title,
-              maxLines: large ? 2 : 1,
+              maxLines: large ? 2 : 2,
               overflow: TextOverflow.ellipsis,
               style: (large ? AppTextStyles.display : AppTextStyles.heading)
                   .copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontSize: large ? 28 : 18,
+                    color: onCardColor,
+                    fontSize: large ? 24 : 17,
                     height: large ? 1.05 : 1.1,
                   ),
             ),
-            const SizedBox(height: AppConstants.spacing8),
+            const SizedBox(height: 6),
             Text(
               feature.subtitle,
               maxLines: large ? 3 : 2,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.body.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                color: onCardColor.withValues(alpha: 0.78),
+                fontSize: large ? 14 : 13,
+                height: 1.25,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Color _featureColor(ThemeData theme, String featureId) {
+    final isDark = theme.brightness == Brightness.dark;
+    switch (featureId) {
+      case 'refine':
+        return isDark ? const Color(0xFF42572A) : const Color(0xFFC9E6A5);
+      case 'voice':
+        return isDark ? const Color(0xFF1E5A51) : const Color(0xFF9EDDC9);
+      case 'analytics':
+        return isDark ? const Color(0xFF2E4371) : const Color(0xFFC9D9FF);
+      case 'templates':
+      default:
+        return isDark ? const Color(0xFF5B3348) : const Color(0xFFF0CFE0);
+    }
   }
 }
 

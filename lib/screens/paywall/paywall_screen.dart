@@ -409,6 +409,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   Widget _buildBottomSection(PremiumProvider premiumProvider, bool trialUsed) {
     final theme = Theme.of(context);
     final secondaryText = _secondaryTextColor(theme);
+    final isBusy = premiumProvider.isLoading;
 
     final selectedPlan = _plans[_selectedPlanIndex];
     final priceText = '${selectedPlan.price}${selectedPlan.period}';
@@ -416,7 +417,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     return Column(
       children: [
         GestureDetector(
-          onTap: () => _handleUpgrade(premiumProvider, trialUsed),
+          onTap: isBusy ? null : () => _handleUpgrade(premiumProvider, trialUsed),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 18),
@@ -432,7 +433,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
               ],
             ),
             child: Text(
-              trialUsed ? 'Upgrade Now' : 'Start 3-Day Free Trial',
+              isBusy
+                  ? 'Activating...'
+                  : trialUsed
+                  ? 'Upgrade Now'
+                  : 'Start 3-Day Free Trial',
               textAlign: TextAlign.center,
               style: AppTextStyles.button.copyWith(color: Colors.white),
             ),
@@ -501,6 +506,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     PremiumProvider premiumProvider,
     bool trialUsed,
   ) async {
+    final navigator = Navigator.of(context);
     if (!trialUsed) {
       final success = await premiumProvider.activateTrial();
       if (!mounted) return;
@@ -510,7 +516,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
           context,
           'Premium activated. Enjoy your 3-day free trial.',
         );
-        Navigator.pop(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          navigator.maybePop();
+        });
       } else {
         SnackbarUtils.showError(
           context,

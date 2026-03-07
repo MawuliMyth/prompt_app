@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -13,6 +14,7 @@ import '../settings/settings_screen.dart';
 import '../templates/templates_screen.dart';
 import 'home_view.dart';
 import 'prompt_composer_screen.dart';
+import 'voice_assessment_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -117,109 +119,127 @@ class _FloatingShell extends StatelessWidget {
                     ),
                   ),
                 ),
-              Container(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                decoration: BoxDecoration(
-                  color: theme.brightness == Brightness.dark
-                      ? AppColors.floatingSurfaceDark
-                      : AppColors.surfaceLight.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(
-                    AppConstants.radiusFloating,
-                  ),
-                  border: Border.all(
-                    color: theme.brightness == Brightness.dark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
-                  ),
-                  boxShadow: theme.brightness == Brightness.dark
-                      ? AppColors.cardShadowDark
-                      : AppColors.cardShadowLight,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _ShellItem(
-                            label: 'Home',
-                            icon: isCupertino
-                                ? CupertinoIcons.house
-                                : Icons.home_outlined,
-                            selectedIcon: isCupertino
-                                ? CupertinoIcons.house_fill
-                                : Icons.home_rounded,
-                            selected: shellProvider.currentIndex == 0,
-                            onTap: () => shellProvider.selectTab(0),
-                          ),
-                          _ShellItem(
-                            label: 'History',
-                            icon: isCupertino
-                                ? CupertinoIcons.clock
-                                : Icons.history_outlined,
-                            selectedIcon: isCupertino
-                                ? CupertinoIcons.clock_fill
-                                : Icons.history_rounded,
-                            selected: shellProvider.currentIndex == 1,
-                            onTap: () => shellProvider.selectTab(1),
-                          ),
-                        ],
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppConstants.radiusFloating),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? AppColors.floatingSurfaceDark.withValues(alpha: 0.78)
+                          : AppColors.surfaceLight.withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusFloating,
                       ),
+                      border: Border.all(
+                        color: theme.brightness == Brightness.dark
+                            ? AppColors.borderDark.withValues(alpha: 0.8)
+                            : AppColors.borderLight.withValues(alpha: 0.65),
+                      ),
+                      boxShadow: theme.brightness == Brightness.dark
+                          ? AppColors.cardShadowDark
+                          : AppColors.cardShadowLight,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: GestureDetector(
-                        onTap: shellProvider.openComposer,
-                        child: Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            shape: BoxShape.circle,
-                            boxShadow: theme.brightness == Brightness.dark
-                                ? AppColors.cardShadowDark
-                                : AppColors.cardShadowLight,
-                          ),
-                          child: Icon(
-                            isCupertino
-                                ? CupertinoIcons.sparkles
-                                : Icons.auto_awesome_rounded,
-                            color: Colors.white,
-                            size: AppConstants.iconSizeNav,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _ShellItem(
+                                label: 'Home',
+                                icon: isCupertino
+                                    ? CupertinoIcons.house
+                                    : Icons.home_outlined,
+                                selectedIcon: isCupertino
+                                    ? CupertinoIcons.house_fill
+                                    : Icons.home_rounded,
+                                selected: shellProvider.currentIndex == 0,
+                                onTap: () => shellProvider.selectTab(0),
+                              ),
+                              _ShellItem(
+                                label: 'History',
+                                icon: isCupertino
+                                    ? CupertinoIcons.clock
+                                    : Icons.history_outlined,
+                                selectedIcon: isCupertino
+                                    ? CupertinoIcons.clock_fill
+                                    : Icons.history_rounded,
+                                selected: shellProvider.currentIndex == 1,
+                                onTap: () => shellProvider.selectTab(1),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _ShellItem(
-                            label: 'Templates',
-                            icon: isCupertino
-                                ? CupertinoIcons.square_grid_2x2
-                                : Icons.grid_view_rounded,
-                            selectedIcon: isCupertino
-                                ? CupertinoIcons.square_grid_2x2_fill
-                                : Icons.grid_view_rounded,
-                            selected: shellProvider.currentIndex == 2,
-                            onTap: () => shellProvider.selectTab(2),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: GestureDetector(
+                            onTap: () async {
+                              final transcript = await Navigator.of(context)
+                                  .push<String>(
+                                    PlatformUtils.adaptivePageRoute(
+                                      const VoiceAssessmentScreen(),
+                                    ),
+                                  );
+                              if (transcript != null && context.mounted) {
+                                shellProvider.openComposer(
+                                  initialText: transcript,
+                                );
+                              }
+                            },
+                            child: Container(
+                              width: 58,
+                              height: 58,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                shape: BoxShape.circle,
+                                boxShadow: theme.brightness == Brightness.dark
+                                    ? AppColors.cardShadowDark
+                                    : AppColors.cardShadowLight,
+                              ),
+                              child: Icon(
+                                isCupertino
+                                    ? CupertinoIcons.mic_fill
+                                    : Icons.mic_rounded,
+                                color: Colors.white,
+                                size: AppConstants.iconSizeNav,
+                              ),
+                            ),
                           ),
-                          _ShellItem(
-                            label: 'Settings',
-                            icon: isCupertino
-                                ? CupertinoIcons.settings
-                                : Icons.settings_outlined,
-                            selectedIcon: isCupertino
-                                ? CupertinoIcons.settings
-                                : Icons.settings_rounded,
-                            selected: shellProvider.currentIndex == 3,
-                            onTap: () => shellProvider.selectTab(3),
+                        ),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _ShellItem(
+                                label: 'Templates',
+                                icon: isCupertino
+                                    ? CupertinoIcons.square_grid_2x2
+                                    : Icons.grid_view_rounded,
+                                selectedIcon: isCupertino
+                                    ? CupertinoIcons.square_grid_2x2_fill
+                                    : Icons.grid_view_rounded,
+                                selected: shellProvider.currentIndex == 2,
+                                onTap: () => shellProvider.selectTab(2),
+                              ),
+                              _ShellItem(
+                                label: 'Settings',
+                                icon: isCupertino
+                                    ? CupertinoIcons.settings
+                                    : Icons.settings_outlined,
+                                selectedIcon: isCupertino
+                                    ? CupertinoIcons.settings
+                                    : Icons.settings_rounded,
+                                selected: shellProvider.currentIndex == 3,
+                                onTap: () => shellProvider.selectTab(3),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],

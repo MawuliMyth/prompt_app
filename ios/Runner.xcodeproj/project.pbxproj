@@ -207,6 +207,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				7024378EDE9DC4458D09C3A1 /* [CP] Embed Pods Frameworks */,
 				2E7D0EC55231C1EAA51FD0B1 /* [CP] Copy Pods Resources */,
+				A1C5B8A22F7F410E00E11A01 /* Resign Embedded Frameworks */,
 			);
 			buildRules = (
 			);
@@ -370,6 +371,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+		};
+		A1C5B8A22F7F410E00E11A01 /* Resign Embedded Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Resign Embedded Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "FRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nif [ -d \"$FRAMEWORKS_DIR\" ] && [ -n \"${EXPANDED_CODE_SIGN_IDENTITY:-}\" ]; then\n  find \"$FRAMEWORKS_DIR\" -maxdepth 1 -name \"*.framework\" | while read -r framework; do\n    binary_name=\"$(basename \"$framework\" .framework)\"\n    binary_path=\"$framework/$binary_name\"\n    if [ -f \"$binary_path\" ]; then\n      /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements \"$binary_path\"\n    fi\n  done\n  find \"$FRAMEWORKS_DIR\" -maxdepth 1 -name \"*.dylib\" | while read -r dylib; do\n    /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements \"$dylib\"\n  done\nfi\n";
+			showEnvVarsInLog = 0;
 		};
 		DE2E7CA6826BFA81489421DB /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
