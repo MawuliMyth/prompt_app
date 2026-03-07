@@ -15,6 +15,7 @@ import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/locked_feature_sheet.dart';
 import '../../data/models/prompt_model.dart';
+import '../../data/services/ai_handoff_service.dart';
 import '../../data/services/claude_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
@@ -39,7 +40,8 @@ class ResultScreen extends StatefulWidget {
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderStateMixin {
+class _ResultScreenState extends State<ResultScreen>
+    with SingleTickerProviderStateMixin {
   late int _strengthScore;
   late String _strengthLabel;
   bool _isCopied = false;
@@ -50,9 +52,11 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
   PromptModel? _currentPrompt;
 
   final ClaudeService _claudeService = ClaudeService();
+  final AiHandoffService _aiHandoffService = AiHandoffService();
   bool _isLoadingVariations = false;
   List<String>? _variations;
   bool _showVariations = false;
+  bool _isSendingToAi = false;
 
   final List<_VariationType> _variationTypes = [
     _VariationType(name: 'Formal', icon: Icons.work_outline),
@@ -118,7 +122,10 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
         if (success) {
           SnackbarUtils.showSuccess(context, 'Saved to history');
         } else {
-          SnackbarUtils.showError(context, promptProvider.error ?? 'Failed to save prompt');
+          SnackbarUtils.showError(
+            context,
+            promptProvider.error ?? 'Failed to save prompt',
+          );
         }
       }
     }
@@ -134,7 +141,10 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
     }
 
     if (_currentPrompt == null) {
-      SnackbarUtils.showError(context, 'Unable to favourite. Please try again.');
+      SnackbarUtils.showError(
+        context,
+        'Unable to favourite. Please try again.',
+      );
       return;
     }
 
@@ -211,7 +221,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
             const SizedBox(height: AppConstants.spacing12),
             Text(
               'Create a free account to save this prompt and build a library of your favourites.',
-              style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.spacing32),
@@ -233,7 +245,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Maybe Later',
-                style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
               ),
             ),
           ],
@@ -267,8 +281,125 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
     }
   }
 
+  Future<void> _sharePrompt() async {
+    await SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt));
+  }
+
+  Future<void> _sendToAi(AiHandoffTarget target) async {
+    if (_isSendingToAi) return;
+
+    setState(() => _isSendingToAi = true);
+    final result = await _aiHandoffService.sendPrompt(
+      prompt: widget.enhancedPrompt,
+      target: target,
+    );
+    if (!mounted) return;
+    setState(() => _isSendingToAi = false);
+
+    if (result.success) {
+      SnackbarUtils.showSuccess(context, result.message);
+      return;
+    }
+    SnackbarUtils.showError(context, result.message);
+  }
+
+  void _showSendToAiSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppConstants.radiusBottomSheet),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.dividerColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacing20),
+              Text(
+                'Send to AI',
+                style: AppTextStyles.title.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacing8),
+              Text(
+                'We will copy your prompt, then open the AI destination you choose.',
+                style: AppTextStyles.body.copyWith(color: theme.hintColor),
+              ),
+              const SizedBox(height: AppConstants.spacing20),
+              _AiTargetTile(
+                target: AiHandoffTarget.chatgpt,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.chatgpt);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.claude,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.claude);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.gemini,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.gemini);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.deepseek,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.deepseek);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.systemShare,
+                description: 'Use the native share sheet',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.systemShare);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _loadVariations() async {
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    final premiumProvider = Provider.of<PremiumProvider>(
+      context,
+      listen: false,
+    );
 
     if (!premiumProvider.hasPremiumAccess) {
       LockedFeatureSheet.show(
@@ -297,7 +428,10 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
           _variations = result['variations'] as List<String>;
           _showVariations = true;
         } else {
-          SnackbarUtils.showError(context, result['error'] ?? 'Failed to load variations');
+          SnackbarUtils.showError(
+            context,
+            result['error'] ?? 'Failed to load variations',
+          );
         }
       });
     }
@@ -316,8 +450,12 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
         title: 'Enhanced Prompt',
         actions: [
           IconButton(
-            icon: Icon(PlatformUtils.useCupertino(context) ? CupertinoIcons.share : Icons.share_outlined),
-            onPressed: () => SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt)),
+            icon: Icon(
+              PlatformUtils.useCupertino(context)
+                  ? CupertinoIcons.share
+                  : Icons.share_outlined,
+            ),
+            onPressed: _sharePrompt,
             tooltip: 'Share',
           ),
         ],
@@ -329,7 +467,11 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               child: SizedBox(
                 width: contentMaxWidth,
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing24),
+                  padding: EdgeInsets.all(
+                    isSmallScreen
+                        ? AppConstants.spacing16
+                        : AppConstants.spacing24,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -363,7 +505,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
 
   Widget _buildStrengthMeter(ThemeData theme, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20),
+      padding: EdgeInsets.all(
+        isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusCard),
@@ -384,7 +528,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                       value: _animation.value,
                       strokeWidth: isSmallScreen ? 5 : 6,
                       backgroundColor: AppColors.surfaceVariantLight,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryLight,
+                      ),
                     );
                   },
                 ),
@@ -417,7 +563,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                 const SizedBox(height: 4),
                 Text(
                   'Prompt Strength',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
               ],
             ),
@@ -429,7 +577,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
 
   Widget _buildOriginalCard(ThemeData theme, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16),
+      padding: EdgeInsets.all(
+        isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusCard),
@@ -507,7 +657,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20),
+            padding: EdgeInsets.all(
+              isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20,
+            ),
             child: SelectableText(
               widget.enhancedPrompt,
               style: AppTextStyles.body.copyWith(
@@ -556,15 +708,21 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                       )
                     else ...[
                       Icon(
-                        hasPremium ? Icons.auto_awesome_outlined : Icons.lock_outline,
+                        hasPremium
+                            ? Icons.auto_awesome_outlined
+                            : Icons.lock_outline,
                         size: 18,
-                        color: hasPremium ? AppColors.primaryLight : AppColors.textSecondaryLight,
+                        color: hasPremium
+                            ? AppColors.primaryLight
+                            : AppColors.textSecondaryLight,
                       ),
                       const SizedBox(width: AppConstants.spacing8),
                       Text(
                         hasPremium ? 'See 3 Variations' : 'Unlock Variations',
                         style: AppTextStyles.subtitle.copyWith(
-                          color: hasPremium ? AppColors.primaryLight : AppColors.textSecondaryLight,
+                          color: hasPremium
+                              ? AppColors.primaryLight
+                              : AppColors.textSecondaryLight,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -579,62 +737,67 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               const SizedBox(height: AppConstants.spacing16),
               ...List.generate(_variations!.length, (index) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
+                  padding: const EdgeInsets.only(
+                    bottom: AppConstants.spacing12,
+                  ),
                   child: Semantics(
                     label: '${_variationTypes[index].name} variation',
                     hint: 'Tap to copy this variation',
                     button: true,
                     child: GestureDetector(
-                      onTap: () => _copyVariationToClipboard(_variations![index]),
+                      onTap: () =>
+                          _copyVariationToClipboard(_variations![index]),
                       child: Container(
-                      padding: const EdgeInsets.all(AppConstants.spacing16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: AppColors.cardShadowLight,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                _variationTypes[index].icon,
-                                size: 16,
-                                color: AppColors.primaryLight,
-                              ),
-                              const SizedBox(width: AppConstants.spacing8),
-                              Text(
-                                _variationTypes[index].name,
-                                style: AppTextStyles.caption.copyWith(
+                        padding: const EdgeInsets.all(AppConstants.spacing16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusCard,
+                          ),
+                          border: Border.all(color: AppColors.borderLight),
+                          boxShadow: AppColors.cardShadowLight,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  _variationTypes[index].icon,
+                                  size: 16,
                                   color: AppColors.primaryLight,
-                                  fontWeight: FontWeight.w600,
                                 ),
-                              ),
-                              const Spacer(),
-                              const Icon(
-                                Icons.copy_outlined,
-                                size: 16,
-                                color: AppColors.textSecondaryLight,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppConstants.spacing12),
-                          Text(
-                            _variations![index],
-                            style: AppTextStyles.body.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontSize: isSmallScreen ? 13 : 14,
+                                const SizedBox(width: AppConstants.spacing8),
+                                Text(
+                                  _variationTypes[index].name,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.primaryLight,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const Spacer(),
+                                const Icon(
+                                  Icons.copy_outlined,
+                                  size: 16,
+                                  color: AppColors.textSecondaryLight,
+                                ),
+                              ],
                             ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                            const SizedBox(height: AppConstants.spacing12),
+                            Text(
+                              _variations![index],
+                              style: AppTextStyles.body.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontSize: isSmallScreen ? 13 : 14,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
                 );
               }),
             ],
@@ -658,44 +821,65 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
           top: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: _buildActionButton(
-              icon: Icons.refresh,
-              label: 'New',
-              onPressed: () => Navigator.of(context).pop(),
-              isOutlined: true,
-              isSmallScreen: isSmallScreen,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.refresh,
+                  label: 'New',
+                  onPressed: () => Navigator.of(context).pop(),
+                  isOutlined: true,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+              const SizedBox(width: AppConstants.spacing8),
+              Expanded(
+                child: _buildActionButton(
+                  icon: _isFavourited ? Icons.star : Icons.star_border,
+                  label: _isFavourited ? 'Saved' : 'Save',
+                  onPressed: _handleFavourite,
+                  backgroundColor: _isFavourited
+                      ? AppColors.warning
+                      : AppColors.primaryLight,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+              const SizedBox(width: AppConstants.spacing8),
+              Expanded(
+                child: _buildActionButton(
+                  icon: _isCopied ? Icons.check : Icons.copy_outlined,
+                  label: _isCopied ? 'Copied' : 'Copy',
+                  onPressed: _copyToClipboard,
+                  backgroundColor: _isCopied
+                      ? AppColors.success
+                      : AppColors.primaryLight,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+              const SizedBox(width: AppConstants.spacing8),
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.share_outlined,
+                  label: 'Share',
+                  onPressed: _sharePrompt,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppConstants.spacing8),
-          Expanded(
+          const SizedBox(height: AppConstants.spacing12),
+          SizedBox(
+            width: double.infinity,
             child: _buildActionButton(
-              icon: _isFavourited ? Icons.star : Icons.star_border,
-              label: _isFavourited ? 'Saved' : 'Save',
-              onPressed: _handleFavourite,
-              backgroundColor: _isFavourited ? AppColors.warning : AppColors.primaryLight,
-              isSmallScreen: isSmallScreen,
-            ),
-          ),
-          const SizedBox(width: AppConstants.spacing8),
-          Expanded(
-            child: _buildActionButton(
-              icon: _isCopied ? Icons.check : Icons.copy_outlined,
-              label: _isCopied ? 'Copied' : 'Copy',
-              onPressed: _copyToClipboard,
-              backgroundColor: _isCopied ? AppColors.success : AppColors.primaryLight,
-              isSmallScreen: isSmallScreen,
-            ),
-          ),
-          const SizedBox(width: AppConstants.spacing8),
-          Expanded(
-            child: _buildActionButton(
-              icon: Icons.share_outlined,
-              label: 'Share',
-              onPressed: () => SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt)),
-              isSmallScreen: isSmallScreen,
+              icon: _isSendingToAi
+                  ? Icons.hourglass_top_rounded
+                  : Icons.send_rounded,
+              label: _isSendingToAi ? 'Opening...' : 'Send to AI',
+              onPressed: _isSendingToAi ? null : _showSendToAiSheet,
+              backgroundColor: AppColors.primaryLight,
             ),
           ),
         ],
@@ -706,7 +890,7 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
   Widget _buildActionButton({
     required IconData icon,
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     Color? backgroundColor,
     bool isOutlined = false,
     bool isSmallScreen = false,
@@ -770,12 +954,114 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
   }
 }
 
-class _VariationType {
-
-  _VariationType({
-    required this.name,
-    required this.icon,
+class _AiTargetTile extends StatelessWidget {
+  const _AiTargetTile({
+    required this.target,
+    required this.description,
+    required this.onTap,
   });
+
+  final AiHandoffTarget target;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+      child: Container(
+        padding: const EdgeInsets.all(AppConstants.spacing16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _backgroundForTarget(target),
+                borderRadius: BorderRadius.circular(AppConstants.radiusControl),
+              ),
+              child: Text(
+                _monogramForTarget(target),
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppConstants.spacing16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    target.displayName,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spacing4),
+                  Text(
+                    description,
+                    style: AppTextStyles.body.copyWith(
+                      color: Theme.of(context).hintColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppConstants.spacing12),
+            Icon(
+              Icons.arrow_outward_rounded,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _backgroundForTarget(AiHandoffTarget target) {
+    switch (target) {
+      case AiHandoffTarget.chatgpt:
+        return const Color(0xFF10A37F);
+      case AiHandoffTarget.claude:
+        return const Color(0xFFD97706);
+      case AiHandoffTarget.gemini:
+        return const Color(0xFF4F46E5);
+      case AiHandoffTarget.deepseek:
+        return const Color(0xFF2563EB);
+      case AiHandoffTarget.systemShare:
+        return AppColors.primaryLight;
+    }
+  }
+
+  String _monogramForTarget(AiHandoffTarget target) {
+    switch (target) {
+      case AiHandoffTarget.chatgpt:
+        return 'G';
+      case AiHandoffTarget.claude:
+        return 'C';
+      case AiHandoffTarget.gemini:
+        return 'Gm';
+      case AiHandoffTarget.deepseek:
+        return 'D';
+      case AiHandoffTarget.systemShare:
+        return '+';
+    }
+  }
+}
+
+class _VariationType {
+  _VariationType({required this.name, required this.icon});
   final String name;
   final IconData icon;
 }
