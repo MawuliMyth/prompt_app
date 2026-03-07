@@ -15,6 +15,7 @@ import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/locked_feature_sheet.dart';
 import '../../data/models/prompt_model.dart';
+import '../../data/services/ai_handoff_service.dart';
 import '../../data/services/claude_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
@@ -51,9 +52,11 @@ class _ResultScreenState extends State<ResultScreen>
   PromptModel? _currentPrompt;
 
   final ClaudeService _claudeService = ClaudeService();
+  final AiHandoffService _aiHandoffService = AiHandoffService();
   bool _isLoadingVariations = false;
   List<String>? _variations;
   bool _showVariations = false;
+  bool _isSendingToAi = false;
 
   final List<_VariationType> _variationTypes = [
     _VariationType(name: 'Formal', icon: Icons.work_outline),
@@ -276,6 +279,120 @@ class _ResultScreenState extends State<ResultScreen>
     }
   }
 
+  Future<void> _sharePrompt() async {
+    await SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt));
+  }
+
+  Future<void> _sendToAi(AiHandoffTarget target) async {
+    if (_isSendingToAi) return;
+
+    setState(() => _isSendingToAi = true);
+    final result = await _aiHandoffService.sendPrompt(
+      prompt: widget.enhancedPrompt,
+      target: target,
+    );
+    if (!mounted) return;
+    setState(() => _isSendingToAi = false);
+
+    if (result.success) {
+      SnackbarUtils.showSuccess(context, result.message);
+      return;
+    }
+    SnackbarUtils.showError(context, result.message);
+  }
+
+  void _showSendToAiSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppConstants.radiusBottomSheet),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.dividerColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacing20),
+              Text(
+                'Send to AI',
+                style: AppTextStyles.title.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacing8),
+              Text(
+                'We will copy your prompt, then open the AI destination you choose.',
+                style: AppTextStyles.body.copyWith(color: theme.hintColor),
+              ),
+              const SizedBox(height: AppConstants.spacing20),
+              _AiTargetTile(
+                target: AiHandoffTarget.chatgpt,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.chatgpt);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.claude,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.claude);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.gemini,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.gemini);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.deepseek,
+                description: 'Open app or web, prompt copied',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.deepseek);
+                },
+              ),
+              const SizedBox(height: AppConstants.spacing12),
+              _AiTargetTile(
+                target: AiHandoffTarget.systemShare,
+                description: 'Use the native share sheet',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _sendToAi(AiHandoffTarget.systemShare);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _loadVariations() async {
     final premiumProvider = Provider.of<PremiumProvider>(
       context,
@@ -336,9 +453,7 @@ class _ResultScreenState extends State<ResultScreen>
                   ? CupertinoIcons.share
                   : Icons.share_outlined,
             ),
-            onPressed: () => SharePlus.instance.share(
-              ShareParams(text: widget.enhancedPrompt),
-            ),
+            onPressed: _sharePrompt,
             tooltip: 'Share',
           ),
         ],
@@ -704,49 +819,65 @@ class _ResultScreenState extends State<ResultScreen>
           top: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: _buildActionButton(
-              icon: Icons.refresh,
-              label: 'New',
-              onPressed: () => Navigator.of(context).pop(),
-              isOutlined: true,
-              isSmallScreen: isSmallScreen,
-            ),
-          ),
-          const SizedBox(width: AppConstants.spacing8),
-          Expanded(
-            child: _buildActionButton(
-              icon: _isFavourited ? Icons.star : Icons.star_border,
-              label: _isFavourited ? 'Saved' : 'Save',
-              onPressed: _handleFavourite,
-              backgroundColor: _isFavourited
-                  ? AppColors.warning
-                  : AppColors.primaryLight,
-              isSmallScreen: isSmallScreen,
-            ),
-          ),
-          const SizedBox(width: AppConstants.spacing8),
-          Expanded(
-            child: _buildActionButton(
-              icon: _isCopied ? Icons.check : Icons.copy_outlined,
-              label: _isCopied ? 'Copied' : 'Copy',
-              onPressed: _copyToClipboard,
-              backgroundColor: _isCopied
-                  ? AppColors.success
-                  : AppColors.primaryLight,
-              isSmallScreen: isSmallScreen,
-            ),
-          ),
-          const SizedBox(width: AppConstants.spacing8),
-          Expanded(
-            child: _buildActionButton(
-              icon: Icons.share_outlined,
-              label: 'Share',
-              onPressed: () => SharePlus.instance.share(
-                ShareParams(text: widget.enhancedPrompt),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.refresh,
+                  label: 'New',
+                  onPressed: () => Navigator.of(context).pop(),
+                  isOutlined: true,
+                  isSmallScreen: isSmallScreen,
+                ),
               ),
+              const SizedBox(width: AppConstants.spacing8),
+              Expanded(
+                child: _buildActionButton(
+                  icon: _isFavourited ? Icons.star : Icons.star_border,
+                  label: _isFavourited ? 'Saved' : 'Save',
+                  onPressed: _handleFavourite,
+                  backgroundColor: _isFavourited
+                      ? AppColors.warning
+                      : AppColors.primaryLight,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+              const SizedBox(width: AppConstants.spacing8),
+              Expanded(
+                child: _buildActionButton(
+                  icon: _isCopied ? Icons.check : Icons.copy_outlined,
+                  label: _isCopied ? 'Copied' : 'Copy',
+                  onPressed: _copyToClipboard,
+                  backgroundColor: _isCopied
+                      ? AppColors.success
+                      : AppColors.primaryLight,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+              const SizedBox(width: AppConstants.spacing8),
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.share_outlined,
+                  label: 'Share',
+                  onPressed: _sharePrompt,
+                  isSmallScreen: isSmallScreen,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spacing12),
+          SizedBox(
+            width: double.infinity,
+            child: _buildActionButton(
+              icon: _isSendingToAi
+                  ? Icons.hourglass_top_rounded
+                  : Icons.send_rounded,
+              label: _isSendingToAi ? 'Opening...' : 'Send to AI',
+              onPressed: _isSendingToAi ? null : _showSendToAiSheet,
+              backgroundColor: AppColors.primaryLight,
               isSmallScreen: isSmallScreen,
             ),
           ),
@@ -758,7 +889,7 @@ class _ResultScreenState extends State<ResultScreen>
   Widget _buildActionButton({
     required IconData icon,
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     Color? backgroundColor,
     bool isOutlined = false,
     bool isSmallScreen = false,
@@ -822,6 +953,111 @@ class _ResultScreenState extends State<ResultScreen>
   }
 }
 
+class _AiTargetTile extends StatelessWidget {
+  const _AiTargetTile({
+    required this.target,
+    required this.description,
+    required this.onTap,
+  });
+
+  final AiHandoffTarget target;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+      child: Container(
+        padding: const EdgeInsets.all(AppConstants.spacing16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _backgroundForTarget(target),
+                borderRadius: BorderRadius.circular(AppConstants.radiusControl),
+              ),
+              child: Text(
+                _monogramForTarget(target),
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppConstants.spacing16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    target.displayName,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spacing4),
+                  Text(
+                    description,
+                    style: AppTextStyles.body.copyWith(
+                      color: Theme.of(context).hintColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppConstants.spacing12),
+            Icon(
+              Icons.arrow_outward_rounded,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _backgroundForTarget(AiHandoffTarget target) {
+    switch (target) {
+      case AiHandoffTarget.chatgpt:
+        return const Color(0xFF10A37F);
+      case AiHandoffTarget.claude:
+        return const Color(0xFFD97706);
+      case AiHandoffTarget.gemini:
+        return const Color(0xFF4F46E5);
+      case AiHandoffTarget.deepseek:
+        return const Color(0xFF2563EB);
+      case AiHandoffTarget.systemShare:
+        return AppColors.primaryLight;
+    }
+  }
+
+  String _monogramForTarget(AiHandoffTarget target) {
+    switch (target) {
+      case AiHandoffTarget.chatgpt:
+        return 'G';
+      case AiHandoffTarget.claude:
+        return 'C';
+      case AiHandoffTarget.gemini:
+        return 'Gm';
+      case AiHandoffTarget.deepseek:
+        return 'D';
+      case AiHandoffTarget.systemShare:
+        return '+';
+    }
+  }
+}
 class _VariationType {
   _VariationType({required this.name, required this.icon});
   final String name;
