@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 /// App Logo Widget
 class AppLogo extends StatelessWidget {
-  final double? width;
-  final double? height;
-  final Color? color;
 
   const AppLogo({
     super.key,
@@ -12,6 +9,9 @@ class AppLogo extends StatelessWidget {
     this.height,
     this.color,
   });
+  final double? width;
+  final double? height;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {

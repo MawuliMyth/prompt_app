@@ -3,9 +3,6 @@ import 'package:shimmer/shimmer.dart';
 
 /// Shimmer loading widget for skeleton loading effects
 class ShimmerLoading extends StatelessWidget {
-  final double width;
-  final double height;
-  final double borderRadius;
 
   const ShimmerLoading({
     super.key,
@@ -13,6 +10,9 @@ class ShimmerLoading extends StatelessWidget {
     this.height = 20,
     this.borderRadius = 8,
   });
+  final double width;
+  final double height;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +35,14 @@ class ShimmerLoading extends StatelessWidget {
 
 /// Shimmer button loading state
 class ShimmerButton extends StatelessWidget {
-  final double width;
-  final double height;
 
   const ShimmerButton({
     super.key,
     this.width = double.infinity,
     this.height = 56,
   });
+  final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +65,12 @@ class ShimmerButton extends StatelessWidget {
 
 /// Shimmer card for list items
 class ShimmerCard extends StatelessWidget {
-  final double height;
 
   const ShimmerCard({
     super.key,
     this.height = 120,
   });
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -133,14 +133,14 @@ class ShimmerCard extends StatelessWidget {
 
 /// Shimmer loading overlay for buttons
 class ShimmerButtonLoader extends StatelessWidget {
-  final String text;
-  final double height;
 
   const ShimmerButtonLoader({
     super.key,
     required this.text,
     this.height = 56,
   });
+  final String text;
+  final double height;
 
   @override
   Widget build(BuildContext context) {

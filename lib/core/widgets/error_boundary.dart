@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 /// Error boundary widget that catches errors and displays a fallback UI
 class ErrorBoundary extends StatefulWidget {
-  final Widget child;
-  final Widget? fallback;
 
   const ErrorBoundary({
     super.key,
     required this.child,
     this.fallback,
   });
+  final Widget child;
+  final Widget? fallback;
 
   @override
   State<ErrorBoundary> createState() => _ErrorBoundaryState();
@@ -42,12 +42,12 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
 }
 
 class ErrorFallback extends StatelessWidget {
-  final String message;
 
   const ErrorFallback({
     super.key,
     required this.message,
   });
+  final String message;
 
   @override
   Widget build(BuildContext context) {

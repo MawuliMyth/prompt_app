@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart';
@@ -32,7 +31,8 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin {
+class _HomeViewState extends State<HomeView>
+    with SingleTickerProviderStateMixin {
   final _inputController = TextEditingController();
   final AudioRecorderService _audioRecorderService = AudioRecorderService();
   final TranscriptionService _transcriptionService = TranscriptionService();
@@ -46,11 +46,31 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   late AnimationController _pulseController;
 
   final List<_CategoryItem> _categories = [
-    _CategoryItem(name: 'General', icon: Icons.public_outlined, color: AppColors.categoryGeneral),
-    _CategoryItem(name: 'Image Generation', icon: Icons.palette_outlined, color: AppColors.categoryImageGeneration),
-    _CategoryItem(name: 'Coding', icon: Icons.code_outlined, color: AppColors.categoryCoding),
-    _CategoryItem(name: 'Writing', icon: Icons.edit_outlined, color: AppColors.categoryWriting),
-    _CategoryItem(name: 'Business', icon: Icons.business_center_outlined, color: AppColors.categoryBusiness),
+    _CategoryItem(
+      name: 'General',
+      icon: Icons.public_outlined,
+      color: AppColors.categoryGeneral,
+    ),
+    _CategoryItem(
+      name: 'Image Generation',
+      icon: Icons.palette_outlined,
+      color: AppColors.categoryImageGeneration,
+    ),
+    _CategoryItem(
+      name: 'Coding',
+      icon: Icons.code_outlined,
+      color: AppColors.categoryCoding,
+    ),
+    _CategoryItem(
+      name: 'Writing',
+      icon: Icons.edit_outlined,
+      color: AppColors.categoryWriting,
+    ),
+    _CategoryItem(
+      name: 'Business',
+      icon: Icons.business_center_outlined,
+      color: AppColors.categoryBusiness,
+    ),
   ];
 
   final List<_ToneItem> _tones = [
@@ -78,11 +98,15 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   }
 
   void _checkForTemplate() {
-    final templateProvider = Provider.of<TemplateProvider>(context, listen: false);
+    final templateProvider = Provider.of<TemplateProvider>(
+      context,
+      listen: false,
+    );
     if (templateProvider.hasTemplate) {
       _inputController.text = templateProvider.selectedTemplateContent ?? '';
       final templateCategory = templateProvider.selectedCategory;
-      if (templateCategory != null && _categories.any((c) => c.name == templateCategory)) {
+      if (templateCategory != null &&
+          _categories.any((c) => c.name == templateCategory)) {
         _selectedCategory = templateCategory;
       }
       templateProvider.clearTemplate();
@@ -104,7 +128,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
       setState(() => _isRecording = false);
       final audioBytes = await _audioRecorderService.stopRecording();
       if (audioBytes == null) {
-        if (mounted) SnackbarUtils.showError(context, 'Failed to record audio.');
+        if (mounted) {
+          SnackbarUtils.showError(context, 'Failed to record audio.');
+        }
         return;
       }
       setState(() => _isTranscribing = true);
@@ -121,12 +147,16 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     } else {
       final hasPermission = await _audioRecorderService.initialize();
       if (!hasPermission) {
-        if (mounted) SnackbarUtils.showError(context, 'Microphone permission denied.');
+        if (mounted) {
+          SnackbarUtils.showError(context, 'Microphone permission denied.');
+        }
         return;
       }
       final path = await _audioRecorderService.startRecording();
       if (path == null) {
-        if (mounted) SnackbarUtils.showError(context, 'Failed to start recording.');
+        if (mounted) {
+          SnackbarUtils.showError(context, 'Failed to start recording.');
+        }
         return;
       }
       setState(() => _isRecording = true);
@@ -178,14 +208,16 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
             ),
             const SizedBox(height: AppConstants.spacing24),
             Text(
-              "You've used all 5 free prompts!",
+              "You've used all 5 free prompts for today!",
               style: AppTextStyles.title,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.spacing12),
             Text(
-              "Create a free account to save your history and sync across devices.",
-              style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+              'Create a free account to save your history and sync across devices.',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.spacing32),
@@ -215,18 +247,24 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                   },
                   child: Text(
                     'Sign in instead',
-                    style: AppTextStyles.body.copyWith(color: AppColors.primaryLight),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.primaryLight,
+                    ),
                   ),
                 ),
                 Text(
                   '  |  ',
-                  style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'Maybe Later',
-                    style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
                   ),
                 ),
               ],
@@ -242,16 +280,31 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     if (text.isEmpty) return;
 
     // Check connectivity first
-    final connectivityProvider = Provider.of<ConnectivityProvider>(context, listen: false);
+    final connectivityProvider = Provider.of<ConnectivityProvider>(
+      context,
+      listen: false,
+    );
     if (!connectivityProvider.isOnline) {
-      SnackbarUtils.showError(context, 'You are offline. Please check your connection.');
+      SnackbarUtils.showError(
+        context,
+        'You are offline. Please check your connection.',
+      );
       return;
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final freePromptProvider = Provider.of<FreePromptProvider>(context, listen: false);
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
-    final dailyLimitProvider = Provider.of<DailyLimitProvider>(context, listen: false);
+    final freePromptProvider = Provider.of<FreePromptProvider>(
+      context,
+      listen: false,
+    );
+    final premiumProvider = Provider.of<PremiumProvider>(
+      context,
+      listen: false,
+    );
+    final dailyLimitProvider = Provider.of<DailyLimitProvider>(
+      context,
+      listen: false,
+    );
 
     // Check limits based on user type
     if (!authProvider.isAuthenticated) {
@@ -263,6 +316,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     } else if (!premiumProvider.hasPremiumAccess) {
       // Free authenticated user: check daily limit
       await dailyLimitProvider.loadDailyUsage();
+      if (!mounted) {
+        return;
+      }
       if (dailyLimitProvider.hasReachedLimit) {
         DailyLimitSheet.show(context);
         return;
@@ -277,7 +333,8 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     SemanticsService.announce('Enhancing your prompt', TextDirection.ltr);
 
     String? persona;
-    if (premiumProvider.hasPremiumAccess && premiumProvider.userData?.persona != null) {
+    if (premiumProvider.hasPremiumAccess &&
+        premiumProvider.userData?.persona != null) {
       persona = premiumProvider.userData!.persona;
     }
 
@@ -297,33 +354,41 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
         // Guest user: increment local counter
         await freePromptProvider.increment();
       } else if (!premiumProvider.hasPremiumAccess) {
-        // Free authenticated user: increment daily counter
-        await dailyLimitProvider.incrementUsage();
+        // Free authenticated user: backend already updated usage
+        await dailyLimitProvider.loadDailyUsage();
       }
       // Premium users: no counter to increment
 
       // Announce for accessibility
       // ignore: deprecated_member_use
-      SemanticsService.announce('Prompt enhanced successfully', TextDirection.ltr);
+      SemanticsService.announce(
+        'Prompt enhanced successfully',
+        TextDirection.ltr,
+      );
 
       if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ResultScreen(
-              originalText: text,
-              enhancedPrompt: result['enhancedPrompt'],
-              category: _selectedCategory,
-            ),
-          ),
-        ).then((_) {
-          _inputController.clear();
-        });
+        Navigator.of(context)
+            .push(
+              MaterialPageRoute(
+                builder: (_) => ResultScreen(
+                  originalText: text,
+                  enhancedPrompt: result['enhancedPrompt'],
+                  category: _selectedCategory,
+                ),
+              ),
+            )
+            .then((_) {
+              _inputController.clear();
+            });
       }
     } else {
       if (mounted) {
         // Announce error for accessibility
         // ignore: deprecated_member_use
-        SemanticsService.announce('Error: ${result['error']}', TextDirection.ltr);
+        SemanticsService.announce(
+          'Error: ${result['error']}',
+          TextDirection.ltr,
+        );
         SnackbarUtils.showError(context, result['error']);
       }
     }
@@ -344,7 +409,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     }
 
     return Scaffold(
-      appBar: AdaptiveAppBar(title: 'Prompt'),
+      appBar: const AdaptiveAppBar(title: 'Prompt'),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final contentMaxWidth = isTablet ? 600.0 : constraints.maxWidth;
@@ -352,14 +417,22 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
             child: SizedBox(
               width: contentMaxWidth,
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing24),
+                padding: EdgeInsets.all(
+                  isSmallScreen
+                      ? AppConstants.spacing16
+                      : AppConstants.spacing24,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Greeting Section
                     Text(
-                      authProvider.isAuthenticated ? 'Hello, $displayName' : 'Hello!',
-                      style: AppTextStyles.heading.copyWith(color: theme.colorScheme.onSurface),
+                      authProvider.isAuthenticated
+                          ? 'Hello, $displayName'
+                          : 'Hello!',
+                      style: AppTextStyles.heading.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: AppConstants.spacing8),
                     Text(
@@ -388,8 +461,14 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                           final category = _categories[index];
                           final isSelected = _selectedCategory == category.name;
                           return Padding(
-                            padding: const EdgeInsets.only(right: AppConstants.spacing8),
-                            child: _buildCategoryChip(category, isSelected, isSmallScreen),
+                            padding: const EdgeInsets.only(
+                              right: AppConstants.spacing8,
+                            ),
+                            child: _buildCategoryChip(
+                              category,
+                              isSelected,
+                              isSmallScreen,
+                            ),
                           );
                         },
                       ),
@@ -409,7 +488,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                                 _buildSectionLabel('Tone'),
                                 if (!hasPremium) ...[
                                   const SizedBox(width: AppConstants.spacing8),
-                                  Icon(
+                                  const Icon(
                                     Icons.lock_outline,
                                     size: 14,
                                     color: AppColors.textSecondaryLight,
@@ -428,8 +507,15 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                                   final isSelected = _selectedTone == tone.name;
                                   final isLocked = !hasPremium && index > 0;
                                   return Padding(
-                                    padding: const EdgeInsets.only(right: AppConstants.spacing8),
-                                    child: _buildToneChip(tone, isSelected, isLocked, isSmallScreen),
+                                    padding: const EdgeInsets.only(
+                                      right: AppConstants.spacing8,
+                                    ),
+                                    child: _buildToneChip(
+                                      tone,
+                                      isSelected,
+                                      isLocked,
+                                      isSmallScreen,
+                                    ),
                                   );
                                 },
                               ),
@@ -452,18 +538,32 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                     // Guest Counter (only for non-authenticated users)
                     if (!authProvider.isAuthenticated) ...[
                       const SizedBox(height: AppConstants.spacing16),
-                      _buildGuestCounter(freePromptProvider, theme, isSmallScreen),
+                      _buildGuestCounter(
+                        freePromptProvider,
+                        theme,
+                        isSmallScreen,
+                      ),
                     ],
 
                     // Daily Usage Indicator (only for free authenticated users)
                     if (authProvider.isAuthenticated) ...[
                       Consumer2<PremiumProvider, DailyLimitProvider>(
-                        builder: (context, premiumProvider, dailyLimitProvider, child) {
-                          if (premiumProvider.hasPremiumAccess) {
-                            return const SizedBox.shrink(); // Hide for premium users
-                          }
-                          return _buildDailyUsageIndicator(dailyLimitProvider, theme, isSmallScreen);
-                        },
+                        builder:
+                            (
+                              context,
+                              premiumProvider,
+                              dailyLimitProvider,
+                              child,
+                            ) {
+                              if (premiumProvider.hasPremiumAccess) {
+                                return const SizedBox.shrink(); // Hide for premium users
+                              }
+                              return _buildDailyUsageIndicator(
+                                dailyLimitProvider,
+                                theme,
+                                isSmallScreen,
+                              );
+                            },
                       ),
                     ],
 
@@ -529,7 +629,11 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildCategoryChip(_CategoryItem category, bool isSelected, bool isSmallScreen) {
+  Widget _buildCategoryChip(
+    _CategoryItem category,
+    bool isSelected,
+    bool isSmallScreen,
+  ) {
     return Semantics(
       label: 'Category: ${category.name}',
       hint: isSelected ? 'Selected' : 'Tap to select',
@@ -537,114 +641,133 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
       child: GestureDetector(
         onTap: () => setState(() => _selectedCategory = category.name),
         child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16,
-          vertical: AppConstants.spacing8,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? category.color : Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.radiusChip),
-          border: Border.all(
-            color: isSelected ? category.color : AppColors.borderLight,
-            width: 1.5,
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen
+                ? AppConstants.spacing12
+                : AppConstants.spacing16,
+            vertical: AppConstants.spacing8,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: category.color.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              category.icon,
-              size: isSmallScreen ? 14 : 16,
-              color: isSelected ? Colors.white : category.color,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? category.color
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppConstants.radiusChip),
+            border: Border.all(
+              color: isSelected ? category.color : AppColors.borderLight,
+              width: 1.5,
             ),
-            const SizedBox(width: AppConstants.spacing8),
-            Text(
-              category.name,
-              style: AppTextStyles.caption.copyWith(
-                color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                fontSize: isSmallScreen ? 11 : 13,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: category.color.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                category.icon,
+                size: isSmallScreen ? 14 : 16,
+                color: isSelected ? Colors.white : category.color,
               ),
-            ),
-          ],
-        ),
-      ),
-    ),
-    );
-  }
-
-  Widget _buildToneChip(_ToneItem tone, bool isSelected, bool isLocked, bool isSmallScreen) {
-    return Semantics(
-      label: 'Tone: ${tone.name}',
-      hint: isLocked
-          ? 'Locked. Tap to unlock with Premium'
-          : isSelected
-              ? 'Selected'
-              : 'Tap to select',
-      button: true,
-      child: GestureDetector(
-      onTap: () {
-        if (isLocked) {
-          LockedFeatureSheet.show(
-            context,
-            'Tone Selection',
-            'Choose from 6 different tones to customize your prompts',
-          );
-        } else {
-          setState(() => _selectedTone = tone.name);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16,
-          vertical: AppConstants.spacing8,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.radiusChip),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryLight : AppColors.borderLight,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isLocked ? Icons.lock_outline : tone.icon,
-              size: isSmallScreen ? 14 : 16,
-              color: isSelected
-                  ? Colors.white
-                  : isLocked
-                      ? AppColors.textSecondaryLight
-                      : Theme.of(context).colorScheme.onSurface,
-            ),
-            if (!isLocked) ...[
               const SizedBox(width: AppConstants.spacing8),
               Text(
-                tone.name,
+                category.name,
                 style: AppTextStyles.caption.copyWith(
-                  color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   fontSize: isSmallScreen ? 11 : 13,
                 ),
               ),
             ],
-          ],
+          ),
         ),
       ),
-    ),
+    );
+  }
+
+  Widget _buildToneChip(
+    _ToneItem tone,
+    bool isSelected,
+    bool isLocked,
+    bool isSmallScreen,
+  ) {
+    return Semantics(
+      label: 'Tone: ${tone.name}',
+      hint: isLocked
+          ? 'Locked. Tap to unlock with Premium'
+          : isSelected
+          ? 'Selected'
+          : 'Tap to select',
+      button: true,
+      child: GestureDetector(
+        onTap: () {
+          if (isLocked) {
+            LockedFeatureSheet.show(
+              context,
+              'Tone Selection',
+              'Choose from 6 different tones to customize your prompts',
+            );
+          } else {
+            setState(() => _selectedTone = tone.name);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen
+                ? AppConstants.spacing12
+                : AppConstants.spacing16,
+            vertical: AppConstants.spacing8,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primaryLight
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppConstants.radiusChip),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryLight
+                  : AppColors.borderLight,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isLocked ? Icons.lock_outline : tone.icon,
+                size: isSmallScreen ? 14 : 16,
+                color: isSelected
+                    ? Colors.white
+                    : isLocked
+                    ? AppColors.textSecondaryLight
+                    : Theme.of(context).colorScheme.onSurface,
+              ),
+              if (!isLocked) ...[
+                const SizedBox(width: AppConstants.spacing8),
+                Text(
+                  tone.name,
+                  style: AppTextStyles.caption.copyWith(
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: isSmallScreen ? 11 : 13,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -676,7 +799,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                           color: AppColors.primaryLight,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primaryLight.withValues(alpha: 0.4 + _pulseController.value * 0.4),
+                              color: AppColors.primaryLight.withValues(
+                                alpha: 0.4 + _pulseController.value * 0.4,
+                              ),
                               blurRadius: 8,
                               spreadRadius: 2,
                             ),
@@ -688,7 +813,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                   const SizedBox(width: AppConstants.spacing12),
                   Text(
                     _isTranscribing ? 'Transcribing...' : 'Listening...',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
                   ),
                 ],
               ),
@@ -701,14 +828,18 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
             minLines: isSmallScreen ? 3 : 4,
             decoration: InputDecoration(
               hintText: 'Describe what you want to prompt...',
-              hintStyle: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+              hintStyle: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
               filled: false,
               contentPadding: const EdgeInsets.all(AppConstants.spacing24),
             ),
-            style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface),
+            style: AppTextStyles.body.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
             onChanged: (_) => setState(() {}),
           ),
 
@@ -725,40 +856,49 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                 // Mic button
                 Semantics(
                   label: _isRecording ? 'Stop recording' : 'Start recording',
-                  hint: _isRecording ? 'Double tap to stop' : 'Double tap to start',
+                  hint: _isRecording
+                      ? 'Double tap to stop'
+                      : 'Double tap to start',
                   button: true,
                   child: GestureDetector(
                     onTap: _handleRecording,
                     child: AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) {
-                      return Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _isRecording
-                              ? AppColors.primaryLight.withValues(alpha: 0.1 + _pulseController.value * 0.15)
-                              : AppColors.primaryLight,
-                          boxShadow: _isRecording
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primaryLight.withValues(alpha: 0.2 + _pulseController.value * 0.2),
-                                    blurRadius: 12,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Icon(
-                          _isRecording ? Icons.stop : Icons.mic_none,
-                          color: _isRecording ? AppColors.primaryLight : Colors.white,
-                          size: 24,
-                        ),
-                      );
-                    },
+                      animation: _pulseController,
+                      builder: (context, child) {
+                        return Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _isRecording
+                                ? AppColors.primaryLight.withValues(
+                                    alpha: 0.1 + _pulseController.value * 0.15,
+                                  )
+                                : AppColors.primaryLight,
+                            boxShadow: _isRecording
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primaryLight.withValues(
+                                        alpha:
+                                            0.2 + _pulseController.value * 0.2,
+                                      ),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Icon(
+                            _isRecording ? Icons.stop : Icons.mic_none,
+                            color: _isRecording
+                                ? AppColors.primaryLight
+                                : Colors.white,
+                            size: 24,
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
                 ),
 
                 const Spacer(),
@@ -766,7 +906,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                 // Character count
                 Text(
                   '${_inputController.text.length} chars',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
 
                 // Clear button
@@ -776,7 +918,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                     onTap: () => setState(() => _inputController.clear()),
                     child: Container(
                       padding: const EdgeInsets.all(AppConstants.spacing8),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.surfaceVariantLight,
                         shape: BoxShape.circle,
                       ),
@@ -804,54 +946,62 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
       hint: isDisabled
           ? 'Enter some text to enable'
           : _isProcessing
-              ? 'Processing your prompt'
-              : 'Tap to enhance your prompt',
+          ? 'Processing your prompt'
+          : 'Tap to enhance your prompt',
       button: true,
       enabled: !isDisabled,
       child: AnimatedScale(
         scale: 1.0,
         duration: const Duration(milliseconds: 100),
         child: SizedBox(
-        width: double.infinity,
-        height: AppConstants.buttonHeight,
-        child: ElevatedButton(
-          onPressed: isDisabled ? null : _enhancePrompt,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryLight,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.textSecondaryLight.withValues(alpha: 0.3),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+          width: double.infinity,
+          height: AppConstants.buttonHeight,
+          child: ElevatedButton(
+            onPressed: isDisabled ? null : _enhancePrompt,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryLight,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.textSecondaryLight.withValues(
+                alpha: 0.3,
+              ),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+              ),
             ),
-          ),
-          child: _isProcessing
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.auto_awesome, size: 20),
-                    const SizedBox(width: AppConstants.spacing8),
-                    Text(
-                      'Enhance Prompt',
-                      style: AppTextStyles.button.copyWith(color: Colors.white),
+            child: _isProcessing
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-                  ],
-                ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.auto_awesome, size: 20),
+                      const SizedBox(width: AppConstants.spacing8),
+                      Text(
+                        'Enhance Prompt',
+                        style: AppTextStyles.button.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
-    ),
     );
   }
 
-  Widget _buildDailyUsageIndicator(DailyLimitProvider provider, ThemeData theme, bool isSmallScreen) {
+  Widget _buildDailyUsageIndicator(
+    DailyLimitProvider provider,
+    ThemeData theme,
+    bool isSmallScreen,
+  ) {
     final used = provider.dailyPromptsUsed;
     final limit = provider.dailyLimit;
     final remaining = provider.remainingPrompts;
@@ -884,7 +1034,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
               Icon(
                 Icons.bolt_outlined,
                 size: 16,
-                color: isWarning || isExhausted ? AppColors.warning : AppColors.primaryLight,
+                color: isWarning || isExhausted
+                    ? AppColors.warning
+                    : AppColors.primaryLight,
               ),
               const SizedBox(width: AppConstants.spacing8),
               Text(
@@ -898,7 +1050,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
               Text(
                 '$remaining remaining',
                 style: AppTextStyles.caption.copyWith(
-                  color: isWarning || isExhausted ? AppColors.warning : AppColors.textSecondaryLight,
+                  color: isWarning || isExhausted
+                      ? AppColors.warning
+                      : AppColors.textSecondaryLight,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -911,7 +1065,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
               value: used / limit,
               backgroundColor: AppColors.surfaceVariantLight,
               valueColor: AlwaysStoppedAnimation<Color>(
-                isWarning || isExhausted ? AppColors.warning : AppColors.primaryLight,
+                isWarning || isExhausted
+                    ? AppColors.warning
+                    : AppColors.primaryLight,
               ),
               minHeight: 6,
             ),
@@ -921,7 +1077,11 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildGuestCounter(FreePromptProvider provider, ThemeData theme, bool isSmallScreen) {
+  Widget _buildGuestCounter(
+    FreePromptProvider provider,
+    ThemeData theme,
+    bool isSmallScreen,
+  ) {
     return Container(
       padding: const EdgeInsets.all(AppConstants.spacing16),
       decoration: BoxDecoration(
@@ -936,7 +1096,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
             children: [
               Text(
                 'Free Prompts',
-                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
               ),
               Text(
                 '${provider.used} / ${FreePromptProvider.maxFreePrompts}',
@@ -953,16 +1115,18 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
             child: LinearProgressIndicator(
               value: provider.used / FreePromptProvider.maxFreePrompts,
               backgroundColor: AppColors.surfaceVariantLight,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primaryLight,
+              ),
               minHeight: 6,
             ),
           ),
           const SizedBox(height: AppConstants.spacing12),
           GestureDetector(
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SignupScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SignupScreen()));
             },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1010,72 +1174,71 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
           });
         },
         child: Container(
-        width: isSmallScreen ? 140 : 160,
-        margin: const EdgeInsets.only(right: AppConstants.spacing16),
-        padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-          border: Border.all(color: AppColors.borderLight),
-          boxShadow: AppColors.cardShadowLight,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing4 : AppConstants.spacing8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+          width: isSmallScreen ? 140 : 160,
+          margin: const EdgeInsets.only(right: AppConstants.spacing16),
+          padding: EdgeInsets.all(
+            isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16,
+          ),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+            border: Border.all(color: AppColors.borderLight),
+            boxShadow: AppColors.cardShadowLight,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(
+                  isSmallScreen ? AppConstants.spacing4 : AppConstants.spacing8,
+                ),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: isSmallScreen ? 18 : 22, color: color),
               ),
-              child: Icon(icon, size: isSmallScreen ? 18 : 22, color: color),
-            ),
-            SizedBox(height: isSmallScreen ? AppConstants.spacing4 : AppConstants.spacing12),
-            Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.subtitle.copyWith(
-                fontSize: isSmallScreen ? 12 : 14,
-                color: theme.colorScheme.onSurface,
+              SizedBox(
+                height: isSmallScreen
+                    ? AppConstants.spacing4
+                    : AppConstants.spacing12,
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              category,
-              style: AppTextStyles.caption.copyWith(
-                color: color,
-                fontWeight: FontWeight.w500,
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.subtitle.copyWith(
+                  fontSize: isSmallScreen ? 12 : 14,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                category,
+                style: AppTextStyles.caption.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
 
 class _CategoryItem {
+  _CategoryItem({required this.name, required this.icon, required this.color});
   final String name;
   final IconData icon;
   final Color color;
-
-  _CategoryItem({
-    required this.name,
-    required this.icon,
-    required this.color,
-  });
 }
 
 class _ToneItem {
+  _ToneItem({required this.name, required this.icon});
   final String name;
   final IconData icon;
-
-  _ToneItem({
-    required this.name,
-    required this.icon,
-  });
 }

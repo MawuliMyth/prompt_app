@@ -158,7 +158,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
     final isCupertino = !kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS);
 
     return Scaffold(
-      appBar: AdaptiveAppBar(title: 'Templates'),
+      appBar: const AdaptiveAppBar(title: 'Templates'),
       body: Column(
         children: [
           if (isCupertino)
@@ -362,10 +362,6 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
 }
 
 class _TemplateItem {
-  final String title;
-  final IconData icon;
-  final String desc;
-  final String content;
 
   _TemplateItem({
     required this.title,
@@ -373,4 +369,8 @@ class _TemplateItem {
     required this.desc,
     required this.content,
   });
+  final String title;
+  final IconData icon;
+  final String desc;
+  final String content;
 }

@@ -5,16 +5,16 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// Provider for network connectivity status
 class ConnectivityProvider extends ChangeNotifier {
+
+  ConnectivityProvider() {
+    _initConnectivity();
+  }
   bool _isOnline = true;
   bool _isChecking = false;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
 
   bool get isOnline => _isOnline;
   bool get isChecking => _isChecking;
-
-  ConnectivityProvider() {
-    _initConnectivity();
-  }
 
   Future<void> _initConnectivity() async {
     try {

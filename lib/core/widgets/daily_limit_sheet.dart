@@ -84,7 +84,7 @@ class _DailyLimitContent extends StatelessWidget {
           const SizedBox(height: AppConstants.spacing24),
 
           // Divider
-          Divider(color: AppColors.borderLight, height: 1),
+          const Divider(color: AppColors.borderLight, height: 1),
 
           const SizedBox(height: AppConstants.spacing24),
 

@@ -4,6 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/repositories/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
+
+  AuthProvider() {
+    _authStateSubscription = _authRepository.authStateChanges.listen((user) {
+      notifyListeners();
+    });
+  }
   final AuthRepository _authRepository = AuthRepository();
   StreamSubscription<User?>? _authStateSubscription;
   bool _isLoading = false;
@@ -25,24 +31,21 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _authRepository.currentUser != null;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get isLockedOut => _lockoutUntil != null && DateTime.now().isBefore(_lockoutUntil!);
+  bool get isLockedOut =>
+      _lockoutUntil != null && DateTime.now().isBefore(_lockoutUntil!);
   Duration? get remainingLockout {
     if (_lockoutUntil == null) return null;
     final remaining = _lockoutUntil!.difference(DateTime.now());
     return remaining.isNegative ? null : remaining;
   }
 
-  bool get isPasswordResetLockedOut => _passwordResetLockoutUntil != null && DateTime.now().isBefore(_passwordResetLockoutUntil!);
+  bool get isPasswordResetLockedOut =>
+      _passwordResetLockoutUntil != null &&
+      DateTime.now().isBefore(_passwordResetLockoutUntil!);
   Duration? get remainingPasswordResetLockout {
     if (_passwordResetLockoutUntil == null) return null;
     final remaining = _passwordResetLockoutUntil!.difference(DateTime.now());
     return remaining.isNegative ? null : remaining;
-  }
-
-  AuthProvider() {
-    _authStateSubscription = _authRepository.authStateChanges.listen((user) {
-      notifyListeners();
-    });
   }
 
   @override
@@ -78,7 +81,9 @@ class AuthProvider extends ChangeNotifier {
     if (isLockedOut) {
       final remaining = remainingLockout;
       if (remaining != null) {
-        _setError('Please wait ${remaining.inMinutes} minutes before trying again.');
+        _setError(
+          'Please wait ${remaining.inMinutes} minutes before trying again.',
+        );
       }
       return true;
     }
@@ -111,7 +116,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> signUpWithEmail(String name, String email, String password) async {
+  Future<bool> signUpWithEmail(
+    String name,
+    String email,
+    String password,
+  ) async {
     if (await _checkLockout()) return false;
 
     try {
@@ -218,12 +227,15 @@ class AuthProvider extends ChangeNotifier {
     if (isPasswordResetLockedOut) {
       final remaining = remainingPasswordResetLockout;
       if (remaining != null) {
-        _setError('Too many reset attempts. Please wait ${remaining.inMinutes} minutes.');
+        _setError(
+          'Too many reset attempts. Please wait ${remaining.inMinutes} minutes.',
+        );
       }
       return false;
     }
     // Clear lockout if time has passed
-    if (_passwordResetLockoutUntil != null && DateTime.now().isAfter(_passwordResetLockoutUntil!)) {
+    if (_passwordResetLockoutUntil != null &&
+        DateTime.now().isAfter(_passwordResetLockoutUntil!)) {
       _passwordResetAttempts = 0;
       _passwordResetLockoutUntil = null;
     }
@@ -237,8 +249,12 @@ class AuthProvider extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       _passwordResetAttempts++;
       if (_passwordResetAttempts >= _maxPasswordResetAttempts) {
-        _passwordResetLockoutUntil = DateTime.now().add(_passwordResetLockoutDuration);
-        _setError('Too many reset attempts. Please wait 30 minutes before trying again.');
+        _passwordResetLockoutUntil = DateTime.now().add(
+          _passwordResetLockoutDuration,
+        );
+        _setError(
+          'Too many reset attempts. Please wait 30 minutes before trying again.',
+        );
       } else {
         _setError(_getFriendlyErrorMessage(e.code, 'Password reset'));
       }
@@ -266,13 +282,13 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-         _setError('Please sign in again before deleting your account.');
+        _setError('Please sign in again before deleting your account.');
       } else {
         _setError(_getFriendlyErrorMessage(e.code, 'delete account'));
       }
       return false;
     } catch (e) {
-      _setError('An unexpected error occurred.');
+      _setError(e.toString().replaceFirst('Exception: ', ''));
       return false;
     } finally {
       _setLoading(false);

@@ -254,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const GoogleLogo(size: 24),
+                      const GoogleLogo(),
                       const SizedBox(width: 12),
                       Flexible(
                         child: Text(
@@ -287,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const AppleLogo(size: 24),
+                        const AppleLogo(),
                         const SizedBox(width: 12),
                         Flexible(
                           child: Text(

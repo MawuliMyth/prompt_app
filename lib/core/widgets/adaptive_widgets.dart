@@ -6,11 +6,6 @@ import '../utils/platform_utils.dart';
 
 /// Adaptive AppBar - Material on Android, Cupertino on iOS
 class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final List<Widget>? actions;
-  final Widget? leading;
-  final bool centerTitle;
-  final Color? backgroundColor;
 
   const AdaptiveAppBar({
     super.key,
@@ -20,6 +15,11 @@ class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.centerTitle = false,
     this.backgroundColor,
   });
+  final String title;
+  final List<Widget>? actions;
+  final Widget? leading;
+  final bool centerTitle;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -61,14 +61,6 @@ class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 /// Adaptive Elevated Button
 class AdaptiveButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final Color? backgroundColor;
-  final Color? foregroundColor;
-  final IconData? icon;
-  final bool isDestructive;
-  final bool filled;
 
   const AdaptiveButton({
     super.key,
@@ -81,6 +73,14 @@ class AdaptiveButton extends StatelessWidget {
     this.isDestructive = false,
     this.filled = true,
   });
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
+  final IconData? icon;
+  final bool isDestructive;
+  final bool filled;
 
   @override
   Widget build(BuildContext context) {
@@ -150,21 +150,6 @@ class AdaptiveButton extends StatelessWidget {
 
 /// Adaptive Text Field
 class AdaptiveTextField extends StatelessWidget {
-  final TextEditingController? controller;
-  final String? hintText;
-  final String? labelText;
-  final Widget? prefixIcon;
-  final Widget? suffixIcon;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-  final int? maxLines;
-  final int? minLines;
-  final String? Function(String?)? validator;
-  final void Function(String)? onChanged;
-  final void Function(String)? onSubmitted;
-  final FocusNode? focusNode;
-  final bool enabled;
-  final TextInputAction? textInputAction;
 
   const AdaptiveTextField({
     super.key,
@@ -184,6 +169,21 @@ class AdaptiveTextField extends StatelessWidget {
     this.enabled = true,
     this.textInputAction,
   });
+  final TextEditingController? controller;
+  final String? hintText;
+  final String? labelText;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final int? maxLines;
+  final int? minLines;
+  final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+  final FocusNode? focusNode;
+  final bool enabled;
+  final TextInputAction? textInputAction;
 
   @override
   Widget build(BuildContext context) {
@@ -316,10 +316,10 @@ class AdaptiveDialog {
 
 /// Adaptive Progress Indicator
 class AdaptiveProgressIndicator extends StatelessWidget {
-  final double? size;
-  final Color? color;
 
   const AdaptiveProgressIndicator({super.key, this.size, this.color});
+  final double? size;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -345,9 +345,6 @@ class AdaptiveProgressIndicator extends StatelessWidget {
 
 /// Adaptive Segment Control (for filters)
 class AdaptiveSegmentControl<T extends Object> extends StatelessWidget {
-  final Map<T, String> segments;
-  final T selectedValue;
-  final void Function(T) onValueChanged;
 
   const AdaptiveSegmentControl({
     super.key,
@@ -355,6 +352,9 @@ class AdaptiveSegmentControl<T extends Object> extends StatelessWidget {
     required this.selectedValue,
     required this.onValueChanged,
   });
+  final Map<T, String> segments;
+  final T selectedValue;
+  final void Function(T) onValueChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -384,12 +384,6 @@ class AdaptiveSegmentControl<T extends Object> extends StatelessWidget {
 
 /// Adaptive List Tile
 class AdaptiveListTile extends StatelessWidget {
-  final Widget? leading;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final EdgeInsetsGeometry? contentPadding;
 
   const AdaptiveListTile({
     super.key,
@@ -400,6 +394,12 @@ class AdaptiveListTile extends StatelessWidget {
     this.onTap,
     this.contentPadding,
   });
+  final Widget? leading;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry? contentPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -434,11 +434,6 @@ class AdaptiveListTile extends StatelessWidget {
 
 /// Adaptive Scaffold
 class AdaptiveScaffold extends StatelessWidget {
-  final PreferredSizeWidget? appBar;
-  final Widget body;
-  final Widget? bottomNavigationBar;
-  final Color? backgroundColor;
-  final bool resizeToAvoidBottomInset;
 
   const AdaptiveScaffold({
     super.key,
@@ -448,6 +443,11 @@ class AdaptiveScaffold extends StatelessWidget {
     this.backgroundColor,
     this.resizeToAvoidBottomInset = true,
   });
+  final PreferredSizeWidget? appBar;
+  final Widget body;
+  final Widget? bottomNavigationBar;
+  final Color? backgroundColor;
+  final bool resizeToAvoidBottomInset;
 
   @override
   Widget build(BuildContext context) {
@@ -463,9 +463,9 @@ class AdaptiveScaffold extends StatelessWidget {
           bottom: false,
           child: Column(
             children: [
-              if (appBar != null) appBar!,
+              ?appBar,
               Expanded(child: body),
-              if (bottomNavigationBar != null) bottomNavigationBar!,
+              ?bottomNavigationBar,
             ],
           ),
         ),

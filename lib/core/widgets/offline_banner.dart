@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 /// A compact banner that displays when the app is offline
 class OfflineBanner extends StatelessWidget {
-  final VoidCallback? onRetry;
 
   const OfflineBanner({
     super.key,
     this.onRetry,
   });
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {

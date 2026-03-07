@@ -13,6 +13,12 @@ class DailyLimitService {
     return _firestore.collection('users').doc(user.uid);
   }
 
+  bool _isSameCalendarDay(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
+
   /// Get current daily usage
   Future<int> getDailyUsage() async {
     final ref = _userDocRef();
@@ -21,7 +27,18 @@ class DailyLimitService {
     try {
       final doc = await ref.get();
       if (!doc.exists) return 0;
-      return doc.data()?['dailyPromptsUsed']?.toInt() ?? 0;
+
+      final data = doc.data();
+      final used = data?['dailyPromptsUsed']?.toInt() ?? 0;
+      final resetDate = data?['dailyPromptsResetDate'];
+      if (resetDate == null) return 0;
+
+      final lastReset = (resetDate as Timestamp).toDate();
+      if (!_isSameCalendarDay(lastReset, DateTime.now())) {
+        return 0;
+      }
+
+      return used;
     } catch (e) {
       debugPrint('Error getting daily usage: $e');
       return 0;
@@ -41,47 +58,9 @@ class DailyLimitService {
   }
 
   /// Check if it's a new day and reset if needed
-  /// Returns true if reset was performed
+  /// Client now calculates the effective count locally; server resets on successful requests.
   Future<bool> resetIfNewDay() async {
-    final ref = _userDocRef();
-    if (ref == null) return false;
-
-    try {
-      final doc = await ref.get();
-      if (!doc.exists) return false;
-
-      final data = doc.data();
-      final resetDate = data?['dailyPromptsResetDate'];
-
-      if (resetDate == null) {
-        // First time, set the reset date
-        await ref.set({
-          'dailyPromptsUsed': 0,
-          'dailyPromptsResetDate': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        return true;
-      }
-
-      final lastReset = (resetDate as Timestamp).toDate();
-      final now = DateTime.now();
-
-      // Check if it's a different calendar day
-      if (lastReset.year != now.year ||
-          lastReset.month != now.month ||
-          lastReset.day != now.day) {
-        // It's a new day, reset the counter
-        await ref.set({
-          'dailyPromptsUsed': 0,
-          'dailyPromptsResetDate': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint('Error checking/resetting daily limit: $e');
-      return false;
-    }
+    return false;
   }
 
   /// Increment daily usage by 1
@@ -90,9 +69,7 @@ class DailyLimitService {
     if (ref == null) return false;
 
     try {
-      await ref.update({
-        'dailyPromptsUsed': FieldValue.increment(1),
-      });
+      await ref.update({'dailyPromptsUsed': FieldValue.increment(1)});
       return true;
     } catch (e) {
       debugPrint('Error incrementing daily usage: $e');

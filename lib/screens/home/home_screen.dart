@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
-          border: Border(
+          border: const Border(
             top: BorderSide(
               color: AppColors.borderLight,
               width: 0.5,
@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           width: 4,
           height: 4,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.primaryLight,
             shape: BoxShape.circle,
           ),

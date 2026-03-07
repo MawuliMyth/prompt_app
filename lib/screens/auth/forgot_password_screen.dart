@@ -135,7 +135,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               height: 56,
               alignment: Alignment.center,
               child: authProvider.isLoading
-                  ? const ShimmerButtonLoader(text: 'Sending...', height: 56)
+                  ? const ShimmerButtonLoader(text: 'Sending...')
                   : Text(
                       'Send Reset Link',
                       style: AppTextStyles.button.copyWith(color: Colors.white),

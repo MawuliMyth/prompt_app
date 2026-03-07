@@ -1,6 +1,9 @@
 const functions = require('firebase-functions');
 const https = require('https');
 
+// Legacy prototype only.
+// The active production API path lives in backend/ and is the path used by the Flutter app.
+
 exports.enhancePrompt = functions.https.onCall(async (data, context) => {
   const { roughPrompt, category } = data;
 

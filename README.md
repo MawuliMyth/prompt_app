@@ -1,17 +1,36 @@
 # promt_app
 
-A new Flutter project.
+Flutter app for prompt enhancement with voice transcription, Firebase auth, quota enforcement, and a Node.js backend.
 
-## Getting Started
+## Project Structure
 
-This project is a starting point for a Flutter application.
+- `lib/` - Flutter application code
+- `backend/` - Active Express backend used by the app in development and production
+- `functions/` - Legacy Firebase Functions prototype kept for reference only
 
-A few resources to get you started if this is your first Flutter project:
+## Backend
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+The active API lives in `backend/`.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See `backend/README.md` for:
+- environment variables
+- local startup
+- backend tests
+- Render deployment steps
+- manual verification checklist
+
+## Flutter
+
+Common commands:
+
+```bash
+flutter pub get
+flutter analyze
+flutter run
+```
+
+## Security Notes
+
+- Do not commit real `.env` files or Firebase service-account keys
+- Premium access and free/guest quotas are enforced by the backend, not just the client
+- Deploy `firestore.rules` whenever Firestore access rules change

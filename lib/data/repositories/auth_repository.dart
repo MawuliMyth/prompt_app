@@ -1,13 +1,27 @@
 import 'dart:io' show Platform;
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart' show SignInWithApple, AppleIDAuthorizationScopes, AuthorizationCredentialAppleID, SignInWithAppleAuthorizationException, AuthorizationErrorCode;
+import 'package:sign_in_with_apple/sign_in_with_apple.dart'
+    show
+        SignInWithApple,
+        AppleIDAuthorizationScopes,
+        AuthorizationCredentialAppleID,
+        SignInWithAppleAuthorizationException,
+        AuthorizationErrorCode;
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
+import '../../core/config/api_config.dart';
 
 class AuthRepository {
+
+  AuthRepository() {
+    // Configure GoogleSignIn with serverClientId for Android
+    _googleSignIn = GoogleSignIn(serverClientId: _googleWebClientId);
+  }
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -18,18 +32,14 @@ class AuthRepository {
 
   late final GoogleSignIn _googleSignIn;
 
-  AuthRepository() {
-    // Configure GoogleSignIn with serverClientId for Android
-    _googleSignIn = GoogleSignIn(
-      serverClientId: _googleWebClientId,
-    );
-  }
-
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   /// Create or update Firestore user document
-  Future<void> _createOrUpdateUserDocument(User user, {String? displayName}) async {
+  Future<void> _createOrUpdateUserDocument(
+    User user, {
+    String? displayName,
+  }) async {
     final userRef = _firestore.collection('users').doc(user.uid);
     final doc = await userRef.get();
 
@@ -81,7 +91,8 @@ class AuthRepository {
         return {'credential': null, 'cancelled': true};
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -103,7 +114,9 @@ class AuthRepository {
   Future<Map<String, dynamic>?> signInWithApple() async {
     // Check platform - Apple Sign-In only works on iOS/macOS (not web)
     if (kIsWeb || (!Platform.isIOS && !Platform.isMacOS)) {
-      throw Exception('Apple Sign-In is only supported on iOS and macOS devices.');
+      throw Exception(
+        'Apple Sign-In is only supported on iOS and macOS devices.',
+      );
     }
 
     try {
@@ -129,7 +142,10 @@ class AuthRepository {
         final displayName = (givenName != null && familyName != null)
             ? '$givenName $familyName'
             : null;
-        await _createOrUpdateUserDocument(result.user!, displayName: displayName);
+        await _createOrUpdateUserDocument(
+          result.user!,
+          displayName: displayName,
+        );
       }
       return {'credential': result, 'cancelled': false};
     } on SignInWithAppleAuthorizationException catch (e) {
@@ -155,11 +171,30 @@ class AuthRepository {
   Future<void> deleteAccount() async {
     final user = currentUser;
     if (user != null) {
-      final uid = user.uid;
-      // Delete Firestore user data first
-      await _firestore.collection('users').doc(uid).delete();
-      // Then delete Firebase Auth account
-      await user.delete();
+      final token = await user.getIdToken(true);
+      final response = await http.delete(
+        Uri.parse(ApiConfig.deleteAccountEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final code = data['code'] as String?;
+        if (code == 'requires-recent-login') {
+          throw FirebaseAuthException(
+            code: 'requires-recent-login',
+            message: data['error'] as String?,
+          );
+        }
+
+        throw Exception(data['error'] ?? 'Failed to delete account');
+      }
+
+      await _googleSignIn.signOut();
+      await _auth.signOut();
     }
   }
 }

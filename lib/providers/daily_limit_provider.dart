@@ -42,17 +42,14 @@ class DailyLimitProvider extends ChangeNotifier {
   Future<bool> incrementUsage() async {
     if (_hasReachedLimit) return false;
 
-    final success = await _dailyLimitService.incrementDailyUsage();
-    if (success) {
-      _dailyPromptsUsed++;
-      _remainingPrompts--;
-      if (_remainingPrompts <= 0) {
-        _remainingPrompts = 0;
-        _hasReachedLimit = true;
-      }
-      notifyListeners();
+    _dailyPromptsUsed++;
+    _remainingPrompts--;
+    if (_remainingPrompts <= 0) {
+      _remainingPrompts = 0;
+      _hasReachedLimit = true;
     }
-    return success;
+    notifyListeners();
+    return true;
   }
 
   /// Reset the daily counter

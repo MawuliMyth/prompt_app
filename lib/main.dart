@@ -26,7 +26,7 @@ void main() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     firebaseInitialized = true;
   } catch (e) {
-    debugPrint("Firebase initialization error: $e");
+    debugPrint('Firebase initialization error: $e');
   }
 
   runApp(

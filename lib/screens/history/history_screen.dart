@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -10,7 +9,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/date_utils.dart';
-import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../result/result_screen.dart';
@@ -26,7 +24,14 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final _searchController = TextEditingController();
-  final List<String> _categories = ['All', 'Image Generation', 'Coding', 'Writing', 'Business', 'General'];
+  final List<String> _categories = [
+    'All',
+    'Image Generation',
+    'Coding',
+    'Writing',
+    'Business',
+    'General',
+  ];
   Timer? _debounceTimer;
 
   static const int _freeUserHistoryLimit = 10;
@@ -36,7 +41,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final promptProvider = Provider.of<PromptProvider>(context, listen: false);
+      final promptProvider = Provider.of<PromptProvider>(
+        context,
+        listen: false,
+      );
       promptProvider.setSearchQuery('');
       promptProvider.setCategoryFilter('All');
     });
@@ -47,7 +55,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      final promptProvider = Provider.of<PromptProvider>(context, listen: false);
+      final promptProvider = Provider.of<PromptProvider>(
+        context,
+        listen: false,
+      );
       promptProvider.setSearchQuery(_searchController.text);
     });
   }
@@ -60,23 +71,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _showClearAllConfirm() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final promptProvider = Provider.of<PromptProvider>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     final confirmed = await AdaptiveDialog.show(
       context: context,
       title: 'Clear History?',
-      content: 'This action cannot be undone. Are you sure you want to delete all your prompt history?',
-      cancelText: 'Cancel',
+      content:
+          'This action cannot be undone. Are you sure you want to delete all your prompt history?',
       confirmText: 'Clear All',
       isDestructive: true,
     );
 
+    if (!mounted) return;
+
     if (confirmed == true) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final promptProvider = Provider.of<PromptProvider>(context, listen: false);
-      final success = await promptProvider.clearAllHistory(authProvider.currentUser);
-      if (!success && context.mounted) {
-        SnackbarUtils.showError(
-          context,
-          promptProvider.error ?? 'Failed to clear history',
+      final success = await promptProvider.clearAllHistory(
+        authProvider.currentUser,
+      );
+      if (!success) {
+        scaffoldMessenger.hideCurrentSnackBar();
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(promptProvider.error ?? 'Failed to clear history'),
+          ),
         );
       }
     }
@@ -93,7 +112,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: [
           Consumer<PromptProvider>(
             builder: (context, promptProvider, _) {
-              if (authProvider.isAuthenticated && promptProvider.prompts.isNotEmpty) {
+              if (authProvider.isAuthenticated &&
+                  promptProvider.prompts.isNotEmpty) {
                 return IconButton(
                   icon: const Icon(Icons.delete_outline),
                   onPressed: _showClearAllConfirm,
@@ -114,7 +134,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 final displayPrompts = hasPremium
                     ? allPrompts
                     : allPrompts.take(_freeUserHistoryLimit).toList();
-                final isLimited = !hasPremium && allPrompts.length > _freeUserHistoryLimit;
+                final isLimited =
+                    !hasPremium && allPrompts.length > _freeUserHistoryLimit;
 
                 return promptProvider.isLoading
                     ? _buildShimmerLoading()
@@ -122,7 +143,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         children: [
                           _buildSearchBar(theme, promptProvider),
                           _buildFilters(theme, promptProvider),
-                          if (isLimited) _buildLimitBanner(theme, allPrompts.length),
+                          if (isLimited)
+                            _buildLimitBanner(theme, allPrompts.length),
                           Expanded(
                             child: displayPrompts.isEmpty
                                 ? _buildEmptyHistory(theme)
@@ -137,21 +159,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       return PromptHistoryCard(
                                         prompt: prompt,
                                         onDelete: () async {
-                                          final success = await promptProvider.deletePrompt(
-                                            authProvider.currentUser,
-                                            prompt.id,
-                                          );
-                                          if (!success && mounted) {
-                                            SnackbarUtils.showError(
-                                              context,
-                                              promptProvider.error ?? 'Failed to delete prompt',
+                                          final scaffoldMessenger =
+                                              ScaffoldMessenger.of(context);
+                                          final success = await promptProvider
+                                              .deletePrompt(
+                                                authProvider.currentUser,
+                                                prompt.id,
+                                              );
+                                          if (!success) {
+                                            scaffoldMessenger
+                                                .hideCurrentSnackBar();
+                                            scaffoldMessenger.showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  promptProvider.error ??
+                                                      'Failed to delete prompt',
+                                                ),
+                                              ),
                                             );
                                           }
                                         },
                                       );
                                     },
                                   ),
-                          )
+                          ),
                         ],
                       );
               },
@@ -201,7 +232,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
           final isSelected = provider.selectedCategoryFilter == cat;
 
           return Padding(
-            padding: const EdgeInsets.only(right: AppConstants.spacing8, bottom: AppConstants.spacing8),
+            padding: const EdgeInsets.only(
+              right: AppConstants.spacing8,
+              bottom: AppConstants.spacing8,
+            ),
             child: FilterChip(
               label: Text(cat),
               selected: isSelected,
@@ -211,7 +245,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               backgroundColor: theme.colorScheme.surface,
               selectedColor: AppColors.primaryLight,
               side: BorderSide(
-                color: isSelected ? AppColors.primaryLight : AppColors.borderLight,
+                color: isSelected
+                    ? AppColors.primaryLight
+                    : AppColors.borderLight,
               ),
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : theme.colorScheme.onSurface,
@@ -277,9 +313,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PaywallScreen()),
-            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const PaywallScreen())),
             style: TextButton.styleFrom(
               backgroundColor: AppColors.primaryLight,
               foregroundColor: Colors.white,
@@ -307,7 +343,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       itemCount: 5,
       itemBuilder: (context, index) => const Padding(
         padding: EdgeInsets.only(bottom: AppConstants.spacing16),
-        child: ShimmerCard(height: 120),
+        child: ShimmerCard(),
       ),
     );
   }
@@ -322,35 +358,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariantLight,
-              shape: BoxShape.circle,
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceVariantLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.history,
+                    size: 40,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacing24),
+                Text(
+                  'No prompts found',
+                  style: AppTextStyles.title.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppConstants.spacing8),
+                Text(
+                  'Start creating prompts from the Home tab',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.history,
-              size: 40,
-              color: AppColors.textSecondaryLight,
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacing24),
-          Text(
-            'No prompts found',
-            style: AppTextStyles.title.copyWith(color: theme.colorScheme.onSurface),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppConstants.spacing8),
-          Text(
-            'Start creating prompts from the Home tab',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-            textAlign: TextAlign.center,
-          )
-        ],
           ),
         ),
-      ),
       ],
     );
   }
@@ -365,44 +405,46 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.history_outlined,
-              size: 50,
-              color: AppColors.primaryLight,
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacing32),
-          Text(
-            'Sign in to view your prompt history',
-            style: AppTextStyles.title,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppConstants.spacing12),
-          Text(
-            'Your history connects across all devices and stays safely backed up.',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppConstants.spacing32),
-          SizedBox(
-            width: double.infinity,
-            height: AppConstants.buttonHeight,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              },
-              child: const Text('Sign In'),
-            ),
-          )
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.history_outlined,
+                    size: 50,
+                    color: AppColors.primaryLight,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacing32),
+                Text(
+                  'Sign in to view your prompt history',
+                  style: AppTextStyles.title,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppConstants.spacing12),
+                Text(
+                  'Your history connects across all devices and stays safely backed up.',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppConstants.spacing32),
+                SizedBox(
+                  width: double.infinity,
+                  height: AppConstants.buttonHeight,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    },
+                    child: const Text('Sign In'),
+                  ),
+                ),
               ],
             ),
           ),
@@ -413,14 +455,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
 }
 
 class PromptHistoryCard extends StatelessWidget {
-  final PromptModel prompt;
-  final VoidCallback onDelete;
-
   const PromptHistoryCard({
     super.key,
     required this.prompt,
     required this.onDelete,
   });
+  final PromptModel prompt;
+  final VoidCallback onDelete;
 
   IconData _getIconForCategory(String category) {
     switch (category) {
@@ -477,7 +518,7 @@ class PromptHistoryCard extends StatelessWidget {
         ),
         child: Container(
           padding: const EdgeInsets.all(AppConstants.spacing12),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.error,
             shape: BoxShape.circle,
           ),
@@ -505,7 +546,9 @@ class PromptHistoryCard extends StatelessWidget {
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
                   'Cancel',
-                  style: AppTextStyles.button.copyWith(color: AppColors.textSecondaryLight),
+                  style: AppTextStyles.button.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
               ),
               TextButton(
@@ -526,7 +569,9 @@ class PromptHistoryCard extends StatelessWidget {
             content: const Text('Prompt deleted'),
             backgroundColor: theme.colorScheme.onSurface,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -589,7 +634,9 @@ class PromptHistoryCard extends StatelessWidget {
                       vertical: AppConstants.spacing4,
                     ),
                     decoration: BoxDecoration(
-                      color: _getScoreColor(prompt.strengthScore).withValues(alpha: 0.1),
+                      color: _getScoreColor(
+                        prompt.strengthScore,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -615,14 +662,18 @@ class PromptHistoryCard extends StatelessWidget {
               const SizedBox(height: AppConstants.spacing12),
               Text(
                 prompt.originalText,
-                style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface),
+                style: AppTextStyles.body.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: AppConstants.spacing8),
               Text(
                 prompt.enhancedPrompt,
-                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
