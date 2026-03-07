@@ -20,13 +20,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
     _PlanOption(
       id: 'monthly',
       title: 'Monthly',
-      price: r'$4.99',
+      price: r'$8.99',
       period: '/month',
     ),
     _PlanOption(
       id: 'yearly',
       title: 'Yearly',
-      price: r'$29.99',
+      price: r'$59.99',
       period: '/year',
       subtitle: r'$2.50/month',
       badge: 'SAVE 40%',
@@ -35,7 +35,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     _PlanOption(
       id: 'lifetime',
       title: 'Lifetime',
-      price: r'$49.99',
+      price: r'$89.99',
       period: ' once',
       badge: 'BEST VALUE',
     ),
