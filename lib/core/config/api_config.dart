@@ -10,10 +10,11 @@ class ApiConfig {
   ApiConfig._();
 
   /// Default production URL (Render backend)
-  static const String _defaultProductionUrl = 'https://prompt-app-05kv.onrender.com';
+  static const String _defaultProductionUrl =
+      'https://prompt-app-05kv.onrender.com';
 
   /// Production URL from environment variable (set via --dart-define)
-  static const String? _productionUrl = String.fromEnvironment('API_URL');
+  static const String _productionUrl = String.fromEnvironment('API_URL');
 
   /// Local development URL - platform aware
   static String get localhostUrl {
@@ -26,10 +27,10 @@ class ApiConfig {
   }
 
   /// Base URL for API calls
-  /// Uses --dart-define URL if set, otherwise production URL (Render)
-  /// Use --dart-define=API_URL=http://localhost:3001 for local development
+  /// Uses --dart-define URL if set, localhost in debug, production URL in release
   static String get baseUrl {
-    if (_productionUrl?.isNotEmpty == true) return _productionUrl!;
+    if (_productionUrl.isNotEmpty == true) return _productionUrl;
+    if (!kReleaseMode) return localhostUrl;
     return _defaultProductionUrl;
   }
 
@@ -45,10 +46,16 @@ class ApiConfig {
   /// Prompt variations endpoint (premium feature)
   static String get variationsEndpoint => '$apiEndpoint/variations';
 
+  /// Trial activation endpoint
+  static String get activateTrialEndpoint => '$apiEndpoint/trial/activate';
+
+  /// Account deletion endpoint
+  static String get deleteAccountEndpoint => '$apiEndpoint/account';
+
   /// Health check endpoint
   static String get healthEndpoint => '$baseUrl/health';
 
   /// Check if running in production mode
   static bool get isProduction =>
-      _productionUrl?.isNotEmpty == true || kReleaseMode;
+      _productionUrl.isNotEmpty == true || kReleaseMode;
 }

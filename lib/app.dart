@@ -6,9 +6,9 @@ import 'providers/theme_provider.dart';
 import 'screens/splash/splash_screen.dart';
 
 class PromptApp extends StatelessWidget {
-  final bool firebaseInitialized;
 
   const PromptApp({super.key, required this.firebaseInitialized});
+  final bool firebaseInitialized;
 
   @override
   Widget build(BuildContext context) {

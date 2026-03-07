@@ -25,13 +25,13 @@ class LockedFeatureSheet {
 }
 
 class _LockedFeatureContent extends StatelessWidget {
-  final String featureName;
-  final String benefit;
 
   const _LockedFeatureContent({
     required this.featureName,
     required this.benefit,
   });
+  final String featureName;
+  final String benefit;
 
   @override
   Widget build(BuildContext context) {

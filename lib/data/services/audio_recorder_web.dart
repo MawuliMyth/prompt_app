@@ -1,5 +1,6 @@
 /// Stub implementation for web platform
 /// Audio recording is not supported on web in this implementation
+library;
 import 'dart:typed_data';
 
 /// Get the directory for saving recordings (not supported on web)

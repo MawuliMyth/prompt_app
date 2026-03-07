@@ -15,7 +15,7 @@ class PaywallScreen extends StatefulWidget {
 
 class _PaywallScreenState extends State<PaywallScreen> {
   final List<_FeatureRow> _features = [
-    _FeatureRow('Daily prompts', '5/day', 'Unlimited', true, true),
+    _FeatureRow('Daily prompts', '10/day', 'Unlimited', true, true),
     _FeatureRow('AI Model', 'Standard', 'Advanced', false, true),
     _FeatureRow('Prompt variations', false, true),
     _FeatureRow('Tone selector', false, true),
@@ -38,9 +38,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
         child: CustomScrollView(
           slivers: [
             // Header with gradient
-            SliverToBoxAdapter(
-              child: _buildHeader(theme),
-            ),
+            SliverToBoxAdapter(child: _buildHeader(theme)),
 
             // Scrollable content
             SliverToBoxAdapter(
@@ -163,10 +161,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 padding: const EdgeInsets.all(AppConstants.spacing16),
                 child: Row(
                   children: [
-                    const Expanded(
-                      flex: 2,
-                      child: SizedBox(),
-                    ),
+                    const Expanded(flex: 2, child: SizedBox()),
                     Expanded(
                       child: Text(
                         'FREE',
@@ -205,7 +200,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
                 return Container(
                   height: 44,
-                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacing16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacing16,
+                  ),
                   decoration: BoxDecoration(
                     color: index.isEven
                         ? theme.colorScheme.surface
@@ -257,7 +254,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                                     fontSize: 11,
                                   ),
                                 )
-                              : Icon(
+                              : const Icon(
                                   Icons.check_circle,
                                   size: 18,
                                   color: AppColors.primaryLight,
@@ -288,11 +285,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
           decoration: BoxDecoration(
             color: AppColors.primaryLight.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-            border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: AppColors.primaryLight.withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.primaryLight, size: 20),
+              const Icon(Icons.info_outline, color: AppColors.primaryLight, size: 20),
               const SizedBox(width: AppConstants.spacing12),
               Expanded(
                 child: Text(
@@ -313,11 +312,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
           width: double.infinity,
           height: AppConstants.buttonHeight,
           child: ElevatedButton(
-            onPressed: trialUsed ? null : () => _handleTrialActivation(premiumProvider),
+            onPressed: trialUsed
+                ? null
+                : () => _handleTrialActivation(premiumProvider),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryLight,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: AppColors.textSecondaryLight.withValues(alpha: 0.3),
+              disabledBackgroundColor: AppColors.textSecondaryLight.withValues(
+                alpha: 0.3,
+              ),
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusButton),
@@ -385,20 +388,21 @@ class _PaywallScreenState extends State<PaywallScreen> {
   Future<void> _handleTrialActivation(PremiumProvider premiumProvider) async {
     final success = await premiumProvider.activateTrial();
     if (success && mounted) {
-      SnackbarUtils.showSuccess(context, 'Premium activated! Enjoy your 3-day free trial');
+      SnackbarUtils.showSuccess(
+        context,
+        'Premium activated! Enjoy your 3-day free trial',
+      );
       Navigator.pop(context);
     } else if (mounted) {
-      SnackbarUtils.showError(context, premiumProvider.error ?? 'Failed to activate trial');
+      SnackbarUtils.showError(
+        context,
+        premiumProvider.error ?? 'Failed to activate trial',
+      );
     }
   }
 }
 
 class _FeatureRow {
-  final String name;
-  final dynamic freeValue;
-  final dynamic premiumValue;
-  final bool hasCustomFree;
-  final bool hasCustomPremium;
 
   _FeatureRow(
     this.name,
@@ -407,4 +411,9 @@ class _FeatureRow {
     this.hasCustomFree = false,
     this.hasCustomPremium = false,
   ]);
+  final String name;
+  final dynamic freeValue;
+  final dynamic premiumValue;
+  final bool hasCustomFree;
+  final bool hasCustomPremium;
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
@@ -10,6 +11,31 @@ const Duration _httpTimeout = Duration(seconds: 30);
 
 class ClaudeService {
   final PremiumService _premiumService = PremiumService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  Future<Map<String, String>> _buildJsonHeaders() async {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+
+    final user = _auth.currentUser;
+    if (user != null) {
+      final token = await user.getIdToken();
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    return headers;
+  }
+
+  String _parseErrorMessage(String responseBody, String fallbackMessage) {
+    try {
+      final data = jsonDecode(responseBody);
+      if (data is Map<String, dynamic>) {
+        return data['error'] as String? ?? fallbackMessage;
+      }
+    } catch (_) {
+      // Ignore JSON parsing failures and fall back to the default message.
+    }
+    return fallbackMessage;
+  }
 
   /// Enhance a rough prompt using Claude API via Node backend
   ///
@@ -41,22 +67,23 @@ class ClaudeService {
 
       if (kDebugMode) {
         debugPrint('Sending enhancement request to $uri');
-        debugPrint('Category: $category, Prompt length: ${roughPrompt.length}, isPremium: $isPremium, tone: $tone');
+        debugPrint(
+          'Category: $category, Prompt length: ${roughPrompt.length}, isPremium: $isPremium, tone: $tone',
+        );
       }
 
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'prompt': roughPrompt,
-          'category': category,
-          'isPremium': isPremium,
-          'tone': tone,
-          'persona': persona,
-        }),
-      ).timeout(_httpTimeout);
+      final response = await http
+          .post(
+            uri,
+            headers: await _buildJsonHeaders(),
+            body: jsonEncode({
+              'prompt': roughPrompt,
+              'category': category,
+              'tone': tone,
+              'persona': persona,
+            }),
+          )
+          .timeout(_httpTimeout);
 
       if (kDebugMode) {
         debugPrint('Enhancement response status: ${response.statusCode}');
@@ -65,14 +92,14 @@ class ClaudeService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'enhancedPrompt': data['enhancedPrompt'],
-        };
+        return {'success': true, 'enhancedPrompt': data['enhancedPrompt']};
       } else {
         return {
           'success': false,
-          'error': data['error'] ?? 'Something went wrong. Please try again.',
+          'error': _parseErrorMessage(
+            response.body,
+            'Something went wrong. Please try again.',
+          ),
         };
       }
     } on TimeoutException {
@@ -81,7 +108,8 @@ class ClaudeService {
       }
       return {
         'success': false,
-        'error': 'Request timed out. Please check your connection and try again.',
+        'error':
+            'Request timed out. Please check your connection and try again.',
       };
     } on http.ClientException catch (e) {
       if (kDebugMode) {
@@ -108,7 +136,7 @@ class ClaudeService {
   /// [category] - The category for context
   /// [isAuthenticated] - Whether the user is logged in
   ///
-  /// Returns a map with 'success' and either 'variations' (List<String>) or 'error'
+  /// Returns a map with 'success' and either 'variations' (list of strings) or 'error'
   Future<Map<String, dynamic>> generateVariations({
     required String roughPrompt,
     required String category,
@@ -128,17 +156,13 @@ class ClaudeService {
         debugPrint('Category: $category, isPremium: $isPremium');
       }
 
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'prompt': roughPrompt,
-          'category': category,
-          'isPremium': isPremium,
-        }),
-      ).timeout(_httpTimeout);
+      final response = await http
+          .post(
+            uri,
+            headers: await _buildJsonHeaders(),
+            body: jsonEncode({'prompt': roughPrompt, 'category': category}),
+          )
+          .timeout(_httpTimeout);
 
       if (kDebugMode) {
         debugPrint('Variations response status: ${response.statusCode}');
@@ -154,7 +178,10 @@ class ClaudeService {
       } else {
         return {
           'success': false,
-          'error': data['error'] ?? 'Failed to generate variations.',
+          'error': _parseErrorMessage(
+            response.body,
+            'Failed to generate variations.',
+          ),
         };
       }
     } on TimeoutException {
@@ -163,7 +190,8 @@ class ClaudeService {
       }
       return {
         'success': false,
-        'error': 'Request timed out. Please check your connection and try again.',
+        'error':
+            'Request timed out. Please check your connection and try again.',
       };
     } on http.ClientException catch (e) {
       if (kDebugMode) {

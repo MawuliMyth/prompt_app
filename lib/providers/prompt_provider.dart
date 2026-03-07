@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/models/prompt_model.dart';
 import '../../data/repositories/prompt_repository.dart';
-import '../../data/repositories/firestore_repository.dart';
 
 class PromptProvider extends ChangeNotifier {
   final PromptRepository _promptRepository = PromptRepository();
-  final FirestoreRepository _firestoreRepository = FirestoreRepository();
 
   List<PromptModel> _prompts = [];
   StreamSubscription<List<PromptModel>>? _subscription;
@@ -21,19 +19,25 @@ class PromptProvider extends ChangeNotifier {
   List<PromptModel> get prompts {
     var filtered = _prompts;
     if (_selectedCategoryFilter != 'All') {
-      filtered = filtered.where((p) => p.category == _selectedCategoryFilter).toList();
+      filtered = filtered
+          .where((p) => p.category == _selectedCategoryFilter)
+          .toList();
     }
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((p) =>
-        p.originalText.toLowerCase().contains(query) ||
-        p.enhancedPrompt.toLowerCase().contains(query)
-      ).toList();
+      filtered = filtered
+          .where(
+            (p) =>
+                p.originalText.toLowerCase().contains(query) ||
+                p.enhancedPrompt.toLowerCase().contains(query),
+          )
+          .toList();
     }
     return filtered;
   }
 
-  List<PromptModel> get favouritePrompts => prompts.where((p) => p.isFavourite).toList();
+  List<PromptModel> get favouritePrompts =>
+      prompts.where((p) => p.isFavourite).toList();
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get selectedCategoryFilter => _selectedCategoryFilter;
@@ -50,7 +54,9 @@ class PromptProvider extends ChangeNotifier {
 
   void updateUser(User? user) {
     final newUserId = user?.uid;
-    debugPrint('PromptProvider.updateUser called. New userId: $newUserId, Current: $_currentUserId');
+    debugPrint(
+      'PromptProvider.updateUser called. New userId: $newUserId, Current: $_currentUserId',
+    );
 
     if (_currentUserId == newUserId) {
       debugPrint('Same user, skipping update');
@@ -66,25 +72,27 @@ class PromptProvider extends ChangeNotifier {
       notifyListeners();
       debugPrint('Setting up prompts stream for user: ${user.uid}');
 
-      _subscription = _promptRepository.watchPrompts(user.uid).listen(
-        (data) {
-          debugPrint('Received ${data.length} prompts from stream');
-          _prompts = data;
-          _isLoading = false;
-          notifyListeners();
-        },
-        onError: (error) {
-          debugPrint('Error loading prompts: $error');
-          _prompts = [];
-          _isLoading = false;
-          notifyListeners();
-        },
-        onDone: () {
-          debugPrint('Prompts stream done');
-          _isLoading = false;
-          notifyListeners();
-        },
-      );
+      _subscription = _promptRepository
+          .watchPrompts(user.uid)
+          .listen(
+            (data) {
+              debugPrint('Received ${data.length} prompts from stream');
+              _prompts = data;
+              _isLoading = false;
+              notifyListeners();
+            },
+            onError: (error) {
+              debugPrint('Error loading prompts: $error');
+              _prompts = [];
+              _isLoading = false;
+              notifyListeners();
+            },
+            onDone: () {
+              debugPrint('Prompts stream done');
+              _isLoading = false;
+              notifyListeners();
+            },
+          );
     } else {
       debugPrint('No user, clearing prompts');
       _prompts = [];
@@ -111,7 +119,6 @@ class PromptProvider extends ChangeNotifier {
     try {
       _setError(null);
       await _promptRepository.savePrompt(user.uid, prompt);
-      await _firestoreRepository.incrementTotalPrompts(user.uid);
       return true;
     } catch (e) {
       debugPrint('Error saving prompt: $e');
@@ -127,7 +134,11 @@ class PromptProvider extends ChangeNotifier {
     }
     try {
       _setError(null);
-      await _promptRepository.toggleFavourite(user.uid, prompt.id, prompt.isFavourite);
+      await _promptRepository.toggleFavourite(
+        user.uid,
+        prompt.id,
+        prompt.isFavourite,
+      );
       return true;
     } catch (e) {
       debugPrint('Error toggling favourite: $e');

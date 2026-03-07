@@ -93,7 +93,7 @@ class PremiumProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error activating trial: $e');
-      _error = 'Failed to activate trial';
+      _error = e.toString().replaceFirst('Exception: ', '');
     }
 
     _isLoading = false;

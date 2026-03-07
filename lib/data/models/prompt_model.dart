@@ -1,14 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PromptModel {
-  final String id;
-  final String originalText;
-  final String enhancedPrompt;
-  final String category;
-  final int strengthScore;
-  final bool isFavourite;
-  final DateTime createdAt;
-  final String? userId; // nullable for guest users
+class PromptModel { // nullable for guest users
 
   PromptModel({
     required this.id,
@@ -37,6 +29,14 @@ class PromptModel {
       userId: map['userId'],
     );
   }
+  final String id;
+  final String originalText;
+  final String enhancedPrompt;
+  final String category;
+  final int strengthScore;
+  final bool isFavourite;
+  final DateTime createdAt;
+  final String? userId;
 
   Map<String, dynamic> toMap() {
     return {

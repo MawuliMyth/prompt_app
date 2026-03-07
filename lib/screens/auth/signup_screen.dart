@@ -318,7 +318,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const GoogleLogo(size: 24),
+                        const GoogleLogo(),
                         const SizedBox(width: 12),
                         Flexible(
                           child: Text(
@@ -351,7 +351,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const AppleLogo(size: 24),
+                          const AppleLogo(),
                           const SizedBox(width: 12),
                           Flexible(
                             child: Text(
@@ -373,7 +373,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Flexible(
-                      child: Text("Already have an account? ", style: AppTextStyles.body, overflow: TextOverflow.ellipsis),
+                      child: Text('Already have an account? ', style: AppTextStyles.body, overflow: TextOverflow.ellipsis),
                     ),
                     Flexible(
                       child: GestureDetector(

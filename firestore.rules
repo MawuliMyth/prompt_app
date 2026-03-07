@@ -1,14 +1,53 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only read/write their own data
-    match /users/{userId} {
-      // Allow user to read/write their own document
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-      // Allow user to read/write their own prompts subcollection
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'email',
+          'displayName',
+          'photoUrl',
+          'createdAt',
+          'totalPromptsGenerated',
+          'isPremium',
+          'planType',
+          'premiumExpiryDate',
+          'trialStartDate',
+          'trialUsed',
+          'persona',
+          'dailyPromptsUsed',
+          'dailyPromptsResetDate'
+        ])
+        && request.resource.data.totalPromptsGenerated == 0
+        && request.resource.data.isPremium == false
+        && request.resource.data.planType == 'free'
+        && request.resource.data.premiumExpiryDate == null
+        && request.resource.data.trialStartDate == null
+        && request.resource.data.trialUsed == false
+        && request.resource.data.dailyPromptsUsed == 0
+        && request.resource.data.dailyPromptsResetDate == null;
+
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName',
+          'photoUrl',
+          'persona'
+        ]);
+
+      allow delete: if false;
+
       match /prompts/{promptId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
     }
   }

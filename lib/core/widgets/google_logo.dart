@@ -3,12 +3,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 /// Google Logo Widget
 class GoogleLogo extends StatelessWidget {
-  final double size;
 
   const GoogleLogo({
     super.key,
     this.size = 24,
   });
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -30,12 +30,12 @@ class GoogleLogo extends StatelessWidget {
 
 /// Apple Logo Widget
 class AppleLogo extends StatelessWidget {
-  final double size;
 
   const AppleLogo({
     super.key,
     this.size = 24,
   });
+  final double size;
 
   @override
   Widget build(BuildContext context) {

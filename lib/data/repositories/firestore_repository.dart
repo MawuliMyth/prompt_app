@@ -16,7 +16,6 @@ class FirestoreRepository {
         displayName: user.displayName ?? '',
         photoUrl: user.photoURL,
         createdAt: DateTime.now(),
-        totalPromptsGenerated: 0,
       );
 
       await docRef.set(newUser.toMap());

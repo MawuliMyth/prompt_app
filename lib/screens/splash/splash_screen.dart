@@ -6,9 +6,9 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
-  final bool firebaseInitialized;
 
   const SplashScreen({super.key, required this.firebaseInitialized});
+  final bool firebaseInitialized;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();

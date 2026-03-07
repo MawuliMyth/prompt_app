@@ -1,24 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
-  final String uid;
-  final String email;
-  final String displayName;
-  final String? photoUrl;
-  final DateTime createdAt;
-  final int totalPromptsGenerated;
-
-  // Premium fields
-  final bool isPremium;
-  final String planType; // 'free', 'monthly', 'yearly', 'lifetime'
-  final DateTime? premiumExpiryDate;
-  final DateTime? trialStartDate;
-  final bool trialUsed;
-  final String? persona; // User's role/profession for personalized prompts
-
-  // Daily limit fields (for free authenticated users)
-  final int dailyPromptsUsed;
-  final DateTime? dailyPromptsResetDate;
 
   UserModel({
     required this.uid,
@@ -71,6 +53,24 @@ class UserModel {
           : null,
     );
   }
+  final String uid;
+  final String email;
+  final String displayName;
+  final String? photoUrl;
+  final DateTime createdAt;
+  final int totalPromptsGenerated;
+
+  // Premium fields
+  final bool isPremium;
+  final String planType; // 'free', 'monthly', 'yearly', 'lifetime'
+  final DateTime? premiumExpiryDate;
+  final DateTime? trialStartDate;
+  final bool trialUsed;
+  final String? persona; // User's role/profession for personalized prompts
+
+  // Daily limit fields (for free authenticated users)
+  final int dailyPromptsUsed;
+  final DateTime? dailyPromptsResetDate;
 
   Map<String, dynamic> toMap() {
     return {

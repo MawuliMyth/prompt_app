@@ -1,4 +1,5 @@
 /// Platform-specific file operations for IO platforms (Android, iOS, macOS, Windows, Linux)
+library;
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';

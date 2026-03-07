@@ -74,7 +74,6 @@ class AudioRecorderService {
       await _recorder.startRecorder(
         toFile: _currentRecordingPath,
         codec: Codec.aacMP4,
-        numChannels: 1,
         sampleRate: 44100,
       );
 

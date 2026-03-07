@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -22,7 +21,7 @@ class FavouritesScreen extends StatelessWidget {
 
     return SafeArea(
       child: Scaffold(
-        appBar: AdaptiveAppBar(title: 'Favourites'),
+        appBar: const AdaptiveAppBar(title: 'Favourites'),
         body: !authProvider.isAuthenticated
             ? _buildGuestEmptyState(context, theme)
             : promptProvider.isLoading
@@ -89,7 +88,7 @@ class FavouritesScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-          Icon(Icons.star_border, size: 80, color: AppColors.dividerLight),
+          const Icon(Icons.star_border, size: 80, color: AppColors.dividerLight),
           const SizedBox(height: 24),
           Text(
             'No favourites yet',
@@ -115,7 +114,7 @@ class FavouritesScreen extends StatelessWidget {
           5,
           (index) => const Padding(
             padding: EdgeInsets.only(bottom: 16),
-            child: ShimmerCard(height: 120),
+            child: ShimmerCard(),
           ),
         ),
       ),
@@ -149,13 +148,13 @@ class FavouritesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             Text(
-              "Sign in to see favourites",
+              'Sign in to see favourites',
               style: AppTextStyles.headingMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              "Create an account to keep your favourite prompts handy across all your devices.",
+              'Create an account to keep your favourite prompts handy across all your devices.',
               style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
               textAlign: TextAlign.center,
             ),

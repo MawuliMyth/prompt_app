@@ -17,7 +17,7 @@ class StrengthCalculator {
       'professional', 'clear', 'structured', 'comprehensive', 'precise'
     ];
     final enhancedLower = enhanced.toLowerCase();
-    int keywordCount = qualityKeywords.where((k) => enhancedLower.contains(k)).length;
+    final int keywordCount = qualityKeywords.where((k) => enhancedLower.contains(k)).length;
     score += (keywordCount * 4).clamp(0, 40);
 
     // Category specific keywords (max 30 points)
@@ -29,7 +29,7 @@ class StrengthCalculator {
       'General': ['explain', 'provide', 'include', 'ensure', 'consider'],
     };
     final keywords = categoryKeywords[category] ?? categoryKeywords['General']!;
-    int catCount = keywords.where((k) => enhancedLower.contains(k)).length;
+    final int catCount = keywords.where((k) => enhancedLower.contains(k)).length;
     score += (catCount * 6).clamp(0, 30);
 
     return score.clamp(0, 100);

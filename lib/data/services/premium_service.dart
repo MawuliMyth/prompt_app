@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../models/user_model.dart';
+import '../../core/config/api_config.dart';
 
 /// Service for handling premium subscription operations
 class PremiumService {
@@ -30,17 +33,29 @@ class PremiumService {
 
       final data = doc.data()!;
       final isPremium = data['isPremium'] ?? false;
+      final trialStartDate = data['trialStartDate'];
+
+      if (trialStartDate != null) {
+        final trialStart = (trialStartDate as Timestamp).toDate();
+        final isTrialActive = DateTime.now().isBefore(
+          trialStart.add(const Duration(days: 3)),
+        );
+        if (isTrialActive) {
+          return true;
+        }
+      }
 
       // Check if premium has expired (for time-based plans)
       if (isPremium) {
         final planType = data['planType'] ?? 'free';
+        if (planType == 'trial') {
+          return false;
+        }
         if (planType != 'lifetime') {
           final expiryDate = data['premiumExpiryDate'];
           if (expiryDate != null) {
             final expiry = (expiryDate as Timestamp).toDate();
             if (DateTime.now().isAfter(expiry)) {
-              // Premium has expired, downgrade to free
-              await downgradeToFree();
               return false;
             }
           }
@@ -73,22 +88,31 @@ class PremiumService {
   /// Activate a 3-day trial for the user
   /// Returns true if successful, false otherwise
   Future<bool> activateTrial() async {
-    final ref = _userDocRef();
-    if (ref == null) return false;
+    final user = _auth.currentUser;
+    if (user == null) return false;
 
     try {
-      await ref.set({
-        'trialStartDate': FieldValue.serverTimestamp(),
-        'trialUsed': true,
-        'isPremium': true,
-        'planType': 'trial',
-      }, SetOptions(merge: true));
+      final token = await user.getIdToken();
+      final response = await http.post(
+        Uri.parse(ApiConfig.activateTrialEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-      debugPrint('Trial activated successfully');
-      return true;
+      if (response.statusCode == 200) {
+        debugPrint('Trial activated successfully');
+        return true;
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final message = data['error'] as String? ?? 'Failed to activate trial';
+      debugPrint('Error activating trial: $message');
+      throw Exception(message);
     } catch (e) {
       debugPrint('Error activating trial: $e');
-      return false;
+      rethrow;
     }
   }
 
@@ -128,61 +152,16 @@ class PremiumService {
     required String planType,
     DateTime? expiryDate,
   }) async {
-    final ref = _userDocRef();
-    if (ref == null) return false;
-
-    if (!['monthly', 'yearly', 'lifetime'].contains(planType)) {
-      debugPrint('Invalid plan type: $planType');
-      return false;
-    }
-
-    try {
-      final data = <String, dynamic>{
-        'isPremium': true,
-        'planType': planType,
-      };
-
-      // Set expiry date for time-based plans
-      if (planType != 'lifetime') {
-        DateTime effectiveExpiryDate;
-        if (expiryDate != null) {
-          effectiveExpiryDate = expiryDate;
-        } else if (planType == 'monthly') {
-          effectiveExpiryDate = DateTime.now().add(const Duration(days: 30));
-        } else {
-          effectiveExpiryDate = DateTime.now().add(const Duration(days: 365));
-        }
-        data['premiumExpiryDate'] = Timestamp.fromDate(effectiveExpiryDate);
-      }
-
-      await ref.set(data, SetOptions(merge: true));
-
-      debugPrint('Upgraded to $planType plan successfully');
-      return true;
-    } catch (e) {
-      debugPrint('Error upgrading to premium: $e');
-      return false;
-    }
+    debugPrint(
+      'upgradeToPremium is disabled on the client. planType=$planType expiryDate=$expiryDate',
+    );
+    return false;
   }
 
   /// Downgrade user to free plan
   Future<bool> downgradeToFree() async {
-    final ref = _userDocRef();
-    if (ref == null) return false;
-
-    try {
-      await ref.set({
-        'isPremium': false,
-        'planType': 'free',
-        'premiumExpiryDate': null,
-      }, SetOptions(merge: true));
-
-      debugPrint('Downgraded to free plan');
-      return true;
-    } catch (e) {
-      debugPrint('Error downgrading to free: $e');
-      return false;
-    }
+    debugPrint('downgradeToFree is disabled on the client.');
+    return false;
   }
 
   /// Update user's AI persona (role/profession for personalized prompts)
@@ -191,9 +170,7 @@ class PremiumService {
     if (ref == null) return false;
 
     try {
-      await ref.set({
-        'persona': persona,
-      }, SetOptions(merge: true));
+      await ref.set({'persona': persona}, SetOptions(merge: true));
 
       debugPrint('Persona updated: $persona');
       return true;
@@ -208,13 +185,9 @@ class PremiumService {
     final uid = _currentUserId;
     if (uid == null) return Stream.value(null);
 
-    return _firestore
-        .collection('users')
-        .doc(uid)
-        .snapshots()
-        .map((doc) {
-          if (!doc.exists || doc.data() == null) return null;
-          return UserModel.fromMap(doc.data()!, doc.id);
-        });
+    return _firestore.collection('users').doc(uid).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) return null;
+      return UserModel.fromMap(doc.data()!, doc.id);
+    });
   }
 }

@@ -440,7 +440,7 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.edit_outlined,
                 size: 16,
                 color: AppColors.textSecondaryLight,
@@ -483,14 +483,14 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
         children: [
           Container(
             padding: const EdgeInsets.all(AppConstants.spacing16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 left: BorderSide(color: AppColors.primaryLight, width: 3),
               ),
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.auto_awesome,
                   color: AppColors.primaryLight,
                   size: 18,
@@ -613,7 +613,7 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                                 ),
                               ),
                               const Spacer(),
-                              Icon(
+                              const Icon(
                                 Icons.copy_outlined,
                                 size: 16,
                                 color: AppColors.textSecondaryLight,
@@ -654,7 +654,7 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
       ),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
-        border: Border(
+        border: const Border(
           top: BorderSide(color: AppColors.borderLight, width: 0.5),
         ),
       ),
@@ -771,11 +771,11 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
 }
 
 class _VariationType {
-  final String name;
-  final IconData icon;
 
   _VariationType({
     required this.name,
     required this.icon,
   });
+  final String name;
+  final IconData icon;
 }

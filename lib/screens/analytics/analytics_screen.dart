@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -70,7 +69,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
     final analytics = _calculateAnalytics(prompts);
 
     return Scaffold(
-      appBar: AdaptiveAppBar(title: 'Analytics'),
+      appBar: const AdaptiveAppBar(title: 'Analytics'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.spacing24),
         child: Column(
@@ -130,7 +129,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
 
   Widget _buildLockedScreen(ThemeData theme) {
     return Scaffold(
-      appBar: AdaptiveAppBar(title: 'Analytics'),
+      appBar: const AdaptiveAppBar(title: 'Analytics'),
       body: Stack(
         children: [
           Opacity(
@@ -214,7 +213,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
 
   Widget _buildSignInPrompt(ThemeData theme) {
     return Scaffold(
-      appBar: AdaptiveAppBar(title: 'Analytics'),
+      appBar: const AdaptiveAppBar(title: 'Analytics'),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -410,7 +409,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
         children: [
           Row(
             children: [
-              Icon(Icons.bar_chart_outlined, size: 20, color: AppColors.textSecondaryLight),
+              const Icon(Icons.bar_chart_outlined, size: 20, color: AppColors.textSecondaryLight),
               const SizedBox(width: AppConstants.spacing8),
               Text(
                 'Categories',
@@ -471,7 +470,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
         children: [
           Row(
             children: [
-              Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.textSecondaryLight),
+              const Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.textSecondaryLight),
               const SizedBox(width: AppConstants.spacing8),
               Text(
                 'This Week vs Last Week',
@@ -641,13 +640,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
 }
 
 class _AnalyticsData {
-  final int totalPrompts;
-  final int avgStrength;
-  final int favouriteRate;
-  final int streak;
-  final Map<String, int> categoryCounts;
-  final int thisWeekPrompts;
-  final int lastWeekPrompts;
 
   _AnalyticsData({
     required this.totalPrompts,
@@ -658,4 +650,11 @@ class _AnalyticsData {
     required this.thisWeekPrompts,
     required this.lastWeekPrompts,
   });
+  final int totalPrompts;
+  final int avgStrength;
+  final int favouriteRate;
+  final int streak;
+  final Map<String, int> categoryCounts;
+  final int thisWeekPrompts;
+  final int lastWeekPrompts;
 }

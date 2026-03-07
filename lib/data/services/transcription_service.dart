@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
@@ -7,6 +8,8 @@ import '../../core/config/api_config.dart';
 ///
 /// Uploads audio files to the backend which uses Groq Whisper API
 class TranscriptionService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   /// Transcribe audio bytes to text
   ///
   /// [audioBytes] - The raw audio bytes (M4A/AAC format recommended for Android)
@@ -23,32 +26,42 @@ class TranscriptionService {
       // Create multipart request
       final request = http.MultipartRequest('POST', uri)
         ..files.add(
-          http.MultipartFile.fromBytes(
-            'audio',
-            audioBytes,
-            filename: filename,
-          ),
+          http.MultipartFile.fromBytes('audio', audioBytes, filename: filename),
         );
 
-      debugPrint('Sending transcription request to ${ApiConfig.transcribeEndpoint}');
+      final user = _auth.currentUser;
+      if (user != null) {
+        final token = await user.getIdToken();
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      debugPrint(
+        'Sending transcription request to ${ApiConfig.transcribeEndpoint}',
+      );
       debugPrint('Audio size: ${audioBytes.length} bytes');
 
       // Send request
       final streamedResponse = await request.send();
       final responseBody = await streamedResponse.stream.bytesToString();
 
-      debugPrint('Transcription response status: ${streamedResponse.statusCode}');
+      debugPrint(
+        'Transcription response status: ${streamedResponse.statusCode}',
+      );
 
       if (streamedResponse.statusCode != 200) {
-        final errorData = jsonDecode(responseBody);
-        throw Exception(errorData['error'] ?? 'Transcription failed');
+        try {
+          final errorData = jsonDecode(responseBody) as Map<String, dynamic>;
+          throw Exception(errorData['error'] ?? 'Transcription failed');
+        } catch (_) {
+          throw Exception('Transcription failed');
+        }
       }
 
       final data = jsonDecode(responseBody);
 
       if (data['success'] == true) {
         final text = data['text'] as String;
-        debugPrint('Transcription successful: "${text.substring(0, text.length > 100 ? 100 : text.length)}..."');
+        debugPrint('Transcription successful (${text.length} chars)');
         return text;
       } else {
         throw Exception(data['error'] ?? 'Transcription failed');

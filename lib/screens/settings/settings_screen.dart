@@ -28,7 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final premiumProvider = Provider.of<PremiumProvider>(context);
 
     return Scaffold(
-      appBar: AdaptiveAppBar(title: 'Settings'),
+      appBar: const AdaptiveAppBar(title: 'Settings'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.spacing24),
         child: Column(
@@ -179,7 +179,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right,
               color: AppColors.textSecondaryLight,
             ),
@@ -206,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: ThemeMode.system,
             themeProvider: themeProvider,
           ),
-          Divider(height: 1, color: AppColors.borderLight),
+          const Divider(height: 1, color: AppColors.borderLight),
           _buildThemeOption(
             theme,
             icon: Icons.light_mode_outlined,
@@ -215,7 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: ThemeMode.light,
             themeProvider: themeProvider,
           ),
-          Divider(height: 1, color: AppColors.borderLight),
+          const Divider(height: 1, color: AppColors.borderLight),
           _buildThemeOption(
             theme,
             icon: Icons.dark_mode_outlined,
@@ -284,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             if (isSelected)
-              Icon(
+              const Icon(
                 Icons.check_circle,
                 color: AppColors.primaryLight,
                 size: 24,
@@ -346,7 +346,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-          Divider(height: 1, color: AppColors.borderLight),
+          const Divider(height: 1, color: AppColors.borderLight),
           _buildSettingItem(
             theme,
             icon: Icons.logout,
@@ -355,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             isDestructive: true,
             onTap: () => _showSignOutDialog(theme, authProvider),
           ),
-          Divider(height: 1, color: AppColors.borderLight),
+          const Divider(height: 1, color: AppColors.borderLight),
           _buildSettingItem(
             theme,
             icon: Icons.delete_forever_outlined,
@@ -562,7 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pop(context);
                 authProvider.signOut();
               },
-              child: Text(
+              child: const Text(
                 'Sign Out',
                 style: TextStyle(color: AppColors.error),
               ),
@@ -607,7 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               onPressed: () => _handleDeleteAccount(authProvider),
-              child: Text(
+              child: const Text(
                 'Delete',
                 style: TextStyle(color: AppColors.error),
               ),
