@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/google_logo.dart';
 import '../home/home_screen.dart';
@@ -93,9 +94,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final success = await authProvider.signUpWithEmail(name, email, password);
 
     if (success && mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -105,9 +104,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
     if (success && mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -117,9 +114,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithApple();
     if (success && mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -269,41 +264,36 @@ class _SignupScreenState extends State<SignupScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: authProvider.isLoading ? null : _handleSignup,
-                    style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Container(
-                        height: 56,
-                        alignment: Alignment.center,
-                        child: authProvider.isLoading
-                            ? Shimmer.fromColors(
-                                baseColor: Colors.white.withValues(alpha: 0.5),
-                                highlightColor: Colors.white.withValues(
-                                  alpha: 0.8,
-                                ),
-                                child: Text(
-                                  'Creating account...',
-                                  style: AppTextStyles.button.copyWith(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                'Create Account',
+                ElevatedButton(
+                  onPressed: authProvider.isLoading ? null : _handleSignup,
+                  style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Container(
+                      height: 56,
+                      alignment: Alignment.center,
+                      child: authProvider.isLoading
+                          ? Shimmer.fromColors(
+                              baseColor: Colors.white.withValues(alpha: 0.5),
+                              highlightColor: Colors.white.withValues(
+                                alpha: 0.8,
+                              ),
+                              child: Text(
+                                'Creating account...',
                                 style: AppTextStyles.button.copyWith(
                                   color: Colors.white,
                                 ),
                               ),
-                      ),
+                            )
+                          : Text(
+                              'Create Account',
+                              style: AppTextStyles.button.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -328,7 +318,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 24),
                 // Google Sign In Button
                 SizedBox(
-                  width: double.infinity,
                   height: 56,
                   child: OutlinedButton(
                     onPressed: authProvider.isLoading
@@ -373,7 +362,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   const SizedBox(height: 16),
                   // Apple Sign In Button
                   SizedBox(
-                    width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
                       onPressed: authProvider.isLoading
@@ -420,10 +408,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     Flexible(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
+                          PlatformUtils.navigateReplace(
+                            context,
+                            const LoginScreen(),
                           );
                         },
                         child: Text(

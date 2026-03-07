@@ -35,7 +35,7 @@ class PaywallScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppConstants.spacing24),
                   decoration: BoxDecoration(
-                    gradient: AppColors.premiumGradient,
+                    gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(
                       AppConstants.radiusCard,
                     ),
@@ -125,7 +125,7 @@ class PaywallScreen extends StatelessWidget {
                       width: double.infinity,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: AppColors.premiumGradient,
+                          gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(
                             AppConstants.radiusButton,
                           ),

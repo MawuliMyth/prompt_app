@@ -4,13 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/repositories/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
-
-  AuthProvider() {
+  AuthProvider({AuthRepositoryBase? authRepository})
+    : _authRepository = authRepository ?? AuthRepository() {
     _authStateSubscription = _authRepository.authStateChanges.listen((user) {
       notifyListeners();
     });
   }
-  final AuthRepository _authRepository = AuthRepository();
+  final AuthRepositoryBase _authRepository;
   StreamSubscription<User?>? _authStateSubscription;
   bool _isLoading = false;
   String? _error;
@@ -105,11 +105,15 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on FirebaseAuthException catch (e) {
       _incrementFailedAttempt();
-      _setError(_getFriendlyErrorMessage(e.code, 'Sign in'));
+      if (!isLockedOut) {
+        _setError(_getFriendlyErrorMessage(e.code, 'Sign in'));
+      }
       return false;
     } catch (e) {
       _incrementFailedAttempt();
-      _setError('An unexpected error occurred.');
+      if (!isLockedOut) {
+        _setError('An unexpected error occurred.');
+      }
       return false;
     } finally {
       _setLoading(false);
@@ -131,11 +135,15 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on FirebaseAuthException catch (e) {
       _incrementFailedAttempt();
-      _setError(_getFriendlyErrorMessage(e.code, 'Sign up'));
+      if (!isLockedOut) {
+        _setError(_getFriendlyErrorMessage(e.code, 'Sign up'));
+      }
       return false;
     } catch (e) {
       _incrementFailedAttempt();
-      _setError('An unexpected error occurred.');
+      if (!isLockedOut) {
+        _setError('An unexpected error occurred.');
+      }
       return false;
     } finally {
       _setLoading(false);
@@ -171,11 +179,15 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } on FirebaseAuthException catch (e) {
       _incrementFailedAttempt();
-      _setError(_getFriendlyErrorMessage(e.code, 'Google Sign-In'));
+      if (!isLockedOut) {
+        _setError(_getFriendlyErrorMessage(e.code, 'Google Sign-In'));
+      }
       return false;
     } catch (e) {
       _incrementFailedAttempt();
-      _setError('Google Sign-In failed. Please try again.');
+      if (!isLockedOut) {
+        _setError('Google Sign-In failed. Please try again.');
+      }
       return false;
     } finally {
       _setLoading(false);
@@ -211,11 +223,15 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } on FirebaseAuthException catch (e) {
       _incrementFailedAttempt();
-      _setError(_getFriendlyErrorMessage(e.code, 'Apple Sign-In'));
+      if (!isLockedOut) {
+        _setError(_getFriendlyErrorMessage(e.code, 'Apple Sign-In'));
+      }
       return false;
     } catch (e) {
       _incrementFailedAttempt();
-      _setError(e.toString().replaceFirst('Exception: ', ''));
+      if (!isLockedOut) {
+        _setError(e.toString().replaceFirst('Exception: ', ''));
+      }
       return false;
     } finally {
       _setLoading(false);

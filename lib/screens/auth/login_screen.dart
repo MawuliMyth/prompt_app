@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/google_logo.dart';
 import '../home/home_screen.dart';
@@ -54,9 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await authProvider.signInWithEmail(email, password);
 
     if (success && mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -66,9 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
     if (success && mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -78,9 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithApple();
     if (success && mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
     }
@@ -182,10 +177,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const ForgotPasswordScreen(),
-                        ),
+                      PlatformUtils.navigateTo(
+                        context,
+                        const ForgotPasswordScreen(),
                       );
                     },
                     child: Text(
@@ -200,13 +194,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Sign In Button with Shimmer
                 authProvider.isLoading
                     ? Shimmer.fromColors(
-                        baseColor: const Color(0xFFE53935),
-                        highlightColor: const Color(0xFFB71C1C),
+                        baseColor: AppColors.primaryLight,
+                        highlightColor: AppColors.accentLight,
                         child: Container(
-                          width: double.infinity,
                           height: 56,
                           decoration: BoxDecoration(
-                            color: Colors.red,
+                            gradient: AppColors.primaryGradient,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Center(
@@ -219,28 +212,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       )
-                    : SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
+                    : ElevatedButton(
+                        onPressed: _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Ink(
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Ink(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Container(
-                              height: 56,
-                              alignment: Alignment.center,
-                              child: Text(
-                                'Sign In',
-                                style: AppTextStyles.button.copyWith(
-                                  color: Colors.white,
-                                ),
+                          child: Container(
+                            height: 56,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Sign In',
+                              style: AppTextStyles.button.copyWith(
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -267,7 +255,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 // Google Sign In Button with Google Logo
                 SizedBox(
-                  width: double.infinity,
                   height: 56,
                   child: OutlinedButton(
                     onPressed: authProvider.isLoading
@@ -312,7 +299,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   // Apple Sign In Button with Apple Logo
                   SizedBox(
-                    width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
                       onPressed: authProvider.isLoading
@@ -359,10 +345,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Flexible(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (_) => const SignupScreen(),
-                            ),
+                          PlatformUtils.navigateReplace(
+                            context,
+                            const SignupScreen(),
                           );
                         },
                         child: Text(

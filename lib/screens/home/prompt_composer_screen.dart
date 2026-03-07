@@ -479,7 +479,14 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('Enhance Prompt'),
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.auto_awesome_rounded, size: 18),
+                                SizedBox(width: AppConstants.spacing8),
+                                Text('Enhance Prompt'),
+                              ],
+                            ),
                     ),
                   ),
                 ],

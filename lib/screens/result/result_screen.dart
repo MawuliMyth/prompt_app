@@ -39,7 +39,8 @@ class ResultScreen extends StatefulWidget {
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderStateMixin {
+class _ResultScreenState extends State<ResultScreen>
+    with SingleTickerProviderStateMixin {
   late int _strengthScore;
   late String _strengthLabel;
   bool _isCopied = false;
@@ -118,7 +119,10 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
         if (success) {
           SnackbarUtils.showSuccess(context, 'Saved to history');
         } else {
-          SnackbarUtils.showError(context, promptProvider.error ?? 'Failed to save prompt');
+          SnackbarUtils.showError(
+            context,
+            promptProvider.error ?? 'Failed to save prompt',
+          );
         }
       }
     }
@@ -134,7 +138,10 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
     }
 
     if (_currentPrompt == null) {
-      SnackbarUtils.showError(context, 'Unable to favourite. Please try again.');
+      SnackbarUtils.showError(
+        context,
+        'Unable to favourite. Please try again.',
+      );
       return;
     }
 
@@ -211,7 +218,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
             const SizedBox(height: AppConstants.spacing12),
             Text(
               'Create a free account to save this prompt and build a library of your favourites.',
-              style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondaryLight,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.spacing32),
@@ -221,9 +230,7 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SignupScreen()),
-                  );
+                  PlatformUtils.navigateTo(context, const SignupScreen());
                 },
                 child: const Text('Create Free Account'),
               ),
@@ -233,7 +240,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Maybe Later',
-                style: AppTextStyles.body.copyWith(color: AppColors.textSecondaryLight),
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
               ),
             ),
           ],
@@ -268,7 +277,10 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
   }
 
   Future<void> _loadVariations() async {
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    final premiumProvider = Provider.of<PremiumProvider>(
+      context,
+      listen: false,
+    );
 
     if (!premiumProvider.hasPremiumAccess) {
       LockedFeatureSheet.show(
@@ -297,7 +309,10 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
           _variations = result['variations'] as List<String>;
           _showVariations = true;
         } else {
-          SnackbarUtils.showError(context, result['error'] ?? 'Failed to load variations');
+          SnackbarUtils.showError(
+            context,
+            result['error'] ?? 'Failed to load variations',
+          );
         }
       });
     }
@@ -311,13 +326,19 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
     final isSmallScreen = screenWidth < 360;
     final contentMaxWidth = isTablet ? 600.0 : screenWidth;
 
-    return Scaffold(
+    return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
         title: 'Enhanced Prompt',
         actions: [
           IconButton(
-            icon: Icon(PlatformUtils.useCupertino(context) ? CupertinoIcons.share : Icons.share_outlined),
-            onPressed: () => SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt)),
+            icon: Icon(
+              PlatformUtils.useCupertino(context)
+                  ? CupertinoIcons.share
+                  : Icons.share_outlined,
+            ),
+            onPressed: () => SharePlus.instance.share(
+              ShareParams(text: widget.enhancedPrompt),
+            ),
             tooltip: 'Share',
           ),
         ],
@@ -329,7 +350,11 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               child: SizedBox(
                 width: contentMaxWidth,
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing24),
+                  padding: EdgeInsets.all(
+                    isSmallScreen
+                        ? AppConstants.spacing16
+                        : AppConstants.spacing24,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -363,7 +388,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
 
   Widget _buildStrengthMeter(ThemeData theme, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20),
+      padding: EdgeInsets.all(
+        isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusCard),
@@ -384,7 +411,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                       value: _animation.value,
                       strokeWidth: isSmallScreen ? 5 : 6,
                       backgroundColor: AppColors.surfaceVariantLight,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryLight),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryLight,
+                      ),
                     );
                   },
                 ),
@@ -417,7 +446,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                 const SizedBox(height: 4),
                 Text(
                   'Prompt Strength',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondaryLight),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
               ],
             ),
@@ -429,7 +460,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
 
   Widget _buildOriginalCard(ThemeData theme, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16),
+      padding: EdgeInsets.all(
+        isSmallScreen ? AppConstants.spacing12 : AppConstants.spacing16,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusCard),
@@ -507,7 +540,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20),
+            padding: EdgeInsets.all(
+              isSmallScreen ? AppConstants.spacing16 : AppConstants.spacing20,
+            ),
             child: SelectableText(
               widget.enhancedPrompt,
               style: AppTextStyles.body.copyWith(
@@ -556,15 +591,21 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
                       )
                     else ...[
                       Icon(
-                        hasPremium ? Icons.auto_awesome_outlined : Icons.lock_outline,
+                        hasPremium
+                            ? Icons.auto_awesome_outlined
+                            : Icons.lock_outline,
                         size: 18,
-                        color: hasPremium ? AppColors.primaryLight : AppColors.textSecondaryLight,
+                        color: hasPremium
+                            ? AppColors.primaryLight
+                            : AppColors.textSecondaryLight,
                       ),
                       const SizedBox(width: AppConstants.spacing8),
                       Text(
                         hasPremium ? 'See 3 Variations' : 'Unlock Variations',
                         style: AppTextStyles.subtitle.copyWith(
-                          color: hasPremium ? AppColors.primaryLight : AppColors.textSecondaryLight,
+                          color: hasPremium
+                              ? AppColors.primaryLight
+                              : AppColors.textSecondaryLight,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -579,62 +620,67 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               const SizedBox(height: AppConstants.spacing16),
               ...List.generate(_variations!.length, (index) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: AppConstants.spacing12),
+                  padding: const EdgeInsets.only(
+                    bottom: AppConstants.spacing12,
+                  ),
                   child: Semantics(
                     label: '${_variationTypes[index].name} variation',
                     hint: 'Tap to copy this variation',
                     button: true,
                     child: GestureDetector(
-                      onTap: () => _copyVariationToClipboard(_variations![index]),
+                      onTap: () =>
+                          _copyVariationToClipboard(_variations![index]),
                       child: Container(
-                      padding: const EdgeInsets.all(AppConstants.spacing16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: AppColors.cardShadowLight,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                _variationTypes[index].icon,
-                                size: 16,
-                                color: AppColors.primaryLight,
-                              ),
-                              const SizedBox(width: AppConstants.spacing8),
-                              Text(
-                                _variationTypes[index].name,
-                                style: AppTextStyles.caption.copyWith(
+                        padding: const EdgeInsets.all(AppConstants.spacing16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusCard,
+                          ),
+                          border: Border.all(color: AppColors.borderLight),
+                          boxShadow: AppColors.cardShadowLight,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  _variationTypes[index].icon,
+                                  size: 16,
                                   color: AppColors.primaryLight,
-                                  fontWeight: FontWeight.w600,
                                 ),
-                              ),
-                              const Spacer(),
-                              const Icon(
-                                Icons.copy_outlined,
-                                size: 16,
-                                color: AppColors.textSecondaryLight,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppConstants.spacing12),
-                          Text(
-                            _variations![index],
-                            style: AppTextStyles.body.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontSize: isSmallScreen ? 13 : 14,
+                                const SizedBox(width: AppConstants.spacing8),
+                                Text(
+                                  _variationTypes[index].name,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.primaryLight,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const Spacer(),
+                                const Icon(
+                                  Icons.copy_outlined,
+                                  size: 16,
+                                  color: AppColors.textSecondaryLight,
+                                ),
+                              ],
                             ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                            const SizedBox(height: AppConstants.spacing12),
+                            Text(
+                              _variations![index],
+                              style: AppTextStyles.body.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontSize: isSmallScreen ? 13 : 14,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
                 );
               }),
             ],
@@ -675,7 +721,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               icon: _isFavourited ? Icons.star : Icons.star_border,
               label: _isFavourited ? 'Saved' : 'Save',
               onPressed: _handleFavourite,
-              backgroundColor: _isFavourited ? AppColors.warning : AppColors.primaryLight,
+              backgroundColor: _isFavourited
+                  ? AppColors.warning
+                  : AppColors.primaryLight,
               isSmallScreen: isSmallScreen,
             ),
           ),
@@ -685,7 +733,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
               icon: _isCopied ? Icons.check : Icons.copy_outlined,
               label: _isCopied ? 'Copied' : 'Copy',
               onPressed: _copyToClipboard,
-              backgroundColor: _isCopied ? AppColors.success : AppColors.primaryLight,
+              backgroundColor: _isCopied
+                  ? AppColors.success
+                  : AppColors.primaryLight,
               isSmallScreen: isSmallScreen,
             ),
           ),
@@ -694,7 +744,9 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
             child: _buildActionButton(
               icon: Icons.share_outlined,
               label: 'Share',
-              onPressed: () => SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt)),
+              onPressed: () => SharePlus.instance.share(
+                ShareParams(text: widget.enhancedPrompt),
+              ),
               isSmallScreen: isSmallScreen,
             ),
           ),
@@ -771,11 +823,7 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
 }
 
 class _VariationType {
-
-  _VariationType({
-    required this.name,
-    required this.icon,
-  });
+  _VariationType({required this.name, required this.icon});
   final String name;
   final IconData icon;
 }

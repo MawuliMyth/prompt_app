@@ -3,11 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 /// Google Logo Widget
 class GoogleLogo extends StatelessWidget {
-
-  const GoogleLogo({
-    super.key,
-    this.size = 24,
-  });
+  const GoogleLogo({super.key, this.size = 24});
   final double size;
 
   @override
@@ -30,12 +26,9 @@ class GoogleLogo extends StatelessWidget {
 
 /// Apple Logo Widget
 class AppleLogo extends StatelessWidget {
-
-  const AppleLogo({
-    super.key,
-    this.size = 24,
-  });
+  const AppleLogo({super.key, this.size = 24, this.color = Colors.white});
   final double size;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +40,7 @@ class AppleLogo extends StatelessWidget {
       ''',
       width: size,
       height: size,
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
     );
   }
 }

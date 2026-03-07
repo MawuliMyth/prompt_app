@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../utils/platform_utils.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../constants/app_constants.dart';
@@ -104,10 +105,6 @@ class UpgradeBanner extends StatelessWidget {
   }
 
   void _openPaywall(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const PaywallScreen(),
-      ),
-    );
+    PlatformUtils.navigateTo(context, const PaywallScreen());
   }
 }

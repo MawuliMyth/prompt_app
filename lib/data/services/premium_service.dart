@@ -7,7 +7,19 @@ import '../models/user_model.dart';
 import '../../core/config/api_config.dart';
 
 /// Service for handling premium subscription operations
-class PremiumService {
+abstract class PremiumServiceBase {
+  Future<bool> checkIsPremium();
+  Future<UserModel?> getUserData();
+  Future<bool> activateTrial();
+  Future<bool> upgradeToPremium({
+    required String planType,
+    DateTime? expiryDate,
+  });
+  Future<bool> downgradeToFree();
+  Future<bool> updatePersona(String? persona);
+}
+
+class PremiumService implements PremiumServiceBase {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -23,6 +35,7 @@ class PremiumService {
 
   /// Check if current user is premium
   /// Returns false for guests (not logged in)
+  @override
   Future<bool> checkIsPremium() async {
     final uid = _currentUserId;
     if (uid == null) return false;
@@ -71,6 +84,7 @@ class PremiumService {
 
   /// Get full user model with premium data
   /// Returns null for guests or on error
+  @override
   Future<UserModel?> getUserData() async {
     final uid = _currentUserId;
     if (uid == null) return null;
@@ -87,6 +101,7 @@ class PremiumService {
 
   /// Activate a 3-day trial for the user
   /// Returns true if successful, false otherwise
+  @override
   Future<bool> activateTrial() async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -148,6 +163,7 @@ class PremiumService {
   /// Upgrade user to premium plan
   /// [planType] should be 'monthly', 'yearly', or 'lifetime'
   /// [expiryDate] is required for monthly/yearly plans
+  @override
   Future<bool> upgradeToPremium({
     required String planType,
     DateTime? expiryDate,
@@ -159,12 +175,14 @@ class PremiumService {
   }
 
   /// Downgrade user to free plan
+  @override
   Future<bool> downgradeToFree() async {
     debugPrint('downgradeToFree is disabled on the client.');
     return false;
   }
 
   /// Update user's AI persona (role/profession for personalized prompts)
+  @override
   Future<bool> updatePersona(String? persona) async {
     final ref = _userDocRef();
     if (ref == null) return false;

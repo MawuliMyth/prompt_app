@@ -8,6 +8,7 @@ import '../../data/models/prompt_model.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -106,7 +107,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
 
-    return Scaffold(
+    return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
         title: 'History',
         actions: [
@@ -311,9 +312,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const PaywallScreen())),
+            onPressed: () =>
+                PlatformUtils.navigateTo(context, const PaywallScreen()),
             style: TextButton.styleFrom(
               backgroundColor: AppColors.primaryLight,
               foregroundColor: Colors.white,
@@ -436,9 +436,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   height: AppConstants.buttonHeight,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
+                      PlatformUtils.navigateTo(context, const LoginScreen());
                     },
                     child: const Text('Sign In'),
                   ),
@@ -528,36 +526,12 @@ class PromptHistoryCard extends StatelessWidget {
         ),
       ),
       confirmDismiss: (direction) async {
-        return await showDialog(
+        return await AdaptiveDialog.show(
           context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-            ),
-            title: Text('Delete Prompt?', style: AppTextStyles.title),
-            content: Text(
-              'This action cannot be undone.',
-              style: AppTextStyles.body,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  'Cancel',
-                  style: AppTextStyles.button.copyWith(
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'Delete',
-                  style: AppTextStyles.button.copyWith(color: AppColors.error),
-                ),
-              ),
-            ],
-          ),
+          title: 'Delete Prompt?',
+          content: 'This action cannot be undone.',
+          confirmText: 'Delete',
+          isDestructive: true,
         );
       },
       onDismissed: (direction) {
@@ -577,8 +551,8 @@ class PromptHistoryCard extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ResultScreen(
+            PlatformUtils.adaptivePageRoute(
+              ResultScreen(
                 originalText: prompt.originalText,
                 enhancedPrompt: prompt.enhancedPrompt,
                 category: prompt.category,

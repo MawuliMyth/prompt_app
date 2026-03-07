@@ -5,7 +5,10 @@ import '../data/services/premium_service.dart';
 
 /// Provider for managing premium subscription state
 class PremiumProvider extends ChangeNotifier {
-  final PremiumService _premiumService = PremiumService();
+  PremiumProvider({PremiumServiceBase? premiumService})
+    : _premiumService = premiumService ?? PremiumService();
+
+  final PremiumServiceBase _premiumService;
 
   // State
   bool _isPremium = false;

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_screen.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -89,9 +89,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToHome() {
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+    PlatformUtils.navigateReplace(context, const HomeScreen());
   }
 
   Future<void> _completeOnboarding() async {
@@ -297,7 +295,6 @@ class _SplashScreenState extends State<SplashScreen>
                   ElevatedButton(
                     onPressed: _nextPage,
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(0, AppConstants.buttonHeight),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 16,

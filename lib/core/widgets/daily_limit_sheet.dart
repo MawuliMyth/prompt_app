@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/platform_utils.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../constants/app_constants.dart';
@@ -105,18 +106,16 @@ class _DailyLimitContent extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const PaywallScreen(),
-                  ),
-                );
+                PlatformUtils.navigateTo(context, const PaywallScreen());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryLight,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.radiusButton,
+                  ),
                 ),
               ),
               child: Row(
@@ -147,7 +146,10 @@ class _DailyLimitContent extends StatelessWidget {
           ),
 
           // Bottom padding for safe area
-          SizedBox(height: MediaQuery.of(context).padding.bottom + AppConstants.spacing8),
+          SizedBox(
+            height:
+                MediaQuery.of(context).padding.bottom + AppConstants.spacing8,
+          ),
         ],
       ),
     );

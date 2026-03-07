@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -19,79 +20,74 @@ class FavouritesScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final promptProvider = Provider.of<PromptProvider>(context);
 
-    return SafeArea(
-      child: Scaffold(
-        appBar: const AdaptiveAppBar(title: 'Favourites'),
-        body: !authProvider.isAuthenticated
-            ? _buildGuestEmptyState(context, theme)
-            : promptProvider.isLoading
-            ? _buildShimmerLoading()
-            : promptProvider.favouritePrompts.isEmpty
-            ? _buildEmptyState(theme)
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
-                itemCount: promptProvider.favouritePrompts.length,
-                itemBuilder: (context, index) {
-                  final prompt = promptProvider.favouritePrompts[index];
-                  return Stack(
-                    children: [
-                      PromptHistoryCard(
-                        prompt: prompt,
-                        onDelete: () async {
-                          final success = await promptProvider.deletePrompt(
-                            authProvider.currentUser,
-                            prompt.id,
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(title: 'Favourites'),
+      body: !authProvider.isAuthenticated
+          ? _buildGuestEmptyState(context, theme)
+          : promptProvider.isLoading
+          ? _buildShimmerLoading()
+          : promptProvider.favouritePrompts.isEmpty
+          ? _buildEmptyState(theme)
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              itemCount: promptProvider.favouritePrompts.length,
+              itemBuilder: (context, index) {
+                final prompt = promptProvider.favouritePrompts[index];
+                return Stack(
+                  children: [
+                    PromptHistoryCard(
+                      prompt: prompt,
+                      onDelete: () async {
+                        final success = await promptProvider.deletePrompt(
+                          authProvider.currentUser,
+                          prompt.id,
+                        );
+                        if (!success && context.mounted) {
+                          SnackbarUtils.showError(
+                            context,
+                            promptProvider.error ?? 'Failed to delete prompt',
                           );
-                          if (!success && context.mounted) {
-                            SnackbarUtils.showError(
-                              context,
-                              promptProvider.error ?? 'Failed to delete prompt',
-                            );
-                          }
-                        },
-                      ),
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
+                        }
+                      },
+                    ),
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                            size: 20,
                           ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 20,
-                            ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: () async {
-                              final success = await promptProvider
-                                  .toggleFavourite(
-                                    authProvider.currentUser,
-                                    prompt,
-                                  );
-                              if (!success && context.mounted) {
-                                SnackbarUtils.showError(
-                                  context,
-                                  promptProvider.error ??
-                                      'Failed to update favourite',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () async {
+                            final success = await promptProvider
+                                .toggleFavourite(
+                                  authProvider.currentUser,
+                                  prompt,
                                 );
-                              }
-                            },
-                          ),
+                            if (!success && context.mounted) {
+                              SnackbarUtils.showError(
+                                context,
+                                promptProvider.error ??
+                                    'Failed to update favourite',
+                              );
+                            }
+                          },
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
-      ),
+                    ),
+                  ],
+                );
+              },
+            ),
     );
   }
 
@@ -184,20 +180,16 @@ class FavouritesScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryLight,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Sign In'),
+                ElevatedButton(
+                  onPressed: () {
+                    PlatformUtils.navigateTo(context, const LoginScreen());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    backgroundColor: AppColors.primaryLight,
+                    foregroundColor: Colors.white,
                   ),
+                  child: const Text('Sign In'),
                 ),
               ],
             ),
