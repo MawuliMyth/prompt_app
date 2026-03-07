@@ -245,9 +245,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               backgroundColor: theme.colorScheme.surface,
               selectedColor: AppColors.primaryLight,
               side: BorderSide(
-                color: isSelected
-                    ? AppColors.primaryLight
-                    : AppColors.borderLight,
+                color: isSelected ? AppColors.primaryLight : theme.dividerColor,
               ),
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : theme.colorScheme.onSurface,

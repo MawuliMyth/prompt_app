@@ -83,7 +83,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
     final transcript = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const VoiceAssessmentScreen()),
     );
-    if (!mounted || transcript == null || transcript.isEmpty) return;
+    if (!mounted || transcript == null) return;
     setState(() {
       _controller.text = transcript;
       _controller.selection = TextSelection.collapsed(

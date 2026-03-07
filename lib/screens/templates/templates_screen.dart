@@ -184,9 +184,10 @@ class _TemplateCard extends StatelessWidget {
           const SizedBox(height: AppConstants.spacing20),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: ElevatedButton.icon(
               onPressed: onUse,
-              child: const Text('Use Template'),
+              icon: const Icon(Icons.arrow_outward_rounded, size: 18),
+              label: const Text('Use Template'),
             ),
           ),
         ],

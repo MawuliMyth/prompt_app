@@ -191,9 +191,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                 children: [
                   _RoundControl(
                     icon: Icons.keyboard_alt_outlined,
-                    onTap: _transcript.isEmpty
-                        ? null
-                        : () => Navigator.of(context).pop(_transcript),
+                    onTap: () => Navigator.of(context).pop(_transcript),
                   ),
                   const Spacer(),
                   GestureDetector(

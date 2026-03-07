@@ -13,6 +13,17 @@ import '../paywall/paywall_screen.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  Future<void> _handleSignOut(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) async {
+    await authProvider.signOut();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Signed out successfully.')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -124,44 +135,119 @@ class SettingsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            authProvider.currentUser?.displayName ??
-                                'Signed in',
-                            style: AppTextStyles.subtitle.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: const BoxDecoration(
+                                  gradient: AppColors.primaryGradient,
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  ((authProvider.currentUser?.displayName ??
+                                                  authProvider
+                                                      .currentUser
+                                                      ?.email ??
+                                                  'P')
+                                              .trim()
+                                              .isEmpty
+                                          ? 'P'
+                                          : (authProvider
+                                                    .currentUser
+                                                    ?.displayName ??
+                                                authProvider
+                                                    .currentUser
+                                                    ?.email ??
+                                                'P')[0])
+                                      .toUpperCase(),
+                                  style: AppTextStyles.subtitle.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppConstants.spacing16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      authProvider.currentUser?.displayName ??
+                                          'Signed in',
+                                      style: AppTextStyles.subtitle.copyWith(
+                                        color: theme.colorScheme.onSurface,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: AppConstants.spacing4,
+                                    ),
+                                    Text(
+                                      authProvider.currentUser?.email ?? '',
+                                      style: AppTextStyles.body.copyWith(
+                                        color: theme.hintColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: AppConstants.spacing4),
-                          Text(
-                            authProvider.currentUser?.email ?? '',
-                            style: AppTextStyles.body.copyWith(
-                              color: theme.hintColor,
+                          if (authProvider.error != null) ...[
+                            const SizedBox(height: AppConstants.spacing12),
+                            Text(
+                              authProvider.error!,
+                              style: AppTextStyles.body.copyWith(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: AppConstants.spacing16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: authProvider.isLoading
+                                  ? null
+                                  : () => _handleSignOut(context, authProvider),
+                              child: const Text('Sign out'),
                             ),
                           ),
                         ],
                       ),
                     )
-                  : ListTile(
-                      title: Text(
-                        'Sign in to sync your prompts',
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Save history and access your prompts across devices.',
-                        style: AppTextStyles.body.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                      trailing: ElevatedButton(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
+                  : Padding(
+                      padding: const EdgeInsets.all(AppConstants.spacing16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Sign in to sync your prompts',
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: theme.colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                        child: const Text('Sign in'),
+                          const SizedBox(height: AppConstants.spacing4),
+                          Text(
+                            'Save history and access your prompts across devices.',
+                            style: AppTextStyles.body.copyWith(
+                              color: theme.hintColor,
+                            ),
+                          ),
+                          const SizedBox(height: AppConstants.spacing16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
+                                ),
+                              ),
+                              child: const Text('Sign in'),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
             ),
@@ -195,13 +281,6 @@ class SettingsScreen extends StatelessWidget {
                           style: AppTextStyles.subtitle.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: AppConstants.spacing4),
-                        Text(
-                          'A friendlier way to shape better prompts.',
-                          style: AppTextStyles.body.copyWith(
-                            color: theme.hintColor,
                           ),
                         ),
                       ],

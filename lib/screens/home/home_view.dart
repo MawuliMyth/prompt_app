@@ -14,6 +14,7 @@ import '../../providers/app_config_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/shell_provider.dart';
+import '../paywall/paywall_screen.dart';
 import 'voice_assessment_screen.dart';
 
 class HomeView extends StatelessWidget {
@@ -45,28 +46,26 @@ class HomeView extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    _CircleUtility(
-                      icon: isCupertino
-                          ? CupertinoIcons.line_horizontal_3
-                          : Icons.menu_rounded,
-                    ),
                     const Spacer(),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: premiumProvider.hasPremiumAccess
-                            ? AppColors.premiumGradient
-                            : AppColors.primaryGradient,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        displayName.isEmpty
-                            ? 'P'
-                            : displayName[0].toUpperCase(),
-                        style: AppTextStyles.title.copyWith(
-                          color: Colors.white,
+                    GestureDetector(
+                      onTap: () => shellProvider.selectTab(3),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: premiumProvider.hasPremiumAccess
+                              ? AppColors.premiumGradient
+                              : AppColors.primaryGradient,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          displayName.isEmpty
+                              ? 'P'
+                              : displayName[0].toUpperCase(),
+                          style: AppTextStyles.title.copyWith(
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -85,6 +84,13 @@ class HomeView extends StatelessWidget {
                 _PremiumStatusCard(
                   isPremium: premiumProvider.hasPremiumAccess,
                   trialUsed: premiumProvider.trialUsed,
+                  onTap: premiumProvider.hasPremiumAccess
+                      ? null
+                      : () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PaywallScreen(),
+                          ),
+                        ),
                 ),
                 const SizedBox(height: AppConstants.spacing24),
                 _FeatureMosaic(
@@ -116,33 +122,42 @@ class HomeView extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      'Hot Features',
+                      'Templates',
                       style: AppTextStyles.heading.copyWith(
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const Spacer(),
-                    Text(
-                      'See all',
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: theme.hintColor,
+                    GestureDetector(
+                      onTap: () => shellProvider.selectTab(2),
+                      child: Text(
+                        'See all',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: theme.hintColor,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppConstants.spacing16),
-                Wrap(
-                  spacing: AppConstants.spacing12,
-                  runSpacing: AppConstants.spacing12,
+                Row(
                   children: quickTemplates.map((template) {
-                    return _QuickTemplateTile(
-                      template: template,
-                      onTap: () {
-                        shellProvider.openComposer(
-                          initialText: template.promptBody,
-                          categoryId: template.categoryId,
-                        );
-                      },
+                    final isLast = template == quickTemplates.last;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: isLast ? 0 : AppConstants.spacing12,
+                        ),
+                        child: _QuickTemplateTile(
+                          template: template,
+                          onTap: () {
+                            shellProvider.openComposer(
+                              initialText: template.promptBody,
+                              categoryId: template.categoryId,
+                            );
+                          },
+                        ),
+                      ),
                     );
                   }).toList(),
                 ),
@@ -151,7 +166,7 @@ class HomeView extends StatelessWidget {
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
                 child: Container(
                   height: 62,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -228,87 +243,71 @@ class HomeView extends StatelessWidget {
   }
 }
 
-class _CircleUtility extends StatelessWidget {
-  const _CircleUtility({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: Icon(
-        icon,
-        size: 22,
-        color: Theme.of(context).colorScheme.onSurface,
-      ),
-    );
-  }
-}
-
 class _PremiumStatusCard extends StatelessWidget {
-  const _PremiumStatusCard({required this.isPremium, required this.trialUsed});
+  const _PremiumStatusCard({
+    required this.isPremium,
+    required this.trialUsed,
+    this.onTap,
+  });
 
   final bool isPremium;
   final bool trialUsed;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacing20),
-      decoration: BoxDecoration(
-        gradient: isPremium
-            ? AppColors.premiumGradient
-            : AppColors.darkGradient,
-        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isPremium ? 'Premium is active' : 'Upgrade your writing flow',
-                  style: AppTextStyles.title.copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: AppConstants.spacing8),
-                Text(
-                  isPremium
-                      ? 'Enjoy unlimited prompt refinement and pro tones.'
-                      : trialUsed
-                      ? 'You have already used your free trial.'
-                      : 'Try pro tones, deeper prompt shaping, and richer analytics.',
-                  style: AppTextStyles.body.copyWith(
-                    color: Colors.white.withValues(alpha: 0.82),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppConstants.spacing20),
+        decoration: BoxDecoration(
+          gradient: isPremium
+              ? AppColors.premiumGradient
+              : AppColors.darkGradient,
+          borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isPremium ? 'Premium is active' : 'Upgrade to premium',
+                    style: AppTextStyles.title.copyWith(color: Colors.white),
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppConstants.spacing8),
+                  Text(
+                    isPremium
+                        ? 'Enjoy unlimited prompt refinement and pro tones.'
+                        : trialUsed
+                        ? 'Your free trial has already been used.'
+                        : 'Unlock premium tones, deeper prompt shaping, and richer insights.',
+                    style: AppTextStyles.body.copyWith(
+                      color: Colors.white.withValues(alpha: 0.82),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppConstants.spacing20),
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
+            const SizedBox(width: AppConstants.spacing20),
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isPremium
+                    ? Icons.workspace_premium_rounded
+                    : Icons.auto_awesome_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
             ),
-            child: Icon(
-              isPremium
-                  ? Icons.workspace_premium_rounded
-                  : Icons.auto_awesome_rounded,
-              color: Colors.white,
-              size: 34,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -403,32 +402,46 @@ class _FeatureCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    shape: BoxShape.circle,
+            if (large) ...[
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      resolveIcon(feature.iconKey, cupertino: isCupertino),
+                      size: 18,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
-                  child: Icon(
-                    resolveIcon(feature.iconKey, cupertino: isCupertino),
-                    size: 18,
+                  const Spacer(),
+                  Icon(
+                    isCupertino
+                        ? CupertinoIcons.arrow_up_right
+                        : Icons.arrow_outward_rounded,
+                    size: 22,
                     color: theme.colorScheme.onSurface,
                   ),
-                ),
-                const Spacer(),
-                Icon(
+                ],
+              ),
+              const Spacer(),
+            ] else ...[
+              Align(
+                alignment: Alignment.topRight,
+                child: Icon(
                   isCupertino
                       ? CupertinoIcons.arrow_up_right
                       : Icons.arrow_outward_rounded,
-                  size: 22,
+                  size: 20,
                   color: theme.colorScheme.onSurface,
                 ),
-              ],
-            ),
-            const Spacer(),
+              ),
+              const Spacer(),
+            ],
             Text(
               feature.title,
               style: (large ? AppTextStyles.display : AppTextStyles.heading)
@@ -462,13 +475,9 @@ class _QuickTemplateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = ((MediaQuery.of(context).size.width - 52) / 3)
-        .clamp(96.0, 150.0)
-        .toDouble();
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: width,
         padding: const EdgeInsets.all(AppConstants.spacing16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
@@ -478,16 +487,6 @@ class _QuickTemplateTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariantLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.auto_awesome_outlined, size: 18),
-            ),
-            const SizedBox(height: AppConstants.spacing20),
             Text(
               template.title,
               maxLines: 2,

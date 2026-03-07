@@ -8,7 +8,6 @@ import '../../core/constants/app_constants.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../providers/shell_provider.dart';
-import '../analytics/analytics_screen.dart';
 import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
 import '../templates/templates_screen.dart';
@@ -29,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
     HomeView(),
     HistoryScreen(),
     TemplatesScreen(),
-    AnalyticsScreen(),
     SettingsScreen(),
   ];
 
@@ -68,14 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, connectivity, child) {
               return IndexedStack(
                 index: shellProvider.currentIndex,
-                children: _screens.map((screen) {
-                  return Column(
-                    children: [
-                      Expanded(child: screen),
-                      SizedBox(height: connectivity.isOnline ? 128 : 152),
-                    ],
-                  );
-                }).toList(),
+                children: _screens,
               );
             },
           ),
@@ -215,17 +206,6 @@ class _FloatingShell extends StatelessWidget {
                             onTap: () => shellProvider.selectTab(2),
                           ),
                           _ShellItem(
-                            label: 'Insights',
-                            icon: isCupertino
-                                ? CupertinoIcons.chart_bar
-                                : Icons.bar_chart_rounded,
-                            selectedIcon: isCupertino
-                                ? CupertinoIcons.chart_bar_fill
-                                : Icons.bar_chart_rounded,
-                            selected: shellProvider.currentIndex == 3,
-                            onTap: () => shellProvider.selectTab(3),
-                          ),
-                          _ShellItem(
                             label: 'Settings',
                             icon: isCupertino
                                 ? CupertinoIcons.settings
@@ -233,8 +213,8 @@ class _FloatingShell extends StatelessWidget {
                             selectedIcon: isCupertino
                                 ? CupertinoIcons.settings
                                 : Icons.settings_rounded,
-                            selected: shellProvider.currentIndex == 4,
-                            onTap: () => shellProvider.selectTab(4),
+                            selected: shellProvider.currentIndex == 3,
+                            onTap: () => shellProvider.selectTab(3),
                           ),
                         ],
                       ),
