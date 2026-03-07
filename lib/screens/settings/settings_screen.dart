@@ -108,18 +108,21 @@ class SettingsScreen extends StatelessWidget {
                   _ThemeOptionTile(
                     label: 'System',
                     subtitle: 'Follow the device appearance',
+                    icon: Icons.brightness_auto_rounded,
                     selected: themeProvider.themeMode == ThemeMode.system,
                     onTap: () => themeProvider.setTheme(ThemeMode.system),
                   ),
                   _ThemeOptionTile(
                     label: 'Light',
                     subtitle: 'Bright surfaces and soft contrast',
+                    icon: Icons.light_mode_rounded,
                     selected: themeProvider.themeMode == ThemeMode.light,
                     onTap: () => themeProvider.setTheme(ThemeMode.light),
                   ),
                   _ThemeOptionTile(
                     label: 'Dark',
                     subtitle: 'Low-glare surfaces and muted edges',
+                    icon: Icons.dark_mode_rounded,
                     selected: themeProvider.themeMode == ThemeMode.dark,
                     onTap: () => themeProvider.setTheme(ThemeMode.dark),
                   ),
@@ -331,12 +334,14 @@ class _ThemeOptionTile extends StatelessWidget {
   const _ThemeOptionTile({
     required this.label,
     required this.subtitle,
+    required this.icon,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
   final String subtitle;
+  final IconData icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -354,7 +359,7 @@ class _ThemeOptionTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppConstants.radiusControl),
         ),
         child: Icon(
-          selected ? Icons.check_rounded : Icons.circle_outlined,
+          icon,
           size: 18,
           color: selected
               ? AppColors.primaryLight
