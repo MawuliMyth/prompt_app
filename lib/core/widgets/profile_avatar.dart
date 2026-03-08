@@ -51,9 +51,18 @@ class ProfileAvatar extends StatelessWidget {
   }
 
   Widget _fallbackText(String avatarText) {
-    return Text(
-      avatarText,
-      style: AppTextStyles.title.copyWith(color: Colors.white),
+    return Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          avatarText,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.title.copyWith(
+            color: Colors.white,
+            height: 1,
+          ),
+        ),
+      ),
     );
   }
 }
