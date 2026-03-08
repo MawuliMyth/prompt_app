@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/profile_avatar.dart';
 import '../../core/widgets/page_header.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
@@ -139,36 +140,14 @@ class SettingsScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: const BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  ((authProvider.currentUser?.displayName ??
-                                                  authProvider
-                                                      .currentUser
-                                                      ?.email ??
-                                                  'P')
-                                              .trim()
-                                              .isEmpty
-                                          ? 'P'
-                                          : (authProvider
-                                                    .currentUser
-                                                    ?.displayName ??
-                                                authProvider
-                                                    .currentUser
-                                                    ?.email ??
-                                                'P')[0])
-                                      .toUpperCase(),
-                                  style: AppTextStyles.subtitle.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                              ProfileAvatar(
+                                photoUrl: authProvider.currentUser?.photoURL,
+                                fallbackLabel:
+                                    (authProvider.currentUser?.displayName ??
+                                            authProvider.currentUser?.email ??
+                                            'P')
+                                        .trim(),
+                                size: 48,
                               ),
                               const SizedBox(width: AppConstants.spacing16),
                               Expanded(

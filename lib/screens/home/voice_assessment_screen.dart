@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -31,11 +32,13 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   bool _isProcessing = false;
   bool _isTransitioningRecorder = false;
   bool _showRetryAction = false;
+  bool _canRetryTranscription = false;
   String _caption = 'Go ahead, I\'m listening...';
   String _transcript = '';
   double _audioLevel = 0;
   DateTime? _recordingStartedAt;
   StreamSubscription<double>? _levelSubscription;
+  Uint8List? _lastRecordedAudio;
 
   @override
   void initState() {
@@ -77,6 +80,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         _isRecording = false;
         _isProcessing = true;
         _showRetryAction = false;
+        _canRetryTranscription = false;
         _caption = 'Transcribing your voice...';
         _audioLevel = 0;
       });
@@ -92,6 +96,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         setState(() {
           _isProcessing = false;
           _showRetryAction = true;
+          _canRetryTranscription = false;
           _caption = 'Hold the mic a little longer, then try again.';
         });
         SnackbarUtils.showError(
@@ -106,6 +111,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
           setState(() {
             _isProcessing = false;
             _showRetryAction = true;
+            _canRetryTranscription = false;
             _caption = 'We could not capture that. Try again.';
           });
         }
@@ -117,6 +123,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         setState(() {
           _isProcessing = false;
           _showRetryAction = true;
+          _canRetryTranscription = false;
           _caption = 'We could not capture enough audio. Try again.';
         });
         SnackbarUtils.showError(
@@ -126,15 +133,16 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         return;
       }
 
+      _lastRecordedAudio = audioBytes;
+
       try {
-        final transcript = await _transcriptionService.transcribeAudio(
-          audioBytes,
-        );
+        final transcript = await _transcribeRecordedAudio(audioBytes);
         if (!mounted) return;
         setState(() {
           _isProcessing = false;
           _transcript = transcript;
           _showRetryAction = false;
+          _canRetryTranscription = false;
           _caption = 'Transcript ready. Opening editor...';
         });
         Navigator.of(context).pop(transcript);
@@ -143,6 +151,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         setState(() {
           _isProcessing = false;
           _showRetryAction = true;
+          _canRetryTranscription = true;
           _caption = 'Something went wrong. Try again.';
         });
         SnackbarUtils.showError(
@@ -173,9 +182,49 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
     setState(() {
       _isRecording = true;
       _showRetryAction = false;
+      _canRetryTranscription = false;
       _caption = 'Listening... speak naturally.';
     });
     _recordingStartedAt = DateTime.now();
+  }
+
+  Future<String> _transcribeRecordedAudio(Uint8List audioBytes) {
+    return _transcriptionService.transcribeAudio(audioBytes);
+  }
+
+  Future<void> _retryLastTranscription() async {
+    final audioBytes = _lastRecordedAudio;
+    if (audioBytes == null || _isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+      _showRetryAction = false;
+      _caption = 'Retrying transcription...';
+    });
+
+    try {
+      final transcript = await _transcribeRecordedAudio(audioBytes);
+      if (!mounted) return;
+      setState(() {
+        _isProcessing = false;
+        _transcript = transcript;
+        _canRetryTranscription = false;
+        _caption = 'Transcript ready. Opening editor...';
+      });
+      Navigator.of(context).pop(transcript);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isProcessing = false;
+        _showRetryAction = true;
+        _canRetryTranscription = true;
+        _caption = 'Still having trouble sending that recording.';
+      });
+      SnackbarUtils.showError(
+        context,
+        error.toString().replaceFirst('Exception: ', ''),
+      );
+    }
   }
 
   Future<void> _handlePermissionFailure() async {
@@ -300,9 +349,22 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: _isProcessing ? null : _toggleRecording,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('Try recording again'),
+                    onPressed: _isProcessing
+                        ? null
+                        : _canRetryTranscription
+                        ? _retryLastTranscription
+                        : _toggleRecording,
+                    icon: Icon(
+                      _canRetryTranscription
+                          ? Icons.cloud_upload_rounded
+                          : Icons.refresh_rounded,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _canRetryTranscription
+                          ? 'Retry sending this recording'
+                          : 'Try recording again',
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryLight,
                       side: BorderSide(
@@ -409,7 +471,8 @@ class _VoiceOrbPainter extends CustomPainter {
       final theta = (i / points) * math.pi * 2;
       final wobble = math.sin(theta * 3 + (animationValue * math.pi * 2)) * 10;
       final ripple =
-          math.sin(theta * 7 - (animationValue * math.pi * 4)) * (6 + energy * 22);
+          math.sin(theta * 7 - (animationValue * math.pi * 4)) *
+          (6 + energy * 22);
       final dynamicRadius = radius + wobble + ripple;
       final point = Offset(
         center.dx + math.cos(theta) * dynamicRadius,

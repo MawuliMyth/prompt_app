@@ -9,6 +9,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/app_icon_mapper.dart';
+import '../../core/widgets/profile_avatar.dart';
 import '../../data/models/app_config_model.dart';
 import '../../providers/app_config_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -342,33 +343,11 @@ class _ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: premium
-            ? AppColors.premiumGradient
-            : AppColors.primaryGradient,
-      ),
-      alignment: Alignment.center,
-      child: photoUrl != null && photoUrl!.isNotEmpty
-          ? ClipOval(
-              child: Image.network(
-                photoUrl!,
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Text(
-                  fallbackLabel,
-                  style: AppTextStyles.title.copyWith(color: Colors.white),
-                ),
-              ),
-            )
-          : Text(
-              fallbackLabel,
-              style: AppTextStyles.title.copyWith(color: Colors.white),
-            ),
+    return ProfileAvatar(
+      photoUrl: photoUrl,
+      fallbackLabel: fallbackLabel,
+      premium: premium,
+      size: 48,
     );
   }
 }
@@ -657,7 +636,7 @@ class _FeatureCard extends StatelessWidget {
                 color: onCardColor.withValues(alpha: 0.78),
                 fontSize: large ? 14 : 11.5,
                 height: large ? 1.25 : 1.1,
-             ),
+              ),
             ),
           ],
         ),
