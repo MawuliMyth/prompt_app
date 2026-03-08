@@ -236,6 +236,35 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacing24),
             _SettingsGroup(
+              title: 'Appearance',
+              child: Column(
+                children: [
+                  _ThemeOptionTile(
+                    label: 'System',
+                    subtitle: 'Follow the device appearance',
+                    icon: Icons.brightness_auto_rounded,
+                    selected: themeProvider.themeMode == ThemeMode.system,
+                    onTap: () => themeProvider.setTheme(ThemeMode.system),
+                  ),
+                  _ThemeOptionTile(
+                    label: 'Light',
+                    subtitle: null,
+                    icon: Icons.light_mode_rounded,
+                    selected: themeProvider.themeMode == ThemeMode.light,
+                    onTap: () => themeProvider.setTheme(ThemeMode.light),
+                  ),
+                  _ThemeOptionTile(
+                    label: 'Dark',
+                    subtitle: null,
+                    icon: Icons.dark_mode_rounded,
+                    selected: themeProvider.themeMode == ThemeMode.dark,
+                    onTap: () => themeProvider.setTheme(ThemeMode.dark),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            _SettingsGroup(
               title: 'About',
               child: Padding(
                 padding: const EdgeInsets.all(AppConstants.spacing16),
@@ -287,35 +316,6 @@ class SettingsScreen extends StatelessWidget {
                     leading: const Icon(Icons.description_outlined),
                     title: 'Terms & Conditions',
                     onTap: () => _handleLaunchUrl(context, _termsUrl),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppConstants.spacing24),
-            _SettingsGroup(
-              title: 'Appearance',
-              child: Column(
-                children: [
-                  _ThemeOptionTile(
-                    label: 'System',
-                    subtitle: 'Follow the device appearance',
-                    icon: Icons.brightness_auto_rounded,
-                    selected: themeProvider.themeMode == ThemeMode.system,
-                    onTap: () => themeProvider.setTheme(ThemeMode.system),
-                  ),
-                  _ThemeOptionTile(
-                    label: 'Light',
-                    subtitle: null,
-                    icon: Icons.light_mode_rounded,
-                    selected: themeProvider.themeMode == ThemeMode.light,
-                    onTap: () => themeProvider.setTheme(ThemeMode.light),
-                  ),
-                  _ThemeOptionTile(
-                    label: 'Dark',
-                    subtitle: null,
-                    icon: Icons.dark_mode_rounded,
-                    selected: themeProvider.themeMode == ThemeMode.dark,
-                    onTap: () => themeProvider.setTheme(ThemeMode.dark),
                   ),
                 ],
               ),
