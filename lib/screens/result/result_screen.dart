@@ -305,6 +305,7 @@ class _ResultScreenState extends State<ResultScreen>
   void _showSendToAiSheet() {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         final theme = Theme.of(sheetContext);
@@ -315,79 +316,91 @@ class _ResultScreenState extends State<ResultScreen>
               top: Radius.circular(AppConstants.radiusBottomSheet),
             ),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.dividerColor,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
+          child: SafeArea(
+            top: false,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.dividerColor,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spacing20),
+                    Text(
+                      'Send to AI',
+                      style: AppTextStyles.title.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spacing8),
+                    Text(
+                      'We will copy your prompt, then open the AI destination you choose.',
+                      style: AppTextStyles.body.copyWith(
+                        color: theme.hintColor,
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spacing20),
+                    _AiTargetTile(
+                      target: AiHandoffTarget.chatgpt,
+                      description: 'Open app or web, prompt copied',
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _sendToAi(AiHandoffTarget.chatgpt);
+                      },
+                    ),
+                    const SizedBox(height: AppConstants.spacing12),
+                    _AiTargetTile(
+                      target: AiHandoffTarget.claude,
+                      description: 'Open app or web, prompt copied',
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _sendToAi(AiHandoffTarget.claude);
+                      },
+                    ),
+                    const SizedBox(height: AppConstants.spacing12),
+                    _AiTargetTile(
+                      target: AiHandoffTarget.gemini,
+                      description: 'Open app or web, prompt copied',
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _sendToAi(AiHandoffTarget.gemini);
+                      },
+                    ),
+                    const SizedBox(height: AppConstants.spacing12),
+                    _AiTargetTile(
+                      target: AiHandoffTarget.deepseek,
+                      description: 'Open app or web, prompt copied',
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _sendToAi(AiHandoffTarget.deepseek);
+                      },
+                    ),
+                    const SizedBox(height: AppConstants.spacing12),
+                    _AiTargetTile(
+                      target: AiHandoffTarget.systemShare,
+                      description: 'Use the native share sheet',
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _sendToAi(AiHandoffTarget.systemShare);
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppConstants.spacing20),
-              Text(
-                'Send to AI',
-                style: AppTextStyles.title.copyWith(
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: AppConstants.spacing8),
-              Text(
-                'We will copy your prompt, then open the AI destination you choose.',
-                style: AppTextStyles.body.copyWith(color: theme.hintColor),
-              ),
-              const SizedBox(height: AppConstants.spacing20),
-              _AiTargetTile(
-                target: AiHandoffTarget.chatgpt,
-                description: 'Open app or web, prompt copied',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _sendToAi(AiHandoffTarget.chatgpt);
-                },
-              ),
-              const SizedBox(height: AppConstants.spacing12),
-              _AiTargetTile(
-                target: AiHandoffTarget.claude,
-                description: 'Open app or web, prompt copied',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _sendToAi(AiHandoffTarget.claude);
-                },
-              ),
-              const SizedBox(height: AppConstants.spacing12),
-              _AiTargetTile(
-                target: AiHandoffTarget.gemini,
-                description: 'Open app or web, prompt copied',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _sendToAi(AiHandoffTarget.gemini);
-                },
-              ),
-              const SizedBox(height: AppConstants.spacing12),
-              _AiTargetTile(
-                target: AiHandoffTarget.deepseek,
-                description: 'Open app or web, prompt copied',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _sendToAi(AiHandoffTarget.deepseek);
-                },
-              ),
-              const SizedBox(height: AppConstants.spacing12),
-              _AiTargetTile(
-                target: AiHandoffTarget.systemShare,
-                description: 'Use the native share sheet',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _sendToAi(AiHandoffTarget.systemShare);
-                },
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -987,13 +1000,7 @@ class _AiTargetTile extends StatelessWidget {
                 color: _backgroundForTarget(target),
                 borderRadius: BorderRadius.circular(AppConstants.radiusControl),
               ),
-              child: Text(
-                _monogramForTarget(target),
-                style: AppTextStyles.subtitle.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              child: _AiBrandMark(target: target),
             ),
             const SizedBox(width: AppConstants.spacing16),
             Expanded(
@@ -1010,6 +1017,8 @@ class _AiTargetTile extends StatelessWidget {
                   const SizedBox(height: AppConstants.spacing4),
                   Text(
                     description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.body.copyWith(
                       color: Theme.of(context).hintColor,
                     ),
@@ -1034,28 +1043,47 @@ class _AiTargetTile extends StatelessWidget {
       case AiHandoffTarget.chatgpt:
         return const Color(0xFF10A37F);
       case AiHandoffTarget.claude:
-        return const Color(0xFFD97706);
+        return Colors.white;
       case AiHandoffTarget.gemini:
-        return const Color(0xFF4F46E5);
+        return Colors.black;
       case AiHandoffTarget.deepseek:
         return const Color(0xFF2563EB);
       case AiHandoffTarget.systemShare:
         return AppColors.primaryLight;
     }
   }
+}
 
-  String _monogramForTarget(AiHandoffTarget target) {
+class _AiBrandMark extends StatelessWidget {
+  const _AiBrandMark({required this.target});
+
+  final AiHandoffTarget target;
+
+  @override
+  Widget build(BuildContext context) {
+    final assetPath = switch (target) {
+      AiHandoffTarget.chatgpt => 'assets/images/chagpt.png',
+      AiHandoffTarget.claude => 'assets/images/claude.png',
+      AiHandoffTarget.gemini => 'assets/images/Gemini-Icon.webp',
+      AiHandoffTarget.deepseek => 'assets/images/deepseek.jpg',
+      AiHandoffTarget.systemShare => null,
+    };
+
+    if (assetPath != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.asset(assetPath, width: 28, height: 28, fit: BoxFit.cover),
+      );
+    }
+
     switch (target) {
-      case AiHandoffTarget.chatgpt:
-        return 'G';
-      case AiHandoffTarget.claude:
-        return 'C';
-      case AiHandoffTarget.gemini:
-        return 'Gm';
-      case AiHandoffTarget.deepseek:
-        return 'D';
       case AiHandoffTarget.systemShare:
-        return '+';
+        return const Icon(Icons.add_rounded, color: Colors.white, size: 24);
+      case AiHandoffTarget.chatgpt:
+      case AiHandoffTarget.claude:
+      case AiHandoffTarget.gemini:
+      case AiHandoffTarget.deepseek:
+        return const SizedBox.shrink();
     }
   }
 }

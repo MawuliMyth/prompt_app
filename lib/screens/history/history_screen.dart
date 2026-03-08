@@ -34,6 +34,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     'General',
   ];
   Timer? _debounceTimer;
+  bool _showLimitBanner = true;
 
   static const int _freeUserHistoryLimit = 10;
 
@@ -102,6 +103,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  Color _softBorderColor(ThemeData theme) {
+    return theme.brightness == Brightness.dark
+        ? Colors.white.withValues(alpha: 0.08)
+        : const Color(0xFFD8E1F0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -144,7 +151,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         children: [
                           _buildSearchBar(theme, promptProvider),
                           _buildFilters(theme, promptProvider),
-                          if (isLimited)
+                          if (isLimited && _showLimitBanner)
                             _buildLimitBanner(theme, allPrompts.length),
                           Expanded(
                             child: displayPrompts.isEmpty
@@ -222,6 +229,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildFilters(ThemeData theme, PromptProvider provider) {
+    final softBorder = _softBorderColor(theme);
+
     return SizedBox(
       height: 44,
       child: ListView.builder(
@@ -246,7 +255,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               backgroundColor: theme.colorScheme.surface,
               selectedColor: AppColors.primaryLight,
               side: BorderSide(
-                color: isSelected ? AppColors.primaryLight : theme.dividerColor,
+                color: isSelected ? softBorder : softBorder,
               ),
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : theme.colorScheme.onSurface,
@@ -263,6 +272,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildLimitBanner(ThemeData theme, int totalPrompts) {
+    final softBorder = _softBorderColor(theme);
+    final secondaryText = theme.brightness == Brightness.dark
+        ? Colors.white70
+        : const Color(0xFF475569);
+
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: AppConstants.spacing24,
@@ -272,60 +286,95 @@ class _HistoryScreenState extends State<HistoryScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: softBorder),
         boxShadow: AppColors.cardShadowLight,
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppConstants.spacing8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.lock_outline,
-              color: AppColors.primaryLight,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: AppConstants.spacing16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.only(right: 44),
+            child: Row(
               children: [
-                Text(
-                  'Viewing $_freeUserHistoryLimit of $totalPrompts prompts',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.all(AppConstants.spacing8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.lock_outline,
+                    color: AppColors.primaryLight,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Upgrade to Premium for unlimited history',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondaryLight,
+                const SizedBox(width: AppConstants.spacing16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Viewing $_freeUserHistoryLimit of $totalPrompts prompts',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Upgrade to Premium for unlimited history',
+                        style: AppTextStyles.caption.copyWith(
+                          color: secondaryText,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      PlatformUtils.navigateTo(context, const PaywallScreen()),
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.primaryLight,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.spacing16,
+                      vertical: AppConstants.spacing8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Upgrade'),
                 ),
               ],
             ),
           ),
-          TextButton(
-            onPressed: () =>
-                PlatformUtils.navigateTo(context, const PaywallScreen()),
-            style: TextButton.styleFrom(
-              backgroundColor: AppColors.primaryLight,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.spacing16,
-                vertical: AppConstants.spacing8,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: () => setState(() => _showLimitBanner = false),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: softBorder),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: secondaryText,
+                  ),
+                ),
               ),
             ),
-            child: const Text('Upgrade'),
           ),
         ],
       ),
@@ -567,7 +616,11 @@ class PromptHistoryCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(AppConstants.radiusCard),
-            border: Border.all(color: AppColors.borderLight),
+            border: Border.all(
+              color: theme.brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : const Color(0xFFD8E1F0),
+            ),
             boxShadow: AppColors.cardShadowLight,
           ),
           child: Column(
