@@ -87,9 +87,7 @@ class HomeView extends StatelessWidget {
                     isPremium: premiumProvider.hasPremiumAccess,
                     trialUsed: premiumProvider.trialUsed,
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const PaywallScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const PaywallScreen()),
                     ),
                   ),
                   const SizedBox(height: AppConstants.spacing24),
@@ -349,7 +347,9 @@ class _ProfileAvatar extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: premium ? AppColors.premiumGradient : AppColors.primaryGradient,
+        gradient: premium
+            ? AppColors.premiumGradient
+            : AppColors.primaryGradient,
       ),
       alignment: Alignment.center,
       child: photoUrl != null && photoUrl!.isNotEmpty
@@ -657,7 +657,7 @@ class _FeatureCard extends StatelessWidget {
                 color: onCardColor.withValues(alpha: 0.78),
                 fontSize: large ? 14 : 11.5,
                 height: large ? 1.25 : 1.1,
-              ),
+             ),
             ),
           ],
         ),
