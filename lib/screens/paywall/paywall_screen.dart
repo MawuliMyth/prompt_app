@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
+import '../auth/login_screen.dart';
 
 class PaywallScreen extends StatefulWidget {
   const PaywallScreen({super.key});
@@ -496,7 +499,24 @@ class _PaywallScreenState extends State<PaywallScreen> {
     PremiumProvider premiumProvider,
     bool trialUsed,
   ) async {
+    final authProvider = context.read<AuthProvider>();
     final navigator = Navigator.of(context);
+
+    if (!authProvider.isAuthenticated) {
+      final shouldSignIn = await AdaptiveDialog.show(
+        context: context,
+        title: 'Sign in required',
+        content:
+            'Sign in to start a free trial or continue when billing is ready.',
+        cancelText: 'Later',
+        confirmText: 'Sign In',
+      );
+      if (shouldSignIn == true && mounted) {
+        await PlatformUtils.navigateTo(context, const LoginScreen());
+      }
+      return;
+    }
+
     if (!trialUsed) {
       final success = await premiumProvider.activateTrial();
       if (!mounted) return;

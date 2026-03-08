@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../providers/shell_provider.dart';
 import '../history/history_screen.dart';
@@ -177,6 +178,22 @@ class _FloatingShell extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: GestureDetector(
                             onTap: () async {
+                              final authProvider = context.read<AuthProvider>();
+                              if (!authProvider.isAuthenticated) {
+                                final shouldSignIn = await AdaptiveDialog.show(
+                                  context: context,
+                                  title: 'Sign in to use voice',
+                                  content:
+                                      'Voice recording is available after sign in. Guest mode can still use typed prompts.',
+                                  cancelText: 'Not now',
+                                  confirmText: 'Sign In',
+                                );
+                                if (shouldSignIn == true && context.mounted) {
+                                  shellProvider.selectTab(3);
+                                }
+                                return;
+                              }
+
                               final transcript = await Navigator.of(context)
                                   .push<String>(
                                     PlatformUtils.adaptivePageRoute(

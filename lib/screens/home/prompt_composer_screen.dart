@@ -21,6 +21,7 @@ import '../../providers/connectivity_provider.dart';
 import '../../providers/daily_limit_provider.dart';
 import '../../providers/free_prompt_provider.dart';
 import '../../providers/premium_provider.dart';
+import '../auth/login_screen.dart';
 import '../auth/signup_screen.dart';
 import '../result/result_screen.dart';
 import 'voice_assessment_screen.dart';
@@ -81,6 +82,22 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
   }
 
   Future<void> _openVoice() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      final shouldSignIn = await AdaptiveDialog.show(
+        context: context,
+        title: 'Sign in to use voice',
+        content:
+            'Voice recording is available after sign in. Guest mode can still use typed prompts.',
+        cancelText: 'Not now',
+        confirmText: 'Sign In',
+      );
+      if (shouldSignIn == true && mounted) {
+        await PlatformUtils.navigateTo(context, const LoginScreen());
+      }
+      return;
+    }
+
     final transcript = await Navigator.of(context).push<String>(
       PlatformUtils.adaptivePageRoute(const VoiceAssessmentScreen()),
     );

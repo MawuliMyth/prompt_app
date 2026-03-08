@@ -76,6 +76,12 @@ class PremiumProvider extends ChangeNotifier {
 
   /// Activate a 3-day trial
   Future<bool> activateTrial() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      _error = 'Sign in to start your free trial.';
+      notifyListeners();
+      return false;
+    }
+
     if (_trialUsed) {
       _error = 'Trial already used';
       notifyListeners();
@@ -109,6 +115,12 @@ class PremiumProvider extends ChangeNotifier {
     required String planType,
     DateTime? expiryDate,
   }) async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      _error = 'Sign in to upgrade to premium.';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();

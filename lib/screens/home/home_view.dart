@@ -10,6 +10,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/app_icon_mapper.dart';
 import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/profile_avatar.dart';
 import '../../data/models/app_config_model.dart';
 import '../../providers/app_config_provider.dart';
@@ -95,6 +96,21 @@ class HomeView extends StatelessWidget {
                   onAction: (feature) async {
                     switch (feature.actionType) {
                       case 'voice':
+                        if (!authProvider.isAuthenticated) {
+                          final shouldSignIn = await AdaptiveDialog.show(
+                            context: context,
+                            title: 'Sign in to use voice',
+                            content:
+                                'Voice recording is available after sign in. Guest mode can still use typed prompts.',
+                            cancelText: 'Not now',
+                            confirmText: 'Sign In',
+                          );
+                          if (shouldSignIn == true && context.mounted) {
+                            shellProvider.selectTab(3);
+                          }
+                          break;
+                        }
+
                         final transcript = await Navigator.of(context).push<String>(
                           PlatformUtils.adaptivePageRoute(
                             const VoiceAssessmentScreen(),

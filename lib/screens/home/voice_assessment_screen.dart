@@ -14,7 +14,10 @@ import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../data/services/audio_recorder_service.dart';
 import '../../data/services/transcription_service.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/connectivity_provider.dart';
+import '../../providers/premium_provider.dart';
+import '../auth/login_screen.dart';
 
 class VoiceAssessmentScreen extends StatefulWidget {
   const VoiceAssessmentScreen({super.key});
@@ -29,6 +32,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   final TranscriptionService _transcriptionService = TranscriptionService();
   late final AnimationController _orbController;
   static const Duration _minimumRecordingDuration = Duration(seconds: 1);
+  static const Duration _freeRecordingLimit = Duration(minutes: 3);
 
   bool _isRecording = false;
   bool _isProcessing = false;
@@ -41,6 +45,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   DateTime? _recordingStartedAt;
   StreamSubscription<double>? _levelSubscription;
   Uint8List? _lastRecordedAudio;
+  Timer? _recordingLimitTimer;
 
   @override
   void initState() {
@@ -59,6 +64,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
 
   @override
   void dispose() {
+    _recordingLimitTimer?.cancel();
     _levelSubscription?.cancel();
     _audioRecorderService.dispose().ignore();
     _orbController.dispose();
@@ -67,6 +73,14 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
 
   Future<void> _toggleRecording() async {
     if (_isTransitioningRecorder) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final premiumProvider = context.read<PremiumProvider>();
+
+    if (!authProvider.isAuthenticated) {
+      await _showGuestVoiceLock();
+      return;
+    }
 
     if (!context.read<ConnectivityProvider>().isOnline) {
       SnackbarUtils.showError(
@@ -77,6 +91,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
     }
 
     if (_isRecording) {
+      _recordingLimitTimer?.cancel();
       _isTransitioningRecorder = true;
       setState(() {
         _isRecording = false;
@@ -188,6 +203,38 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       _caption = 'Listening... speak naturally.';
     });
     _recordingStartedAt = DateTime.now();
+
+    if (!premiumProvider.hasPremiumAccess) {
+      _recordingLimitTimer?.cancel();
+      _recordingLimitTimer = Timer(_freeRecordingLimit, _handleRecordingLimitHit);
+    }
+  }
+
+  Future<void> _showGuestVoiceLock() async {
+    final shouldSignIn = await AdaptiveDialog.show(
+      context: context,
+      title: 'Sign in to use voice',
+      content:
+          'Voice recording is available after sign in. Guest mode can still use typed prompts.',
+      cancelText: 'Not now',
+      confirmText: 'Sign In',
+    );
+    if (shouldSignIn == true && mounted) {
+      await PlatformUtils.navigateTo(context, const LoginScreen());
+    }
+  }
+
+  Future<void> _handleRecordingLimitHit() async {
+    if (!mounted || !_isRecording || _isTransitioningRecorder) return;
+
+    setState(() {
+      _caption = 'Free recording limit reached. Finishing transcription...';
+    });
+    SnackbarUtils.showError(
+      context,
+      'Free voice recordings are limited to 3 minutes per take.',
+    );
+    await _toggleRecording();
   }
 
   Future<String> _transcribeRecordedAudio(Uint8List audioBytes) {
@@ -256,6 +303,10 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isCupertino = PlatformUtils.useCupertino(context);
+    final authProvider = context.watch<AuthProvider>();
+    final premiumProvider = context.watch<PremiumProvider>();
+    final hasVoiceAccess = authProvider.isAuthenticated;
+    final isUnlimitedRecording = premiumProvider.hasPremiumAccess;
 
     return AdaptiveScaffold(
       appBar: const AdaptiveAppBar(
@@ -270,7 +321,11 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
           child: Column(
             children: [
               Text(
-                'Speak naturally and we will turn it into a prompt draft.',
+                hasVoiceAccess
+                    ? isUnlimitedRecording
+                        ? 'Speak naturally and we will turn it into a prompt draft.'
+                        : 'Speak naturally and we will turn it into a prompt draft. Free recordings are limited to 3 minutes.'
+                    : 'Voice recording is locked in guest mode. Sign in to use it.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(color: theme.hintColor),
               ),
@@ -319,14 +374,16 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                                 ],
                               ),
                               alignment: Alignment.center,
-                              child: Icon(
-                                _isRecording
-                                    ? Icons.graphic_eq_rounded
-                                    : Icons.mic_rounded,
-                                size: 42,
-                                color: Colors.white,
-                              ),
-                            ),
+                               child: Icon(
+                                 hasVoiceAccess
+                                     ? (_isRecording
+                                           ? Icons.graphic_eq_rounded
+                                           : Icons.mic_rounded)
+                                     : Icons.lock_rounded,
+                                 size: 42,
+                                 color: Colors.white,
+                               ),
+                             ),
                           ),
                         ),
                       );
@@ -335,7 +392,9 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                 ),
               ),
               Text(
-                _transcript.isEmpty
+                !hasVoiceAccess
+                    ? 'Type your prompt instead, or sign in to unlock voice capture.'
+                    : _transcript.isEmpty
                     ? 'Your transcript will appear here.'
                     : _transcript,
                 textAlign: TextAlign.center,
@@ -343,6 +402,19 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.86),
                 ),
               ),
+              if (!hasVoiceAccess) ...[
+                const SizedBox(height: AppConstants.spacing16),
+                SizedBox(
+                  width: double.infinity,
+                  child: AdaptiveButton(
+                    label: 'Sign In to Use Voice',
+                    icon: Icons.lock_open_rounded,
+                    onPressed: () {
+                      _showGuestVoiceLock();
+                    },
+                  ),
+                ),
+              ],
               if (_showRetryAction) ...[
                 const SizedBox(height: AppConstants.spacing16),
                 SizedBox(
@@ -376,8 +448,8 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: _isProcessing ? null : _toggleRecording,
-                    child: Container(
+                     onTap: _isProcessing ? null : _toggleRecording,
+                     child: Container(
                       width: 86,
                       height: 86,
                       decoration: BoxDecoration(
@@ -396,13 +468,15 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                               baseColor: Color(0x66FFFFFF),
                               highlightColor: Color(0xAAFFFFFF),
                             )
-                          : Icon(
-                              _isRecording
-                                  ? Icons.stop_rounded
-                                  : Icons.mic_rounded,
-                              size: 34,
-                              color: Colors.white,
-                            ),
+                           : Icon(
+                               hasVoiceAccess
+                                   ? (_isRecording
+                                         ? Icons.stop_rounded
+                                         : Icons.mic_rounded)
+                                   : Icons.lock_rounded,
+                               size: 34,
+                               color: Colors.white,
+                             ),
                     ),
                   ),
                   const Spacer(),
