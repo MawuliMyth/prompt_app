@@ -61,6 +61,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                   final category = categories[index];
                   final selected = category.id == _selectedCategoryId;
                   return ChoiceChip(
+                    showCheckmark: false,
                     label: Text(category.label),
                     avatar: Icon(
                       resolveIcon(category.iconKey, cupertino: isCupertino),

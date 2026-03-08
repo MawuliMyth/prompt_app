@@ -118,8 +118,9 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         setState(() {
           _isProcessing = false;
           _transcript = transcript;
-          _caption = 'Tap use text to continue editing.';
+          _caption = 'Transcript ready. Opening editor...';
         });
+        Navigator.of(context).pop(transcript);
       } catch (error) {
         if (!mounted) return;
         setState(() {

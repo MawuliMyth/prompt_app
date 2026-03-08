@@ -247,6 +247,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               bottom: AppConstants.spacing8,
             ),
             child: FilterChip(
+              showCheckmark: false,
               label: Text(cat),
               selected: isSelected,
               onSelected: (val) {

@@ -58,6 +58,7 @@ class _ResultScreenState extends State<ResultScreen>
   List<String>? _variations;
   bool _showVariations = false;
   bool _isSendingToAi = false;
+  int? _copiedVariationIndex;
 
   final List<_VariationType> _variationTypes = [
     _VariationType(name: 'Formal', icon: Icons.work_outline),
@@ -272,12 +273,18 @@ class _ResultScreenState extends State<ResultScreen>
     });
   }
 
-  void _copyVariationToClipboard(String variation) async {
+  void _copyVariationToClipboard(String variation, int index) async {
     await Clipboard.setData(ClipboardData(text: variation));
+    setState(() => _copiedVariationIndex = index);
     HapticFeedback.lightImpact();
     if (mounted) {
       SnackbarUtils.showSuccess(context, 'Variation copied');
     }
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && _copiedVariationIndex == index) {
+        setState(() => _copiedVariationIndex = null);
+      }
+    });
   }
 
   Future<void> _sharePrompt() async {
@@ -757,8 +764,10 @@ class _ResultScreenState extends State<ResultScreen>
                     hint: 'Tap to copy this variation',
                     button: true,
                     child: GestureDetector(
-                      onTap: () =>
-                          _copyVariationToClipboard(_variations![index]),
+                      onTap: () => _copyVariationToClipboard(
+                        _variations![index],
+                        index,
+                      ),
                       child: Container(
                         padding: const EdgeInsets.all(AppConstants.spacing16),
                         decoration: BoxDecoration(
@@ -788,10 +797,14 @@ class _ResultScreenState extends State<ResultScreen>
                                   ),
                                 ),
                                 const Spacer(),
-                                const Icon(
-                                  Icons.copy_outlined,
+                                Icon(
+                                  _copiedVariationIndex == index
+                                      ? Icons.check_rounded
+                                      : Icons.copy_outlined,
                                   size: 16,
-                                  color: AppColors.textSecondaryLight,
+                                  color: _copiedVariationIndex == index
+                                      ? AppColors.success
+                                      : AppColors.textSecondaryLight,
                                 ),
                               ],
                             ),
