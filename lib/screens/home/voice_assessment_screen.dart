@@ -30,6 +30,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   bool _isRecording = false;
   bool _isProcessing = false;
   bool _isTransitioningRecorder = false;
+  bool _showRetryAction = false;
   String _caption = 'Go ahead, I\'m listening...';
   String _transcript = '';
   double _audioLevel = 0;
@@ -75,6 +76,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       setState(() {
         _isRecording = false;
         _isProcessing = true;
+        _showRetryAction = false;
         _caption = 'Transcribing your voice...';
         _audioLevel = 0;
       });
@@ -89,6 +91,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         if (!mounted) return;
         setState(() {
           _isProcessing = false;
+          _showRetryAction = true;
           _caption = 'Hold the mic a little longer, then try again.';
         });
         SnackbarUtils.showError(
@@ -102,6 +105,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         if (mounted) {
           setState(() {
             _isProcessing = false;
+            _showRetryAction = true;
             _caption = 'We could not capture that. Try again.';
           });
         }
@@ -112,6 +116,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         if (!mounted) return;
         setState(() {
           _isProcessing = false;
+          _showRetryAction = true;
           _caption = 'We could not capture enough audio. Try again.';
         });
         SnackbarUtils.showError(
@@ -129,6 +134,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         setState(() {
           _isProcessing = false;
           _transcript = transcript;
+          _showRetryAction = false;
           _caption = 'Transcript ready. Opening editor...';
         });
         Navigator.of(context).pop(transcript);
@@ -136,6 +142,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         if (!mounted) return;
         setState(() {
           _isProcessing = false;
+          _showRetryAction = true;
           _caption = 'Something went wrong. Try again.';
         });
         SnackbarUtils.showError(
@@ -165,6 +172,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
 
     setState(() {
       _isRecording = true;
+      _showRetryAction = false;
       _caption = 'Listening... speak naturally.';
     });
     _recordingStartedAt = DateTime.now();
@@ -287,6 +295,31 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.86),
                 ),
               ),
+              if (_showRetryAction) ...[
+                const SizedBox(height: AppConstants.spacing16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isProcessing ? null : _toggleRecording,
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('Try recording again'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryLight,
+                      side: BorderSide(
+                        color: AppColors.primaryLight.withValues(alpha: 0.24),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppConstants.spacing16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusButton,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppConstants.spacing24),
               Row(
                 children: [
