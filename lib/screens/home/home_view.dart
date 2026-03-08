@@ -87,9 +87,7 @@ class HomeView extends StatelessWidget {
                     isPremium: premiumProvider.hasPremiumAccess,
                     trialUsed: premiumProvider.trialUsed,
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const PaywallScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const PaywallScreen()),
                     ),
                   ),
                   const SizedBox(height: AppConstants.spacing24),
@@ -349,7 +347,9 @@ class _ProfileAvatar extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: premium ? AppColors.premiumGradient : AppColors.primaryGradient,
+        gradient: premium
+            ? AppColors.premiumGradient
+            : AppColors.primaryGradient,
       ),
       alignment: Alignment.center,
       child: photoUrl != null && photoUrl!.isNotEmpty
@@ -634,28 +634,39 @@ class _FeatureCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const Spacer(flex: 2),
+              const SizedBox(height: AppConstants.spacing12),
             ],
-            Text(
-              feature.title,
-              maxLines: large ? 2 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: (large ? AppTextStyles.display : AppTextStyles.heading)
-                  .copyWith(
-                    color: onCardColor,
-                    fontSize: large ? 24 : 17,
-                    height: large ? 1.05 : 1.1,
+            Expanded(
+              child: Column(
+                mainAxisAlignment: large
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    feature.title,
+                    maxLines: large ? 2 : 2,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        (large ? AppTextStyles.display : AppTextStyles.heading)
+                            .copyWith(
+                              color: onCardColor,
+                              fontSize: large ? 24 : 17,
+                              height: large ? 1.05 : 1.1,
+                            ),
                   ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              feature.subtitle,
-              maxLines: large ? 3 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.body.copyWith(
-                color: onCardColor.withValues(alpha: 0.78),
-                fontSize: large ? 14 : 13,
-                height: 1.25,
+                  const SizedBox(height: 6),
+                  Text(
+                    feature.subtitle,
+                    maxLines: large ? 3 : 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      color: onCardColor.withValues(alpha: 0.78),
+                      fontSize: large ? 14 : 13,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
