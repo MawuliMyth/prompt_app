@@ -204,33 +204,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
         horizontal: AppConstants.spacing24,
         vertical: AppConstants.spacing12,
       ),
-      child: TextField(
+      child: AdaptiveTextField(
         controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search prompts...',
-          prefixIcon: const Icon(Icons.search_outlined, size: 20),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: () {
-                    _debounceTimer?.cancel();
-                    _searchController.clear();
-                    provider.setSearchQuery('');
-                  },
-                )
-              : null,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.spacing16,
-            vertical: AppConstants.spacing12,
-          ),
-        ),
+        hintText: 'Search prompts...',
+        prefixIcon: const Icon(Icons.search_outlined, size: 20),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 20),
+                onPressed: () {
+                  _debounceTimer?.cancel();
+                  _searchController.clear();
+                  provider.setSearchQuery('');
+                },
+              )
+            : null,
       ),
     );
   }
 
   Widget _buildFilters(ThemeData theme, PromptProvider provider) {
-    final softBorder = _softBorderColor(theme);
-
     return SizedBox(
       height: 44,
       child: ListView.builder(
@@ -246,25 +238,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
               right: AppConstants.spacing8,
               bottom: AppConstants.spacing8,
             ),
-            child: FilterChip(
-              showCheckmark: false,
-              label: Text(cat),
+            child: AdaptiveSelectionChip(
+              label: cat,
               selected: isSelected,
-              onSelected: (val) {
+              onTap: () {
                 provider.setCategoryFilter(cat);
               },
-              backgroundColor: theme.colorScheme.surface,
-              selectedColor: AppColors.primaryLight,
-              side: BorderSide(
-                color: isSelected ? softBorder : softBorder,
-              ),
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : theme.colorScheme.onSurface,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppConstants.radiusChip),
-              ),
             ),
           );
         },
@@ -330,21 +309,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ],
                   ),
                 ),
-                TextButton(
+                AdaptiveButton(
+                  label: 'Upgrade',
                   onPressed: () =>
                       PlatformUtils.navigateTo(context, const PaywallScreen()),
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.primaryLight,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppConstants.spacing16,
-                      vertical: AppConstants.spacing8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text('Upgrade'),
                 ),
               ],
             ),
@@ -484,11 +452,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: AppConstants.buttonHeight,
-                  child: ElevatedButton(
+                  child: AdaptiveButton(
+                    label: 'Sign In',
                     onPressed: () {
                       PlatformUtils.navigateTo(context, const LoginScreen());
                     },
-                    child: const Text('Sign In'),
                   ),
                 ),
               ],

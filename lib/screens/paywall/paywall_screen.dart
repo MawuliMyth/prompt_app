@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../providers/premium_provider.dart';
 
 class PaywallScreen extends StatefulWidget {
@@ -58,9 +60,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
     final premiumProvider = context.watch<PremiumProvider>();
     final trialUsed = premiumProvider.trialUsed;
 
-    return Scaffold(
+    return AdaptiveScaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             _buildHeader(),
@@ -100,9 +103,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
       : const Color(0xFFD8E1F0);
 
   Widget _buildHeader() {
+    final isCupertino = CupertinoUserInterfaceLevel.maybeOf(context) != null;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
       decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
       child: Column(
         children: [
@@ -116,7 +121,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   color: Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.close, color: Colors.white, size: 20),
+                child: Icon(
+                  isCupertino ? CupertinoIcons.clear : Icons.close,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -416,31 +425,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     return Column(
       children: [
-        GestureDetector(
-          onTap: isBusy ? null : () => _handleUpgrade(premiumProvider, trialUsed),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryLight.withValues(alpha: 0.28),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Text(
-              isBusy
-                  ? 'Activating...'
-                  : trialUsed
-                  ? 'Upgrade Now'
-                  : 'Start 3-Day Free Trial',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.button.copyWith(color: Colors.white),
-            ),
+        SizedBox(
+          width: double.infinity,
+          child: AdaptiveButton(
+            label: trialUsed ? 'Upgrade Now' : 'Start 3-Day Free Trial',
+            isLoading: isBusy,
+            onPressed: isBusy ? null : () => _handleUpgrade(premiumProvider, trialUsed),
           ),
         ),
         const SizedBox(height: 12),

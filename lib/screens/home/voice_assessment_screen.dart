@@ -1,15 +1,17 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
-import '../../core/widgets/page_header.dart';
 import '../../data/services/audio_recorder_service.dart';
 import '../../data/services/transcription_service.dart';
 import '../../providers/connectivity_provider.dart';
@@ -230,28 +232,17 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   Future<void> _handlePermissionFailure() async {
     final permissionState = _audioRecorderService.lastPermissionState;
     if (permissionState == RecorderPermissionState.permanentlyDenied) {
-      await showDialog<void>(
+      final shouldOpenSettings = await AdaptiveDialog.show(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Microphone access needed'),
-          content: const Text(
+        title: 'Microphone access needed',
+        content:
             'Prompt needs microphone access to capture your voice. Open Settings and allow microphone access for the app.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Not now'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                await openAppSettings();
-              },
-              child: const Text('Open Settings'),
-            ),
-          ],
-        ),
+        cancelText: 'Not now',
+        confirmText: 'Open Settings',
       );
+      if (shouldOpenSettings == true) {
+        await openAppSettings();
+      }
       return;
     }
 
@@ -264,16 +255,24 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    final isCupertino = PlatformUtils.useCupertino(context);
+
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(
+        title: 'Voice assessment',
+        backgroundColor: Colors.transparent,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Column(
             children: [
-              PageHeader(
-                title: 'Voice assessment',
-                onBack: () => Navigator.of(context).pop(),
+              Text(
+                'Speak naturally and we will turn it into a prompt draft.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body.copyWith(color: theme.hintColor),
               ),
               const SizedBox(height: AppConstants.spacing32),
               Text(
@@ -348,37 +347,21 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                 const SizedBox(height: AppConstants.spacing16),
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
+                  child: AdaptiveButton(
+                    label: _canRetryTranscription
+                        ? 'Retry sending this recording'
+                        : 'Try recording again',
+                    icon: _canRetryTranscription
+                        ? Icons.cloud_upload_rounded
+                        : Icons.refresh_rounded,
+                    filled: false,
+                    foregroundColor: AppColors.primaryLight,
+                    backgroundColor: theme.colorScheme.surface,
                     onPressed: _isProcessing
                         ? null
                         : _canRetryTranscription
-                        ? _retryLastTranscription
-                        : _toggleRecording,
-                    icon: Icon(
-                      _canRetryTranscription
-                          ? Icons.cloud_upload_rounded
-                          : Icons.refresh_rounded,
-                      size: 18,
-                    ),
-                    label: Text(
-                      _canRetryTranscription
-                          ? 'Retry sending this recording'
-                          : 'Try recording again',
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryLight,
-                      side: BorderSide(
-                        color: AppColors.primaryLight.withValues(alpha: 0.24),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppConstants.spacing16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.radiusButton,
-                        ),
-                      ),
-                    ),
+                            ? _retryLastTranscription
+                            : _toggleRecording,
                   ),
                 ),
               ],
@@ -386,7 +369,9 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
               Row(
                 children: [
                   _RoundControl(
-                    icon: Icons.keyboard_alt_outlined,
+                    icon: isCupertino
+                        ? CupertinoIcons.keyboard
+                        : Icons.keyboard_alt_outlined,
                     onTap: () => Navigator.of(context).pop(_transcript),
                   ),
                   const Spacer(),
@@ -422,7 +407,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                   ),
                   const Spacer(),
                   _RoundControl(
-                    icon: Icons.close_rounded,
+                    icon: isCupertino ? CupertinoIcons.clear : Icons.close_rounded,
                     onTap: () => Navigator.of(context).pop(),
                   ),
                 ],

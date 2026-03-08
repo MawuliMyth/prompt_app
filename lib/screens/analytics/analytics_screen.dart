@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/widgets/page_header.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../data/models/prompt_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
@@ -34,15 +35,20 @@ class AnalyticsScreen extends StatelessWidget {
     final categoryCounts = _buildCategoryCounts(prompts);
     final weeklyPoints = _buildWeeklyPoints(prompts);
 
-    return Scaffold(
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(
+        title: 'Insights',
+        backgroundColor: Colors.transparent,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 160),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 160),
           children: [
-            const PageHeader(
-              title: 'Insights',
-              subtitle: 'A visual summary of how you refine prompts.',
+            Text(
+              'A visual summary of how you refine prompts.',
+              style: AppTextStyles.body.copyWith(color: theme.hintColor),
             ),
             const SizedBox(height: AppConstants.spacing20),
             Container(
@@ -191,15 +197,20 @@ class _AnalyticsLockedState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(
+        title: 'Insights',
+        backgroundColor: Colors.transparent,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 160),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 160),
           children: [
-            const PageHeader(
-              title: 'Insights',
-              subtitle: 'See how your prompt writing evolves over time.',
+            Text(
+              'See how your prompt writing evolves over time.',
+              style: AppTextStyles.body.copyWith(color: theme.hintColor),
             ),
             const SizedBox(height: AppConstants.spacing20),
             Container(
@@ -246,13 +257,12 @@ class _AnalyticsLockedState extends StatelessWidget {
                   const SizedBox(height: AppConstants.spacing20),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PaywallScreen(),
-                        ),
+                    child: AdaptiveButton(
+                      label: signedIn ? 'Unlock Premium' : 'See Premium',
+                      onPressed: () => PlatformUtils.navigateTo(
+                        context,
+                        const PaywallScreen(),
                       ),
-                      child: Text(signedIn ? 'Unlock Premium' : 'See Premium'),
                     ),
                   ),
                 ],

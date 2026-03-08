@@ -180,16 +180,14 @@ class FavouritesScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () {
-                    PlatformUtils.navigateTo(context, const LoginScreen());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                    backgroundColor: AppColors.primaryLight,
-                    foregroundColor: Colors.white,
+                SizedBox(
+                  width: double.infinity,
+                  child: AdaptiveButton(
+                    label: 'Sign In',
+                    onPressed: () {
+                      PlatformUtils.navigateTo(context, const LoginScreen());
+                    },
                   ),
-                  child: const Text('Sign In'),
                 ),
               ],
             ),

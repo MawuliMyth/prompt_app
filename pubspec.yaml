@@ -38,7 +38,6 @@ dependencies:
   firebase_auth: ^6.1.4
   cloud_firestore: ^6.1.2
   provider: ^6.1.5+1
-  cloud_functions: ^6.0.6
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^7.0.1
   flutter_sound: ^9.0.0

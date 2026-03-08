@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_screen.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -124,34 +126,21 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _showFirebaseError() {
-    showDialog(
+    AdaptiveDialog.show(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Configuration Error'),
-        content: const Text(
-          'Firebase could not be initialized. Please ensure you have '
-          'configured firebase_options.dart with valid credentials. '
-          'Run "flutterfire configure" to generate the configuration.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _completeOnboarding();
-            },
-            child: const Text('Continue Anyway'),
-          ),
-        ],
-      ),
-    );
+      title: 'Configuration Error',
+      content:
+          'Firebase could not be initialized. Please ensure you have configured firebase_options.dart with valid credentials. Run "flutterfire configure" to generate the configuration.',
+      cancelText: 'Continue Anyway',
+      confirmText: 'Continue Anyway',
+    ).then((_) => _completeOnboarding());
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return AdaptiveScaffold(
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
         child: _showOnboarding ? _buildOnboarding(theme) : _buildSplashLogo(),
@@ -192,22 +181,34 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildOnboarding(ThemeData theme) {
-    return Scaffold(
+    final isCupertino = PlatformUtils.useCupertino(context);
+
+    return AdaptiveScaffold(
       key: const ValueKey('onboarding'),
       body: SafeArea(
         child: Column(
           children: [
             Align(
               alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _completeOnboarding,
-                child: Text(
-                  'Skip',
-                  style: AppTextStyles.button.copyWith(
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
-              ),
+              child: isCupertino
+                  ? CupertinoButton(
+                      onPressed: _completeOnboarding,
+                      child: Text(
+                        'Skip',
+                        style: AppTextStyles.button.copyWith(
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    )
+                  : TextButton(
+                      onPressed: _completeOnboarding,
+                      child: Text(
+                        'Skip',
+                        style: AppTextStyles.button.copyWith(
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ),
             ),
             Expanded(
               child: PageView.builder(
@@ -292,35 +293,13 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                    ),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        child: Text(
-                          _currentPage == _onboardingData.length - 1
-                              ? 'Get Started'
-                              : 'Next',
-                          style: AppTextStyles.button.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                  SizedBox(
+                    width: 150,
+                    child: AdaptiveButton(
+                      label: _currentPage == _onboardingData.length - 1
+                          ? 'Get Started'
+                          : 'Next',
+                      onPressed: _nextPage,
                     ),
                   ),
                 ],

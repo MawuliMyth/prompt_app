@@ -9,6 +9,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/app_icon_mapper.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/profile_avatar.dart';
 import '../../data/models/app_config_model.dart';
 import '../../providers/app_config_provider.dart';
@@ -29,7 +30,6 @@ class HomeView extends StatelessWidget {
     final premiumProvider = context.watch<PremiumProvider>();
     final configProvider = context.watch<AppConfigProvider>();
     final shellProvider = context.read<ShellProvider>();
-    final isCupertino = !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
     String displayName = authProvider.currentUser?.displayName?.trim() ?? '';
     if (displayName.isEmpty) {
@@ -54,14 +54,10 @@ class HomeView extends StatelessWidget {
         ),
     ];
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            ListView(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 210),
-              children: [
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 210),
+        children: [
                 Row(
                   children: [
                     const Spacer(),
@@ -84,13 +80,14 @@ class HomeView extends StatelessWidget {
                 ),
                 const SizedBox(height: AppConstants.spacing24),
                 if (!premiumProvider.hasPremiumAccess) ...[
-                  _PremiumStatusCard(
-                    isPremium: premiumProvider.hasPremiumAccess,
-                    trialUsed: premiumProvider.trialUsed,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const PaywallScreen()),
-                    ),
-                  ),
+                   _PremiumStatusCard(
+                     isPremium: premiumProvider.hasPremiumAccess,
+                     trialUsed: premiumProvider.trialUsed,
+                     onTap: () => PlatformUtils.navigateTo(
+                       context,
+                       const PaywallScreen(),
+                     ),
+                   ),
                   const SizedBox(height: AppConstants.spacing24),
                 ],
                 _FeatureMosaic(
@@ -98,21 +95,19 @@ class HomeView extends StatelessWidget {
                   onAction: (feature) async {
                     switch (feature.actionType) {
                       case 'voice':
-                        final transcript = await Navigator.of(context)
-                            .push<String>(
-                              MaterialPageRoute(
-                                builder: (_) => const VoiceAssessmentScreen(),
-                              ),
-                            );
+                        final transcript = await Navigator.of(context).push<String>(
+                          PlatformUtils.adaptivePageRoute(
+                            const VoiceAssessmentScreen(),
+                          ),
+                        );
                         if (transcript != null && context.mounted) {
                           shellProvider.openComposer(initialText: transcript);
                         }
                         break;
                       case 'analytics':
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const AnalyticsScreen(),
-                          ),
+                        await PlatformUtils.navigateTo(
+                          context,
+                          const AnalyticsScreen(),
                         );
                         break;
                       case 'templates':
@@ -171,10 +166,7 @@ class HomeView extends StatelessWidget {
                     },
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -263,7 +255,6 @@ class _ProfileAvatar extends StatelessWidget {
       photoUrl: photoUrl,
       fallbackLabel: fallbackLabel,
       premium: premium,
-      size: 48,
     );
   }
 }

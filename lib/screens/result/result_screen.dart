@@ -232,23 +232,20 @@ class _ResultScreenState extends State<ResultScreen>
             SizedBox(
               width: double.infinity,
               height: AppConstants.buttonHeight,
-              child: ElevatedButton(
+              child: AdaptiveButton(
+                label: 'Create Free Account',
                 onPressed: () {
                   Navigator.pop(context);
                   PlatformUtils.navigateTo(context, const SignupScreen());
                 },
-                child: const Text('Create Free Account'),
               ),
             ),
             const SizedBox(height: AppConstants.spacing12),
-            TextButton(
+            AdaptiveButton(
+              label: 'Maybe Later',
+              filled: false,
+              foregroundColor: AppColors.textSecondaryLight,
               onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Maybe Later',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
-              ),
             ),
           ],
         ),
@@ -723,7 +720,6 @@ class _ResultScreenState extends State<ResultScreen>
                       const ShimmerPulse(
                         width: 92,
                         height: 16,
-                        borderRadius: 999,
                       )
                     else ...[
                       Icon(
@@ -927,26 +923,13 @@ class _ResultScreenState extends State<ResultScreen>
       return Semantics(
         label: label,
         button: true,
-        child: OutlinedButton(
+        child: AdaptiveButton(
+          label: label,
+          icon: icon,
+          filled: false,
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           onPressed: onPressed,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.onSurface,
-            side: const BorderSide(color: AppColors.borderLight, width: 1.5),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.radiusButton),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18),
-              if (!isSmallScreen) ...[
-                const SizedBox(width: 4),
-                Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
-              ],
-            ],
-          ),
         ),
       );
     }
@@ -954,27 +937,12 @@ class _ResultScreenState extends State<ResultScreen>
     return Semantics(
       label: label,
       button: true,
-      child: ElevatedButton(
+      child: AdaptiveButton(
+        label: label,
+        icon: icon,
+        backgroundColor: color,
+        foregroundColor: Colors.white,
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.radiusButton),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18),
-            if (!isSmallScreen) ...[
-              const SizedBox(width: 4),
-              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
-            ],
-          ],
-        ),
       ),
     );
   }

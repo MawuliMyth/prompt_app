@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/profile_avatar.dart';
-import '../../core/widgets/page_header.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -13,6 +15,11 @@ import '../paywall/paywall_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  static const String _privacyPolicyUrl =
+      'https://promptapp-legal.netlify.app/privacy.html';
+  static const String _termsUrl =
+      'https://promptapp-legal.netlify.app/terms.html';
 
   Future<void> _handleSignOut(
     BuildContext context,
@@ -25,29 +32,54 @@ class SettingsScreen extends StatelessWidget {
     ).showSnackBar(const SnackBar(content: Text('Signed out successfully.')));
   }
 
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  Future<void> _handleLaunchUrl(BuildContext context, String url) async {
+    try {
+      await _launchURL(url);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open link right now.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = context.watch<AuthProvider>();
     final premiumProvider = context.watch<PremiumProvider>();
     final themeProvider = context.watch<ThemeProvider>();
+    final isIOS = PlatformUtils.isIOS;
 
-    return Scaffold(
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(
+        title: 'Settings',
+        backgroundColor: Colors.transparent,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 160),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 160),
           children: [
-            const PageHeader(
-              title: 'Settings',
-              subtitle: 'Preferences, account, and app details.',
+            Text(
+              'Preferences, account, and app details.',
+              style: AppTextStyles.body.copyWith(color: theme.hintColor),
             ),
             const SizedBox(height: AppConstants.spacing20),
             GestureDetector(
               onTap: premiumProvider.hasPremiumAccess
                   ? null
-                  : () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const PaywallScreen()),
+                  : () => PlatformUtils.navigateTo(
+                      context,
+                      const PaywallScreen(),
                     ),
               child: Container(
                 padding: const EdgeInsets.all(AppConstants.spacing20),
@@ -102,35 +134,6 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacing24),
             _SettingsGroup(
-              title: 'Appearance',
-              child: Column(
-                children: [
-                  _ThemeOptionTile(
-                    label: 'System',
-                    subtitle: 'Follow the device appearance',
-                    icon: Icons.brightness_auto_rounded,
-                    selected: themeProvider.themeMode == ThemeMode.system,
-                    onTap: () => themeProvider.setTheme(ThemeMode.system),
-                  ),
-                  _ThemeOptionTile(
-                    label: 'Light',
-                    subtitle: null,
-                    icon: Icons.light_mode_rounded,
-                    selected: themeProvider.themeMode == ThemeMode.light,
-                    onTap: () => themeProvider.setTheme(ThemeMode.light),
-                  ),
-                  _ThemeOptionTile(
-                    label: 'Dark',
-                    subtitle: null,
-                    icon: Icons.dark_mode_rounded,
-                    selected: themeProvider.themeMode == ThemeMode.dark,
-                    onTap: () => themeProvider.setTheme(ThemeMode.dark),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppConstants.spacing24),
-            _SettingsGroup(
               title: 'Account',
               child: authProvider.isAuthenticated
                   ? Padding(
@@ -140,15 +143,14 @@ class SettingsScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              ProfileAvatar(
-                                photoUrl: authProvider.currentUser?.photoURL,
-                                fallbackLabel:
-                                    (authProvider.currentUser?.displayName ??
-                                            authProvider.currentUser?.email ??
-                                            'P')
-                                        .trim(),
-                                size: 48,
-                              ),
+                               ProfileAvatar(
+                                 photoUrl: authProvider.currentUser?.photoURL,
+                                 fallbackLabel:
+                                     (authProvider.currentUser?.displayName ??
+                                             authProvider.currentUser?.email ??
+                                             'P')
+                                         .trim(),
+                               ),
                               const SizedBox(width: AppConstants.spacing16),
                               Expanded(
                                 child: Column(
@@ -188,11 +190,12 @@ class SettingsScreen extends StatelessWidget {
                           const SizedBox(height: AppConstants.spacing16),
                           SizedBox(
                             width: double.infinity,
-                            child: OutlinedButton(
+                            child: AdaptiveButton(
+                              label: 'Sign out',
+                              filled: !isIOS,
                               onPressed: authProvider.isLoading
                                   ? null
                                   : () => _handleSignOut(context, authProvider),
-                              child: const Text('Sign out'),
                             ),
                           ),
                         ],
@@ -219,13 +222,12 @@ class SettingsScreen extends StatelessWidget {
                           const SizedBox(height: AppConstants.spacing16),
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
-                                ),
+                            child: AdaptiveButton(
+                              label: 'Sign in',
+                              onPressed: () => PlatformUtils.navigateTo(
+                                context,
+                                const LoginScreen(),
                               ),
-                              child: const Text('Sign in'),
                             ),
                           ),
                         ],
@@ -268,6 +270,54 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            _SettingsGroup(
+              title: 'Legal',
+              child: Column(
+                children: [
+                  AdaptiveListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: 'Privacy Policy',
+                    onTap: () => _handleLaunchUrl(context, _privacyPolicyUrl),
+                  ),
+                  Divider(height: 1, color: theme.dividerColor),
+                  AdaptiveListTile(
+                    leading: const Icon(Icons.description_outlined),
+                    title: 'Terms & Conditions',
+                    onTap: () => _handleLaunchUrl(context, _termsUrl),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+            _SettingsGroup(
+              title: 'Appearance',
+              child: Column(
+                children: [
+                  _ThemeOptionTile(
+                    label: 'System',
+                    subtitle: 'Follow the device appearance',
+                    icon: Icons.brightness_auto_rounded,
+                    selected: themeProvider.themeMode == ThemeMode.system,
+                    onTap: () => themeProvider.setTheme(ThemeMode.system),
+                  ),
+                  _ThemeOptionTile(
+                    label: 'Light',
+                    subtitle: null,
+                    icon: Icons.light_mode_rounded,
+                    selected: themeProvider.themeMode == ThemeMode.light,
+                    onTap: () => themeProvider.setTheme(ThemeMode.light),
+                  ),
+                  _ThemeOptionTile(
+                    label: 'Dark',
+                    subtitle: null,
+                    icon: Icons.dark_mode_rounded,
+                    selected: themeProvider.themeMode == ThemeMode.dark,
+                    onTap: () => themeProvider.setTheme(ThemeMode.dark),
+                  ),
+                ],
               ),
             ),
           ],
@@ -325,7 +375,7 @@ class _ThemeOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return AdaptiveListTile(
       onTap: onTap,
       leading: Container(
         width: 36,
@@ -344,15 +394,8 @@ class _ThemeOptionTile extends StatelessWidget {
               : Theme.of(context).hintColor,
         ),
       ),
-      title: Text(label, style: AppTextStyles.subtitle),
-      subtitle: subtitle == null
-          ? null
-          : Text(
-              subtitle!,
-              style: AppTextStyles.body.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
-            ),
+      title: label,
+      subtitle: subtitle,
     );
   }
 }

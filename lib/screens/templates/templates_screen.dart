@@ -6,7 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/app_icon_mapper.dart';
-import '../../core/widgets/page_header.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../data/models/app_config_model.dart';
 import '../../providers/app_config_provider.dart';
 import '../../providers/shell_provider.dart';
@@ -40,15 +40,20 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         .where((item) => item.categoryId == _selectedCategoryId)
         .toList();
 
-    return Scaffold(
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(
+        title: 'Templates',
+        backgroundColor: Colors.transparent,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 160),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 160),
           children: [
-            const PageHeader(
-              title: 'Templates',
-              subtitle: 'Start with a strong structure, then make it yours.',
+            Text(
+              'Start with a strong structure, then make it yours.',
+              style: AppTextStyles.body.copyWith(color: theme.hintColor),
             ),
             const SizedBox(height: AppConstants.spacing20),
             SizedBox(
@@ -60,28 +65,13 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                 itemBuilder: (context, index) {
                   final category = categories[index];
                   final selected = category.id == _selectedCategoryId;
-                  return ChoiceChip(
-                    showCheckmark: false,
-                    label: Text(category.label),
-                    avatar: Icon(
-                      resolveIcon(category.iconKey, cupertino: isCupertino),
-                      size: 16,
-                      color: selected
-                          ? Colors.white
-                          : theme.colorScheme.onSurface,
-                    ),
+                  return AdaptiveSelectionChip(
+                    label: category.label,
                     selected: selected,
-                    selectedColor: AppColors.primaryLight,
-                    backgroundColor: theme.colorScheme.surface,
-                    side: BorderSide(color: theme.dividerColor),
-                    labelStyle: TextStyle(
-                      color: selected
-                          ? Colors.white
-                          : theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
+                    icon: Icon(
+                      resolveIcon(category.iconKey, cupertino: isCupertino),
                     ),
-                    onSelected: (_) =>
-                        setState(() => _selectedCategoryId = category.id),
+                    onTap: () => setState(() => _selectedCategoryId = category.id),
                   );
                 },
               ),
@@ -185,10 +175,10 @@ class _TemplateCard extends StatelessWidget {
           const SizedBox(height: AppConstants.spacing20),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
+            child: AdaptiveButton(
+              label: 'Use Template',
+              icon: Icons.arrow_outward_rounded,
               onPressed: onUse,
-              icon: const Icon(Icons.arrow_outward_rounded, size: 18),
-              label: const Text('Use Template'),
             ),
           ),
         ],

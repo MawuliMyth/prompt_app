@@ -208,8 +208,16 @@ void main() {
 
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Sign in to sync your prompts'), findsOneWidget);
-      expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Account'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Appearance'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Appearance'), findsOneWidget);
     });
   });
 }

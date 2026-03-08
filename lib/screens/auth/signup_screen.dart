@@ -1,15 +1,17 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/google_logo.dart';
 import '../home/home_screen.dart';
 import 'login_screen.dart';
+import 'widgets/auth_action_widgets.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -19,7 +21,6 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -77,7 +78,35 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleSignup() async {
-    if (!_formKey.currentState!.validate()) {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (name.isEmpty) {
+      SnackbarUtils.showError(context, 'Please enter your name');
+      return;
+    }
+    if (name.length < 2) {
+      SnackbarUtils.showError(context, 'Name must be at least 2 characters');
+      return;
+    }
+
+    final emailError = _validateEmail(email);
+    if (emailError != null) {
+      SnackbarUtils.showError(context, emailError);
+      return;
+    }
+
+    final passwordError = _validatePassword(password);
+    if (passwordError != null) {
+      SnackbarUtils.showError(context, passwordError);
+      return;
+    }
+
+    final confirmPasswordError = _validateConfirmPassword(confirmPassword);
+    if (confirmPasswordError != null) {
+      SnackbarUtils.showError(context, confirmPasswordError);
       return;
     }
 
@@ -85,10 +114,6 @@ class _SignupScreenState extends State<SignupScreen> {
       SnackbarUtils.showError(context, 'Please accept the Terms of Service');
       return;
     }
-
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signUpWithEmail(name, email, password);
@@ -124,20 +149,23 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final isCupertino = PlatformUtils.useCupertino(context);
 
-    return Scaffold(
-      appBar: AppBar(
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: 'Create Account',
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(
+            isCupertino ? CupertinoIcons.back : Icons.arrow_back,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
+          child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
@@ -176,126 +204,91 @@ class _SignupScreenState extends State<SignupScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                TextFormField(
+                AdaptiveTextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Full Name',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    if (value.length < 2) {
-                      return 'Name must be at least 2 characters';
-                    }
-                    return null;
-                  },
+                  hintText: 'Full Name',
+                  prefixIcon: const Icon(Icons.person_outline),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AdaptiveTextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: _validateEmail,
+                  hintText: 'Email',
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AdaptiveTextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    hintText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                  hintText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
-                  validator: _validatePassword,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AdaptiveTextField(
                   controller: _confirmPasswordController,
                   obscureText: _obscurePassword,
-                  decoration: const InputDecoration(
-                    hintText: 'Confirm Password',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
-                  validator: _validateConfirmPassword,
+                  hintText: 'Confirm Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _termsAccepted,
-                      onChanged: (val) {
-                        setState(() {
-                          _termsAccepted = val ?? false;
-                        });
-                      },
-                      activeColor: AppColors.primaryLight,
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _termsAccepted = !_termsAccepted;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
                     ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _termsAccepted = !_termsAccepted;
-                          });
-                        },
-                        child: Text(
-                          'I agree to the Terms of Service',
-                          style: AppTextStyles.caption.copyWith(
-                            color: theme.colorScheme.onSurface,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.dividerColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _termsAccepted
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color: _termsAccepted
+                              ? AppColors.primaryLight
+                              : theme.hintColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'I agree to the Terms of Service',
+                            style: AppTextStyles.caption.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: authProvider.isLoading ? null : _handleSignup,
-                  style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      child: authProvider.isLoading
-                          ? Shimmer.fromColors(
-                              baseColor: Colors.white.withValues(alpha: 0.5),
-                              highlightColor: Colors.white.withValues(
-                                alpha: 0.8,
-                              ),
-                              child: Text(
-                                'Creating account...',
-                                style: AppTextStyles.button.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              'Create Account',
-                              style: AppTextStyles.button.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
+                      ],
                     ),
                   ),
+                ),
+                const SizedBox(height: 24),
+                AuthPrimaryButton(
+                  label: 'Create Account',
+                  loadingLabel: 'Creating account...',
+                  isLoading: authProvider.isLoading,
+                  onPressed: _handleSignup,
                 ),
                 const SizedBox(height: 32),
                 Row(
@@ -316,82 +309,24 @@ class _SignupScreenState extends State<SignupScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                // Google Sign In Button
-                SizedBox(
-                  height: 56,
-                  child: OutlinedButton(
-                    onPressed: authProvider.isLoading
-                        ? null
-                        : _handleGoogleSignIn,
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: theme.brightness == Brightness.light
-                          ? Colors.white
-                          : AppColors.surfaceDark,
-                      foregroundColor: theme.colorScheme.onSurface,
-                      side: BorderSide(
-                        color: theme.brightness == Brightness.light
-                            ? Colors.grey[300]!
-                            : Colors.grey[700]!,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const GoogleLogo(),
-                        const SizedBox(width: 12),
-                        Flexible(
-                          child: Text(
-                            'Continue with Google',
-                            style: AppTextStyles.button.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                AuthSurfaceButton(
+                  label: 'Continue with Google',
+                  leading: const GoogleLogo(),
+                  onPressed:
+                      authProvider.isLoading ? null : _handleGoogleSignIn,
                 ),
                 if (!kIsWeb &&
                     (defaultTargetPlatform == TargetPlatform.iOS ||
                         defaultTargetPlatform == TargetPlatform.macOS)) ...[
                   const SizedBox(height: 16),
-                  // Apple Sign In Button
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: authProvider.isLoading
-                          ? null
-                          : _handleAppleSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const AppleLogo(),
-                          const SizedBox(width: 12),
-                          Flexible(
-                            child: Text(
-                              'Continue with Apple',
-                              style: AppTextStyles.button.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  AuthSurfaceButton(
+                    label: 'Continue with Apple',
+                    leading: const AppleLogo(),
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    borderColor: Colors.black,
+                    onPressed:
+                        authProvider.isLoading ? null : _handleAppleSignIn,
                   ),
                 ],
                 const SizedBox(height: 32),
@@ -426,7 +361,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ],
             ),
-          ),
         ),
       ),
     );

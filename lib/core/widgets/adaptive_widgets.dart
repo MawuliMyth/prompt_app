@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_constants.dart';
 import '../constants/app_text_styles.dart';
 import '../utils/platform_utils.dart';
 import 'shimmer_loading.dart';
@@ -90,26 +91,48 @@ class AdaptiveButton extends StatelessWidget {
     if (isCupertino) {
       return CupertinoButton(
         onPressed: isLoading ? null : onPressed,
-        color: isDestructive
-            ? CupertinoColors.destructiveRed
-            : backgroundColor ?? AppColors.primaryLight,
+        color: filled
+            ? (isDestructive
+                  ? CupertinoColors.destructiveRed
+                  : backgroundColor ?? AppColors.primaryLight)
+            : null,
+        borderRadius: BorderRadius.circular(16),
         padding: EdgeInsets.zero,
         child: isLoading
             ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 18),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    label,
-                    style: AppTextStyles.button.copyWith(
-                      color: foregroundColor ?? Colors.white,
+            : Container(
+                decoration: filled
+                    ? null
+                    : BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: foregroundColor ?? AppColors.primaryLight,
+                        ),
+                      ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(
+                        icon,
+                        size: 18,
+                        color: foregroundColor ?? (filled ? Colors.white : null),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      label,
+                      style: AppTextStyles.button.copyWith(
+                        color: foregroundColor ?? (filled ? Colors.white : null),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
       );
     }
@@ -128,7 +151,6 @@ class AdaptiveButton extends StatelessWidget {
           ? const ShimmerPulse(
               width: 56,
               height: 14,
-              borderRadius: 999,
               baseColor: Color(0x66FFFFFF),
               highlightColor: Color(0xAAFFFFFF),
             )
@@ -348,7 +370,6 @@ class AdaptiveProgressIndicator extends StatelessWidget {
       child: ShimmerPulse(
         width: size ?? 20,
         height: size ?? 20,
-        borderRadius: 999,
         baseColor: (color ?? AppColors.primaryLight).withValues(alpha: 0.28),
         highlightColor: (color ?? AppColors.primaryLight).withValues(
           alpha: 0.6,
@@ -468,6 +489,93 @@ class AdaptiveListTile extends StatelessWidget {
   }
 }
 
+class AdaptiveSelectionChip extends StatelessWidget {
+  const AdaptiveSelectionChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+    this.trailing,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Widget? icon;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isCupertino = PlatformUtils.useCupertino(context);
+    final backgroundColor = selected
+        ? AppColors.primaryLight
+        : theme.colorScheme.surface;
+    final foregroundColor = selected
+        ? Colors.white
+        : theme.colorScheme.onSurface;
+
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          IconTheme(
+            data: IconThemeData(color: foregroundColor, size: 18),
+            child: icon!,
+          ),
+          const SizedBox(width: 8),
+        ],
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(
+              color: foregroundColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 6),
+          trailing!,
+        ],
+      ],
+    );
+
+    if (isCupertino) {
+      return CupertinoButton(
+        padding: EdgeInsets.zero,
+        minimumSize: Size.zero,
+        onPressed: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(AppConstants.radiusChip),
+            border: Border.all(color: theme.dividerColor),
+          ),
+          child: child,
+        ),
+      );
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppConstants.radiusChip),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(AppConstants.radiusChip),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
 /// Adaptive Scaffold
 class AdaptiveScaffold extends StatelessWidget {
   const AdaptiveScaffold({
@@ -476,12 +584,14 @@ class AdaptiveScaffold extends StatelessWidget {
     required this.body,
     this.bottomNavigationBar,
     this.backgroundColor,
+    this.extendBody = false,
     this.resizeToAvoidBottomInset = true,
   });
   final PreferredSizeWidget? appBar;
   final Widget body;
   final Widget? bottomNavigationBar;
   final Color? backgroundColor;
+  final bool extendBody;
   final bool resizeToAvoidBottomInset;
 
   @override
@@ -499,7 +609,9 @@ class AdaptiveScaffold extends StatelessWidget {
           child: Column(
             children: [
               ?appBar,
-              Expanded(child: body),
+              Expanded(
+                child: Material(type: MaterialType.transparency, child: body),
+              ),
               ?bottomNavigationBar,
             ],
           ),
@@ -512,6 +624,7 @@ class AdaptiveScaffold extends StatelessWidget {
       body: body,
       bottomNavigationBar: bottomNavigationBar,
       backgroundColor: backgroundColor,
+      extendBody: extendBody,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
     );
   }

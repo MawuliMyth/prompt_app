@@ -9,11 +9,11 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/app_icon_mapper.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/daily_limit_sheet.dart';
 import '../../core/widgets/locked_feature_sheet.dart';
-import '../../core/widgets/page_header.dart';
-import '../../core/widgets/shimmer_loading.dart';
 import '../../data/services/claude_service.dart';
 import '../../providers/app_config_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -82,7 +82,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
 
   Future<void> _openVoice() async {
     final transcript = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const VoiceAssessmentScreen()),
+      PlatformUtils.adaptivePageRoute(const VoiceAssessmentScreen()),
     );
     if (!mounted || transcript == null) return;
     setState(() {
@@ -115,30 +115,17 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
 
     if (!authProvider.isAuthenticated) {
       if (freePromptProvider.hasReachedLimit) {
-        await showDialog<void>(
+        final shouldSignUp = await AdaptiveDialog.show(
           context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Create an account'),
-            content: const Text(
+          title: 'Create an account',
+          content:
               'You have used today\'s free guest prompts. Create an account to keep going.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Later'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SignupScreen()),
-                  );
-                },
-                child: const Text('Sign up'),
-              ),
-            ],
-          ),
+          cancelText: 'Later',
+          confirmText: 'Sign up',
         );
+        if (shouldSignUp == true && mounted) {
+          await PlatformUtils.navigateTo(context, const SignupScreen());
+        }
         return;
       }
     } else if (!premiumProvider.hasPremiumAccess) {
@@ -182,8 +169,8 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
       }
 
       await navigator.push(
-        MaterialPageRoute(
-          builder: (_) => ResultScreen(
+        PlatformUtils.adaptivePageRoute(
+          ResultScreen(
             originalText: text,
             enhancedPrompt: result['enhancedPrompt'] as String,
             category: category.label,
@@ -224,22 +211,25 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
     final categories = configProvider.categories;
     final tones = configProvider.tones;
 
-    return Scaffold(
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(
+        title: 'Refine your prompt',
+        backgroundColor: Colors.transparent,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    PageHeader(
-                      title: 'Refine your prompt',
-                      subtitle:
-                          'Start rough. We will shape it into something clear.',
-                      onBack: () => Navigator.of(context).pop(),
+                    Text(
+                      'Start rough. We will shape it into something clear.',
+                      style: AppTextStyles.body.copyWith(color: theme.hintColor),
                     ),
                     const SizedBox(height: AppConstants.spacing20),
                     if (!premiumProvider.hasPremiumAccess) ...[
@@ -267,24 +257,18 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                       ),
                       const SizedBox(height: AppConstants.spacing20),
                     ],
-                    TextField(
+                    AdaptiveTextField(
                       controller: _controller,
                       maxLines: 12,
                       minLines: 10,
-                      decoration: InputDecoration(
-                        hintText:
-                            'Describe what you want. Add context, goals, and any details you already know.',
-                        suffixIcon: _controller.text.isEmpty
-                            ? null
-                            : IconButton(
-                                onPressed: () =>
-                                    setState(() => _controller.clear()),
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                      ),
-                      style: AppTextStyles.body.copyWith(
-                        color: theme.colorScheme.onSurface,
-                      ),
+                      hintText:
+                          'Describe what you want. Add context, goals, and any details you already know.',
+                      suffixIcon: _controller.text.isEmpty
+                          ? null
+                          : IconButton(
+                              onPressed: () => setState(() => _controller.clear()),
+                              icon: const Icon(Icons.close_rounded),
+                            ),
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: AppConstants.spacing20),
@@ -300,31 +284,17 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                       runSpacing: AppConstants.spacing8,
                       children: categories.map((category) {
                         final selected = category.id == _selectedCategoryId;
-                        return ChoiceChip(
-                          showCheckmark: false,
-                          label: Text(category.label),
-                          avatar: Icon(
+                        return AdaptiveSelectionChip(
+                          label: category.label,
+                          selected: selected,
+                          icon: Icon(
                             resolveIcon(
                               category.iconKey,
                               cupertino: isCupertino,
                             ),
-                            size: 18,
-                            color: selected
-                                ? Colors.white
-                                : theme.colorScheme.onSurface,
                           ),
-                          selected: selected,
-                          onSelected: (_) =>
+                          onTap: () =>
                               setState(() => _selectedCategoryId = category.id),
-                          selectedColor: AppColors.primaryLight,
-                          backgroundColor: theme.colorScheme.surface,
-                          labelStyle: TextStyle(
-                            color: selected
-                                ? Colors.white
-                                : theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          side: BorderSide(color: theme.dividerColor),
                         );
                       }).toList(),
                     ),
@@ -475,40 +445,41 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: _openVoice,
-                    style: IconButton.styleFrom(
-                      backgroundColor: theme.colorScheme.surface,
-                      minimumSize: const Size(52, 52),
-                    ),
-                    icon: Icon(
-                      isCupertino ? CupertinoIcons.mic : Icons.mic_none_rounded,
-                    ),
-                  ),
-                  const SizedBox(width: AppConstants.spacing12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          _controller.text.trim().isEmpty || _isProcessing
-                          ? null
-                          : _enhancePrompt,
-                      child: _isProcessing
-                          ? const ShimmerPulse(
-                              width: 96,
-                              height: 16,
-                              baseColor: Color(0x66FFFFFF),
-                              highlightColor: Color(0xAAFFFFFF),
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.auto_awesome_rounded, size: 18),
-                                SizedBox(width: AppConstants.spacing8),
-                                Text('Enhance Prompt'),
-                              ],
-                            ),
-                    ),
-                  ),
+                   isCupertino
+                       ? CupertinoButton(
+                           padding: EdgeInsets.zero,
+                           onPressed: _openVoice,
+                           child: Container(
+                             width: 52,
+                             height: 52,
+                             decoration: BoxDecoration(
+                               color: theme.colorScheme.surface,
+                               borderRadius: BorderRadius.circular(16),
+                               border: Border.all(color: theme.dividerColor),
+                             ),
+                             alignment: Alignment.center,
+                             child: const Icon(CupertinoIcons.mic),
+                           ),
+                         )
+                       : IconButton(
+                           onPressed: _openVoice,
+                           style: IconButton.styleFrom(
+                             backgroundColor: theme.colorScheme.surface,
+                             minimumSize: const Size(52, 52),
+                           ),
+                           icon: const Icon(Icons.mic_none_rounded),
+                         ),
+                   const SizedBox(width: AppConstants.spacing12),
+                   Expanded(
+                     child: AdaptiveButton(
+                       label: 'Enhance Prompt',
+                       icon: Icons.auto_awesome_rounded,
+                       isLoading: _isProcessing,
+                       onPressed: _controller.text.trim().isEmpty || _isProcessing
+                           ? null
+                           : _enhancePrompt,
+                     ),
+                   ),
                 ],
               ),
             ),

@@ -1,16 +1,18 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/google_logo.dart';
 import '../home/home_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import 'widgets/auth_action_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,7 +22,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -44,7 +45,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) {
+    final emailError = _validateEmail(_emailController.text.trim());
+    if (emailError != null) {
+      SnackbarUtils.showError(context, emailError);
+      return;
+    }
+
+    if (_passwordController.text.trim().isEmpty) {
+      SnackbarUtils.showError(context, 'Please enter your password');
       return;
     }
 
@@ -85,20 +93,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final isCupertino = PlatformUtils.useCupertino(context);
 
-    return Scaffold(
-      appBar: AppBar(
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: 'Sign In',
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(
+            isCupertino ? CupertinoIcons.back : Icons.arrow_back,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
+          child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
@@ -137,103 +148,71 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                TextFormField(
+                AdaptiveTextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: _validateEmail,
+                  hintText: 'Email',
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AdaptiveTextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    hintText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                  hintText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
                 ),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      PlatformUtils.navigateTo(
-                        context,
-                        const ForgotPasswordScreen(),
-                      );
-                    },
-                    child: Text(
-                      'Forgot Password?',
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.primaryLight,
-                      ),
-                    ),
-                  ),
+                  child: isCupertino
+                      ? CupertinoButton(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          onPressed: () {
+                            PlatformUtils.navigateTo(
+                              context,
+                              const ForgotPasswordScreen(),
+                            );
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.primaryLight,
+                            ),
+                          ),
+                        )
+                      : TextButton(
+                          onPressed: () {
+                            PlatformUtils.navigateTo(
+                              context,
+                              const ForgotPasswordScreen(),
+                            );
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.primaryLight,
+                            ),
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 24),
-                // Sign In Button with Shimmer
-                authProvider.isLoading
-                    ? Shimmer.fromColors(
-                        baseColor: AppColors.primaryLight,
-                        highlightColor: AppColors.accentLight,
-                        child: Container(
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Signing in...',
-                              style: AppTextStyles.button.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : ElevatedButton(
-                        onPressed: _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Ink(
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Container(
-                            height: 56,
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Sign In',
-                              style: AppTextStyles.button.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                AuthPrimaryButton(
+                  label: 'Sign In',
+                  loadingLabel: 'Signing in...',
+                  isLoading: authProvider.isLoading,
+                  onPressed: _handleLogin,
+                ),
                 const SizedBox(height: 32),
                 Row(
                   children: [
@@ -253,82 +232,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                // Google Sign In Button with Google Logo
-                SizedBox(
-                  height: 56,
-                  child: OutlinedButton(
-                    onPressed: authProvider.isLoading
-                        ? null
-                        : _handleGoogleSignIn,
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: theme.brightness == Brightness.light
-                          ? Colors.white
-                          : AppColors.surfaceDark,
-                      foregroundColor: theme.colorScheme.onSurface,
-                      side: BorderSide(
-                        color: theme.brightness == Brightness.light
-                            ? Colors.grey[300]!
-                            : Colors.grey[700]!,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const GoogleLogo(),
-                        const SizedBox(width: 12),
-                        Flexible(
-                          child: Text(
-                            'Continue with Google',
-                            style: AppTextStyles.button.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                AuthSurfaceButton(
+                  label: 'Continue with Google',
+                  leading: const GoogleLogo(),
+                  onPressed:
+                      authProvider.isLoading ? null : _handleGoogleSignIn,
                 ),
                 if (!kIsWeb &&
                     (defaultTargetPlatform == TargetPlatform.iOS ||
                         defaultTargetPlatform == TargetPlatform.macOS)) ...[
                   const SizedBox(height: 16),
-                  // Apple Sign In Button with Apple Logo
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: authProvider.isLoading
-                          ? null
-                          : _handleAppleSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const AppleLogo(),
-                          const SizedBox(width: 12),
-                          Flexible(
-                            child: Text(
-                              'Continue with Apple',
-                              style: AppTextStyles.button.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  AuthSurfaceButton(
+                    label: 'Continue with Apple',
+                    leading: const AppleLogo(),
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    borderColor: Colors.black,
+                    onPressed:
+                        authProvider.isLoading ? null : _handleAppleSignIn,
                   ),
                 ],
                 const SizedBox(height: 32),
@@ -363,7 +284,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-          ),
         ),
       ),
     );

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/platform_utils.dart';
+import '../../core/widgets/adaptive_widgets.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../providers/shell_provider.dart';
 import '../history/history_screen.dart';
@@ -60,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final shellProvider = context.watch<ShellProvider>();
     _maybeOpenComposer(context, shellProvider);
 
-    return Scaffold(
+    return AdaptiveScaffold(
       extendBody: true,
       body: Stack(
         children: [

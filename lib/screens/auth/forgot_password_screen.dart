@@ -1,10 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
-import '../../core/widgets/shimmer_loading.dart';
+import '../../core/widgets/adaptive_widgets.dart';
+import 'widgets/auth_action_widgets.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -53,11 +56,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final isCupertino = PlatformUtils.useCupertino(context);
 
-    return Scaffold(
-      appBar: AppBar(
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: 'Reset Password',
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(
+            isCupertino ? CupertinoIcons.back : Icons.arrow_back,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -84,7 +92,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 24),
-        Flexible(
+        Center(
           child: Container(
             width: 120,
             height: 120,
@@ -116,39 +124,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        TextField(
+        AdaptiveTextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
-            hintText: 'Email address',
-            prefixIcon: Icon(Icons.email_outlined),
-          ),
+          hintText: 'Email address',
+          prefixIcon: const Icon(Icons.email_outlined),
         ),
         const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: authProvider.isLoading ? null : _handleReset,
-            style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                height: 56,
-                alignment: Alignment.center,
-                child: authProvider.isLoading
-                    ? const ShimmerButtonLoader(text: 'Sending...')
-                    : Text(
-                        'Send Reset Link',
-                        style: AppTextStyles.button.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-          ),
+        AuthPrimaryButton(
+          label: 'Send Reset Link',
+          loadingLabel: 'Sending...',
+          isLoading: authProvider.isLoading,
+          onPressed: _handleReset,
         ),
       ],
     );
@@ -158,7 +145,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Flexible(
+        Center(
           child: Container(
             width: 120,
             height: 120,
@@ -190,29 +177,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
-            child: Ink(
-              decoration: BoxDecoration(
-                color: AppColors.backgroundLight,
-                border: Border.all(color: AppColors.primaryLight),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                height: 56,
-                alignment: Alignment.center,
-                child: Text(
-                  'Back to Login',
-                  style: AppTextStyles.button.copyWith(
-                    color: AppColors.primaryLight,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        AuthSurfaceButton(
+          label: 'Back to Login',
+          foregroundColor: AppColors.primaryLight,
+          borderColor: AppColors.primaryLight,
+          backgroundColor: theme.colorScheme.surface,
+          onPressed: () => Navigator.of(context).pop(),
         ),
         const SizedBox(height: 24),
       ],
