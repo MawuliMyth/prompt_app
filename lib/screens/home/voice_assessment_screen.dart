@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +32,9 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   bool _isTransitioningRecorder = false;
   String _caption = 'Go ahead, I\'m listening...';
   String _transcript = '';
+  double _audioLevel = 0;
   DateTime? _recordingStartedAt;
+  StreamSubscription<double>? _levelSubscription;
 
   @override
   void initState() {
@@ -40,10 +43,17 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2400),
     )..repeat(reverse: true);
+    _levelSubscription = _audioRecorderService.levelStream.listen((level) {
+      if (!mounted) return;
+      setState(() {
+        _audioLevel = level;
+      });
+    });
   }
 
   @override
   void dispose() {
+    _levelSubscription?.cancel();
     _audioRecorderService.dispose().ignore();
     _orbController.dispose();
     super.dispose();
@@ -66,6 +76,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         _isRecording = false;
         _isProcessing = true;
         _caption = 'Transcribing your voice...';
+        _audioLevel = 0;
       });
 
       final audioBytes = await _audioRecorderService.stopRecording();
@@ -221,29 +232,44 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
                   child: AnimatedBuilder(
                     animation: _orbController,
                     builder: (context, child) {
-                      return Transform.scale(
-                        scale: 0.94 + (_orbController.value * 0.08),
-                        child: Container(
-                          width: 270,
-                          height: 270,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.voiceGradient,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryLight.withValues(
-                                  alpha: 0.28 + (_orbController.value * 0.14),
-                                ),
-                                blurRadius: 40,
-                                spreadRadius: 12,
-                              ),
-                            ],
+                      final pulse = _orbController.value;
+                      final liveLevel = _isRecording
+                          ? (_audioLevel * 0.85) + (pulse * 0.15)
+                          : pulse * 0.18;
+                      return SizedBox(
+                        width: 290,
+                        height: 290,
+                        child: CustomPaint(
+                          painter: _VoiceOrbPainter(
+                            animationValue: pulse,
+                            audioLevel: liveLevel,
+                            glowColor: AppColors.primaryLight,
                           ),
-                          child: Container(
-                            margin: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.black.withValues(alpha: 0.22),
+                          child: Center(
+                            child: Container(
+                              width: 116,
+                              height: 116,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryLight.withValues(
+                                      alpha: 0.22 + (liveLevel * 0.22),
+                                    ),
+                                    blurRadius: 26,
+                                    spreadRadius: 2 + (liveLevel * 8),
+                                  ),
+                                ],
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(
+                                _isRecording
+                                    ? Icons.graphic_eq_rounded
+                                    : Icons.mic_rounded,
+                                size: 42,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -311,6 +337,127 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
         ),
       ),
     );
+  }
+}
+
+class _VoiceOrbPainter extends CustomPainter {
+  const _VoiceOrbPainter({
+    required this.animationValue,
+    required this.audioLevel,
+    required this.glowColor,
+  });
+
+  final double animationValue;
+  final double audioLevel;
+  final Color glowColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.width * 0.31;
+    final energy = audioLevel.clamp(0.0, 1.0);
+    final wavePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..color = Colors.white.withValues(alpha: 0.18 + (energy * 0.16));
+
+    final blobPaint = Paint()
+      ..shader = AppColors.voiceGradient.createShader(
+        Rect.fromCircle(center: center, radius: radius * 1.8),
+      );
+
+    final glowPaint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28)
+      ..color = glowColor.withValues(alpha: 0.16 + (energy * 0.18));
+
+    final blobPath = Path();
+    const points = 72;
+    for (var i = 0; i <= points; i++) {
+      final theta = (i / points) * math.pi * 2;
+      final wobble = math.sin(theta * 3 + (animationValue * math.pi * 2)) * 10;
+      final ripple =
+          math.sin(theta * 7 - (animationValue * math.pi * 4)) * (6 + energy * 22);
+      final dynamicRadius = radius + wobble + ripple;
+      final point = Offset(
+        center.dx + math.cos(theta) * dynamicRadius,
+        center.dy + math.sin(theta) * dynamicRadius,
+      );
+
+      if (i == 0) {
+        blobPath.moveTo(point.dx, point.dy);
+      } else {
+        blobPath.lineTo(point.dx, point.dy);
+      }
+    }
+    blobPath.close();
+
+    canvas.drawPath(blobPath, glowPaint);
+    canvas.drawPath(blobPath, blobPaint);
+
+    for (var index = 0; index < 3; index++) {
+      final waveRadius = radius + 36 + (index * 20) + (animationValue * 10);
+      final opacity = (0.15 - (index * 0.03)) + (energy * 0.08);
+      final ringPaint = wavePaint
+        ..color = Colors.white.withValues(alpha: opacity.clamp(0.04, 0.24));
+      canvas.drawCircle(center, waveRadius, ringPaint);
+    }
+
+    _drawWaveLine(
+      canvas,
+      size,
+      energy: energy,
+      verticalOffset: size.height * 0.16,
+      reverse: false,
+    );
+    _drawWaveLine(
+      canvas,
+      size,
+      energy: energy,
+      verticalOffset: size.height * 0.84,
+      reverse: true,
+    );
+  }
+
+  void _drawWaveLine(
+    Canvas canvas,
+    Size size, {
+    required double energy,
+    required double verticalOffset,
+    required bool reverse,
+  }) {
+    final path = Path();
+    final width = size.width * 0.76;
+    final startX = (size.width - width) / 2;
+    final amplitude = 6 + (energy * 12);
+    for (var x = 0.0; x <= width; x += 6) {
+      final progress = x / width;
+      final direction = reverse ? -1 : 1;
+      final wave = math.sin(
+        (progress * math.pi * 4 * direction) + (animationValue * math.pi * 2),
+      );
+      final y = verticalOffset + (wave * amplitude);
+      if (x == 0) {
+        path.moveTo(startX + x, y);
+      } else {
+        path.lineTo(startX + x, y);
+      }
+    }
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 2
+        ..color = Colors.white.withValues(alpha: 0.14 + (energy * 0.1)),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _VoiceOrbPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue ||
+        oldDelegate.audioLevel != audioLevel ||
+        oldDelegate.glowColor != glowColor;
   }
 }
 

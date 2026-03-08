@@ -13,6 +13,14 @@ Future<Uint8List?> readRecordingFile(String path) async {
   throw UnsupportedError('Audio recording is not supported on web platform');
 }
 
+/// Wait for a recording file to flush (not supported on web)
+Future<int?> waitForRecordingFile(
+  String path, {
+  Duration timeout = const Duration(seconds: 2),
+}) async {
+  throw UnsupportedError('Audio recording is not supported on web platform');
+}
+
 /// Delete a recording file (not supported on web)
 Future<void> deleteRecordingFile(String path) async {
   // No-op on web

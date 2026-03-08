@@ -582,11 +582,12 @@ class _FeatureCard extends StatelessWidget {
         ? Colors.white
         : AppColors.textPrimaryLight;
     final color = _featureColor(theme, feature.id);
+    final cardPadding = large ? AppConstants.spacing20 : AppConstants.spacing16;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppConstants.spacing20),
+        padding: EdgeInsets.all(cardPadding),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(AppConstants.radiusCard),
@@ -634,7 +635,7 @@ class _FeatureCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const Spacer(flex: 2),
+              const SizedBox(height: AppConstants.spacing8),
             ],
             Text(
               feature.title,
@@ -643,19 +644,19 @@ class _FeatureCard extends StatelessWidget {
               style: (large ? AppTextStyles.display : AppTextStyles.heading)
                   .copyWith(
                     color: onCardColor,
-                    fontSize: large ? 24 : 17,
+                    fontSize: large ? 24 : 15,
                     height: large ? 1.05 : 1.1,
                   ),
             ),
             const SizedBox(height: 6),
             Text(
               feature.subtitle,
-              maxLines: large ? 3 : 2,
+              maxLines: large ? 3 : 1,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.body.copyWith(
                 color: onCardColor.withValues(alpha: 0.78),
-                fontSize: large ? 14 : 13,
-                height: 1.25,
+                fontSize: large ? 14 : 11.5,
+                height: large ? 1.25 : 1.1,
               ),
             ),
           ],

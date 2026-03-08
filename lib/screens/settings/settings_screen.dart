@@ -64,21 +64,20 @@ class SettingsScreen extends StatelessWidget {
                         children: [
                           Text(
                             premiumProvider.hasPremiumAccess
-                                ? 'Premium active'
+                                ? 'Prompt Pro'
                                 : 'Upgrade to Premium',
                             style: AppTextStyles.heading.copyWith(
                               color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: AppConstants.spacing8),
-                          Text(
-                            premiumProvider.hasPremiumAccess
-                                ? 'Unlocked tones, deeper prompt shaping, and pro insights.'
-                                : 'Unlock premium tones, deeper refinement, and richer insights.',
-                            style: AppTextStyles.body.copyWith(
-                              color: Colors.white.withValues(alpha: 0.82),
+                          if (!premiumProvider.hasPremiumAccess)
+                            Text(
+                              'Unlock premium tones, deeper refinement, and richer insights.',
+                              style: AppTextStyles.body.copyWith(
+                                color: Colors.white.withValues(alpha: 0.82),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),

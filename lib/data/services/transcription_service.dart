@@ -36,7 +36,7 @@ class TranscriptionService {
   /// Returns the transcribed text, or throws an exception on error
   Future<String> transcribeAudio(
     Uint8List audioBytes, {
-    String filename = 'audio.m4a',
+    String filename = 'audio.mp4',
   }) async {
     try {
       final uri = Uri.parse(ApiConfig.transcribeEndpoint);
