@@ -184,6 +184,105 @@ class SettingsScreen extends StatelessWidget {
                               ),
                             ),
                           ],
+                          if (!(authProvider.currentUser?.emailVerified ?? true) &&
+                              (authProvider.currentUser?.email?.isNotEmpty ?? false)) ...[
+                            const SizedBox(height: AppConstants.spacing16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(
+                                AppConstants.spacing16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.radiusCard,
+                                ),
+                                border: Border.all(color: theme.dividerColor),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Verify your email to unlock the free trial.',
+                                    style: AppTextStyles.subtitle.copyWith(
+                                      color: theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppConstants.spacing8),
+                                  Text(
+                                    'Didn\'t get the message? Resend it, then tap refresh after you verify.',
+                                    style: AppTextStyles.body.copyWith(
+                                      color: theme.hintColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppConstants.spacing16),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: AdaptiveButton(
+                                          label: 'Resend Email',
+                                          filled: !isIOS,
+                                          onPressed: authProvider.isLoading
+                                              ? null
+                                              : () async {
+                                                  final success =
+                                                      await authProvider
+                                                          .resendEmailVerification();
+                                                  if (!context.mounted) return;
+                                                  if (success) {
+                                                    SnackbarUtils.showSuccess(
+                                                      context,
+                                                      'Verification email sent.',
+                                                    );
+                                                  } else if (authProvider.error !=
+                                                      null) {
+                                                    SnackbarUtils.showError(
+                                                      context,
+                                                      authProvider.error!,
+                                                    );
+                                                  }
+                                                },
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppConstants.spacing12),
+                                      Expanded(
+                                        child: AdaptiveButton(
+                                          label: 'Refresh',
+                                          filled: false,
+                                          foregroundColor:
+                                              theme.colorScheme.onSurface,
+                                          backgroundColor:
+                                              theme.colorScheme.surface,
+                                          onPressed: authProvider.isLoading
+                                              ? null
+                                              : () async {
+                                                  await authProvider
+                                                      .refreshCurrentUser();
+                                                  if (!context.mounted) return;
+                                                  if (authProvider
+                                                          .currentUser
+                                                          ?.emailVerified ==
+                                                      true) {
+                                                    SnackbarUtils.showSuccess(
+                                                      context,
+                                                      'Email verified successfully.',
+                                                    );
+                                                  } else {
+                                                    SnackbarUtils.showInfo(
+                                                      context,
+                                                      'Your email is not verified yet.',
+                                                    );
+                                                  }
+                                                },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: AppConstants.spacing16),
                           SizedBox(
                             width: double.infinity,

@@ -210,7 +210,7 @@ function createApp({
         throw createError(401, 'Please sign in to start a trial.', 'auth-required');
       }
 
-      await activateTrialForUser(authenticatedUser);
+      await activateTrialForUser(authenticatedUser, req.body?.installationId);
 
       res.json({
         success: true,

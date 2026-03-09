@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/user_model.dart';
 import '../../core/config/api_config.dart';
+import 'installation_id_service.dart';
 
 /// Service for handling premium subscription operations
 abstract class PremiumServiceBase {
@@ -20,8 +21,13 @@ abstract class PremiumServiceBase {
 }
 
 class PremiumService implements PremiumServiceBase {
+  PremiumService({InstallationIdServiceBase? installationIdService})
+    : _installationIdService =
+          installationIdService ?? InstallationIdService();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final InstallationIdServiceBase _installationIdService;
 
   /// Get the current user's ID, or null if not authenticated
   String? get _currentUserId => _auth.currentUser?.uid;
@@ -107,13 +113,19 @@ class PremiumService implements PremiumServiceBase {
     if (user == null) return false;
 
     try {
-      final token = await user.getIdToken();
+      await user.reload();
+      final refreshedUser = _auth.currentUser;
+      if (refreshedUser == null) return false;
+
+      final installationId = await _installationIdService.getInstallationId();
+      final token = await refreshedUser.getIdToken(true);
       final response = await http.post(
         Uri.parse(ApiConfig.activateTrialEndpoint),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
+        body: jsonEncode({'installationId': installationId}),
       );
 
       if (response.statusCode == 200) {

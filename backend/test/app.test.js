@@ -144,6 +144,24 @@ test('trial activation requires authentication', async () => {
   assert.equal(response.body.code, 'auth-required');
 });
 
+test('trial activation forwards the installation id', async () => {
+  let capturedInstallationId = null;
+  const app = buildApp({
+    activateTrialForUser: async (authenticatedUser, installationId) => {
+      assert.equal(authenticatedUser.decodedToken.uid, 'user-123');
+      capturedInstallationId = installationId;
+    },
+  });
+
+  const response = await request(app)
+    .post('/api/trial/activate')
+    .send({ installationId: 'install-1234567890abcdef' })
+    .expect(200);
+
+  assert.equal(response.body.success, true);
+  assert.equal(capturedInstallationId, 'install-1234567890abcdef');
+});
+
 test('account deletion surfaces recent-login requirement', async () => {
   const app = buildApp({
     deleteUserAccount: async () => {

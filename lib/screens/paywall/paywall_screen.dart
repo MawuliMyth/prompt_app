@@ -10,6 +10,7 @@ import '../../core/widgets/adaptive_widgets.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../auth/login_screen.dart';
+import '../settings/settings_screen.dart';
 
 class PaywallScreen extends StatefulWidget {
   const PaywallScreen({super.key});
@@ -421,8 +422,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   Widget _buildBottomSection(PremiumProvider premiumProvider, bool trialUsed) {
     final theme = Theme.of(context);
+    final authProvider = context.watch<AuthProvider>();
     final secondaryText = _secondaryTextColor(theme);
     final isBusy = premiumProvider.isLoading;
+    final requiresVerificationForTrial =
+        !trialUsed &&
+        authProvider.isAuthenticated &&
+        !(authProvider.currentUser?.emailVerified ?? false);
 
     final selectedPlan = _plans[_selectedPlanIndex];
     final priceText = '${selectedPlan.price}${selectedPlan.period}';
@@ -432,16 +438,28 @@ class _PaywallScreenState extends State<PaywallScreen> {
         SizedBox(
           width: double.infinity,
           child: AdaptiveButton(
-            label: trialUsed ? 'Upgrade Now' : 'Start 3-Day Free Trial',
+            label: trialUsed
+                ? 'Upgrade Now'
+                : requiresVerificationForTrial
+                ? 'Verify Email to Start Trial'
+                : 'Start 3-Day Free Trial',
             isLoading: isBusy,
-            onPressed: isBusy ? null : () => _handleUpgrade(premiumProvider, trialUsed),
+            onPressed: isBusy
+                ? null
+                : () => _handleUpgrade(
+                    premiumProvider,
+                    trialUsed,
+                    requiresVerificationForTrial,
+                  ),
           ),
         ),
         const SizedBox(height: 12),
         Text(
-          trialUsed
-              ? '$priceText. Purchase integration is coming next.'
-              : 'Then $priceText. Cancel anytime.',
+          requiresVerificationForTrial
+              ? 'Verify your email first, then return here to start your free trial.'
+              : trialUsed
+               ? '$priceText. Purchase integration is coming next.'
+               : 'Then $priceText. Cancel anytime.',
           style: AppTextStyles.caption.copyWith(color: secondaryText),
           textAlign: TextAlign.center,
         ),
@@ -499,6 +517,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   Future<void> _handleUpgrade(
     PremiumProvider premiumProvider,
     bool trialUsed,
+    bool requiresVerificationForTrial,
   ) async {
     final authProvider = context.read<AuthProvider>();
     final navigator = Navigator.of(context);
@@ -514,6 +533,21 @@ class _PaywallScreenState extends State<PaywallScreen> {
       );
       if (shouldSignIn == true && mounted) {
         await PlatformUtils.navigateTo(context, const LoginScreen());
+      }
+      return;
+    }
+
+    if (requiresVerificationForTrial) {
+      final shouldOpenSettings = await AdaptiveDialog.show(
+        context: context,
+        title: 'Verify your email first',
+        content:
+            'To prevent trial abuse, email/password accounts must verify their email before starting the free trial. You can resend the verification email from Settings.',
+        cancelText: 'Later',
+        confirmText: 'Open Settings',
+      );
+      if (shouldOpenSettings == true && mounted) {
+        await PlatformUtils.navigateTo(context, const SettingsScreen());
       }
       return;
     }

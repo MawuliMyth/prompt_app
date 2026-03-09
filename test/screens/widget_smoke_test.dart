@@ -35,11 +35,17 @@ class FakeAuthRepository implements AuthRepositoryBase {
   Future<void> deleteAccount() async {}
 
   @override
+  Future<void> reloadCurrentUser() async {}
+
+  @override
   Future<void> sendPasswordResetEmail(String email) async {
     if (passwordResetError != null) {
       throw passwordResetError!;
     }
   }
+
+  @override
+  Future<void> sendEmailVerification() async {}
 
   @override
   Future<Map<String, dynamic>?> signInWithApple() async => null;

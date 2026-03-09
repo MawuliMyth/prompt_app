@@ -289,6 +289,28 @@ class AuthProvider extends ChangeNotifier {
     await _authRepository.signOut();
   }
 
+  Future<bool> resendEmailVerification() async {
+    try {
+      _setLoading(true);
+      _setError(null);
+      await _authRepository.sendEmailVerification();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _setError(_getFriendlyErrorMessage(e.code, 'Email verification'));
+      return false;
+    } catch (e) {
+      _setError(e.toString().replaceFirst('Exception: ', ''));
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> refreshCurrentUser() async {
+    await _authRepository.reloadCurrentUser();
+    notifyListeners();
+  }
+
   Future<bool> deleteAccount() async {
     try {
       _setLoading(true);

@@ -31,6 +31,8 @@ abstract class AuthRepositoryBase {
   Future<Map<String, dynamic>?> signInWithApple();
   Future<void> signOut();
   Future<void> sendPasswordResetEmail(String email);
+  Future<void> sendEmailVerification();
+  Future<void> reloadCurrentUser();
   Future<void> deleteAccount();
 }
 
@@ -101,6 +103,7 @@ class AuthRepository implements AuthRepositoryBase {
       password: password,
     );
     await credential.user?.updateDisplayName(name);
+    await credential.user?.sendEmailVerification();
     // Create Firestore user document
     if (credential.user != null) {
       await _createOrUpdateUserDocument(credential.user!, displayName: name);
@@ -195,6 +198,21 @@ class AuthRepository implements AuthRepositoryBase {
   @override
   Future<void> sendPasswordResetEmail(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  @override
+  Future<void> sendEmailVerification() async {
+    final user = currentUser;
+    if (user == null) {
+      throw Exception('Please sign in first.');
+    }
+
+    await user.sendEmailVerification();
+  }
+
+  @override
+  Future<void> reloadCurrentUser() async {
+    await currentUser?.reload();
   }
 
   @override

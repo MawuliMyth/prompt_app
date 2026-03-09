@@ -17,9 +17,12 @@ class FakeAuthRepository implements AuthRepositoryBase {
   Object? appleError;
   Object? passwordResetError;
   Object? deleteError;
+  Object? emailVerificationError;
   Map<String, dynamic>? googleResult;
   Map<String, dynamic>? appleResult;
   int signOutCalls = 0;
+  int emailVerificationCalls = 0;
+  int reloadCalls = 0;
 
   @override
   User? get currentUser => _currentUser;
@@ -35,6 +38,17 @@ class FakeAuthRepository implements AuthRepositoryBase {
   @override
   Future<void> sendPasswordResetEmail(String email) async {
     if (passwordResetError != null) throw passwordResetError!;
+  }
+
+  @override
+  Future<void> sendEmailVerification() async {
+    emailVerificationCalls += 1;
+    if (emailVerificationError != null) throw emailVerificationError!;
+  }
+
+  @override
+  Future<void> reloadCurrentUser() async {
+    reloadCalls += 1;
   }
 
   @override
@@ -194,6 +208,20 @@ void main() {
 
       expect(provider.isLockedOut, isFalse);
       expect(authRepository.signOutCalls, 1);
+    });
+
+    test('resendEmailVerification forwards success', () async {
+      final success = await provider.resendEmailVerification();
+
+      expect(success, isTrue);
+      expect(authRepository.emailVerificationCalls, 1);
+      expect(provider.error, isNull);
+    });
+
+    test('refreshCurrentUser delegates to repository', () async {
+      await provider.refreshCurrentUser();
+
+      expect(authRepository.reloadCalls, 1);
     });
   });
 }

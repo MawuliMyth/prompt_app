@@ -119,6 +119,10 @@ class _SignupScreenState extends State<SignupScreen> {
     final success = await authProvider.signUpWithEmail(name, email, password);
 
     if (success && mounted) {
+      SnackbarUtils.showInfo(
+        context,
+        'Verification email sent. Confirm your email to unlock the free trial.',
+      );
       PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);

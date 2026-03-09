@@ -6,6 +6,7 @@ const GUEST_DAILY_LIMIT = 5;
 const TRIAL_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
 const guestCollection = db.collection('guestUsage');
 const userCollection = db.collection('users');
+const trialInstallationCollection = db.collection('trialInstallations');
 
 function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];
@@ -26,6 +27,26 @@ function hashIp(ip) {
   }
   const salt = envSalt || 'prompt-app-local-salt';
   return crypto.createHash('sha256').update(`${salt}:${ip}`).digest('hex');
+}
+
+function hashInstallationId(installationId) {
+  return crypto
+    .createHash('sha256')
+    .update(`trial-installation:${installationId}`)
+    .digest('hex');
+}
+
+function normalizeInstallationId(installationId) {
+  if (typeof installationId !== 'string') {
+    return null;
+  }
+
+  const normalized = installationId.trim();
+  if (normalized.length < 16 || normalized.length > 200) {
+    return null;
+  }
+
+  return normalized;
 }
 
 function isTrialActive(userData) {
@@ -203,8 +224,17 @@ async function recordEnhanceSuccess(accessContext) {
   });
 }
 
-async function activateTrialForUser(authenticatedUser) {
-  const { userRef, userData } = authenticatedUser;
+async function activateTrialForUser(authenticatedUser, installationId) {
+  const { userRef, userData, decodedToken } = authenticatedUser;
+
+  const normalizedInstallationId = normalizeInstallationId(installationId);
+  if (!normalizedInstallationId) {
+    throw createError(400, 'A valid installation ID is required.', 'installation-required');
+  }
+
+  if (!decodedToken.email_verified) {
+    throw createError(403, 'Verify your email before starting a free trial.', 'email-verification-required');
+  }
 
   if (userData?.trialUsed) {
     throw createError(409, 'Trial already used.', 'trial-already-used');
@@ -214,13 +244,49 @@ async function activateTrialForUser(authenticatedUser) {
     throw createError(409, 'Premium is already active.', 'premium-already-active');
   }
 
-  await userRef.set({
-    trialStartDate: admin.firestore.FieldValue.serverTimestamp(),
-    trialUsed: true,
-    isPremium: true,
-    planType: 'trial',
-    premiumExpiryDate: null,
-  }, { merge: true });
+  const installationRef = trialInstallationCollection.doc(
+    hashInstallationId(normalizedInstallationId),
+  );
+
+  await db.runTransaction(async (transaction) => {
+    const [userSnapshot, installationSnapshot] = await Promise.all([
+      transaction.get(userRef),
+      transaction.get(installationRef),
+    ]);
+
+    const latestUserData = userSnapshot.exists ? userSnapshot.data() : userData ?? {};
+    if (latestUserData?.trialUsed) {
+      throw createError(409, 'Trial already used.', 'trial-already-used');
+    }
+
+    if (hasPremiumAccess(latestUserData)) {
+      throw createError(409, 'Premium is already active.', 'premium-already-active');
+    }
+
+    if (installationSnapshot.exists) {
+      throw createError(
+        409,
+        'This device has already used a free trial.',
+        'trial-device-already-used',
+      );
+    }
+
+    transaction.set(userRef, {
+      trialStartDate: admin.firestore.FieldValue.serverTimestamp(),
+      trialUsed: true,
+      isPremium: true,
+      planType: 'trial',
+      premiumExpiryDate: null,
+      trialInstallationId: normalizedInstallationId,
+      trialActivatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    transaction.set(installationRef, {
+      uid: decodedToken.uid,
+      email: decodedToken.email ?? null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
 }
 
 async function deleteUserAccount(authenticatedUser) {
