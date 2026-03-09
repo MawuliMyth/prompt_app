@@ -1,4 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import '../utils/platform_utils.dart';
+import 'adaptive_widgets.dart';
 
 /// Error boundary widget that catches errors and displays a fallback UI
 class ErrorBoundary extends StatefulWidget {
@@ -51,6 +55,8 @@ class ErrorFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCupertino = PlatformUtils.useCupertino(context);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -69,9 +75,10 @@ class ErrorFallback extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
+            AdaptiveButton(
+              label: 'Go Back',
+              icon: isCupertino ? CupertinoIcons.back : Icons.arrow_back,
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Go Back'),
             ),
           ],
         ),

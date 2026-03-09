@@ -1,12 +1,25 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../utils/platform_utils.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'adaptive_widgets.dart';
 import '../../screens/paywall/paywall_screen.dart';
 
 class DailyLimitSheet {
   static void show(BuildContext context) {
+    if (PlatformUtils.useCupertino(context)) {
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (context) => const Material(
+          color: Colors.transparent,
+          child: _DailyLimitContent(),
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -103,45 +116,25 @@ class _DailyLimitContent extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: AppConstants.buttonHeight,
-            child: ElevatedButton(
+            child: AdaptiveButton(
+              label: 'Upgrade to Premium',
+              icon: Icons.workspace_premium_outlined,
               onPressed: () {
                 Navigator.pop(context);
                 PlatformUtils.navigateTo(context, const PaywallScreen());
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryLight,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    AppConstants.radiusButton,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.workspace_premium_outlined, size: 20),
-                  const SizedBox(width: AppConstants.spacing8),
-                  Text(
-                    'Upgrade to Premium',
-                    style: AppTextStyles.button.copyWith(color: Colors.white),
-                  ),
-                ],
-              ),
             ),
           ),
 
           const SizedBox(height: AppConstants.spacing12),
 
-          // Come back tomorrow button
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Come back tomorrow',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textSecondaryLight,
-              ),
+          SizedBox(
+            width: double.infinity,
+            child: AdaptiveButton(
+              label: 'Come back tomorrow',
+              filled: false,
+              foregroundColor: AppColors.textSecondaryLight,
+              onPressed: () => Navigator.pop(context),
             ),
           ),
 

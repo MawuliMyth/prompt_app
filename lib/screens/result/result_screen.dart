@@ -178,77 +178,92 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   void _showSignupPrompt() {
+    if (PlatformUtils.useCupertino(context)) {
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (context) => Material(
+          color: Colors.transparent,
+          child: _buildSignupPromptSheet(context),
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppConstants.radiusBottomSheet),
+      builder: (context) => _buildSignupPromptSheet(context),
+    );
+  }
+
+  Widget _buildSignupPromptSheet(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppConstants.radiusBottomSheet),
+        ),
+      ),
+      padding: const EdgeInsets.all(AppConstants.spacing24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.dividerLight,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        ),
-        padding: const EdgeInsets.all(AppConstants.spacing24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.dividerLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
+          const SizedBox(height: AppConstants.spacing24),
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: AppConstants.spacing24),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.save_outlined,
-                size: 40,
-                color: AppColors.primaryLight,
-              ),
+            child: const Icon(
+              Icons.save_outlined,
+              size: 40,
+              color: AppColors.primaryLight,
             ),
-            const SizedBox(height: AppConstants.spacing24),
-            Text(
-              'Sign up to save prompts',
-              style: AppTextStyles.title,
-              textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.spacing24),
+          Text(
+            'Sign up to save prompts',
+            style: AppTextStyles.title,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.spacing12),
+          Text(
+            'Create a free account to save this prompt and build a library of your favourites.',
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textSecondaryLight,
             ),
-            const SizedBox(height: AppConstants.spacing12),
-            Text(
-              'Create a free account to save this prompt and build a library of your favourites.',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textSecondaryLight,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.spacing32),
+          SizedBox(
+            width: double.infinity,
+            height: AppConstants.buttonHeight,
+            child: AdaptiveButton(
+              label: 'Create Free Account',
+              onPressed: () {
+                Navigator.pop(context);
+                PlatformUtils.navigateTo(context, const SignupScreen());
+              },
             ),
-            const SizedBox(height: AppConstants.spacing32),
-            SizedBox(
-              width: double.infinity,
-              height: AppConstants.buttonHeight,
-              child: AdaptiveButton(
-                label: 'Create Free Account',
-                onPressed: () {
-                  Navigator.pop(context);
-                  PlatformUtils.navigateTo(context, const SignupScreen());
-                },
-              ),
-            ),
-            const SizedBox(height: AppConstants.spacing12),
-            AdaptiveButton(
-              label: 'Maybe Later',
-              filled: false,
-              foregroundColor: AppColors.textSecondaryLight,
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppConstants.spacing12),
+          AdaptiveButton(
+            label: 'Maybe Later',
+            filled: false,
+            foregroundColor: AppColors.textSecondaryLight,
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
       ),
     );
   }
