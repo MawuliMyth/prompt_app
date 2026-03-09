@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/adaptive_widgets.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/google_logo.dart';
@@ -112,23 +113,10 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primaryLight,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'P',
-                        style: AppTextStyles.headingLarge.copyWith(
-                          color: Colors.white,
-                          fontSize: 40,
-                        ),
-                      ),
-                    ),
+                const Center(
+                  child: AppLogo(
+                    width: 104,
+                    height: 104,
                   ),
                 ),
                 const SizedBox(height: 32),

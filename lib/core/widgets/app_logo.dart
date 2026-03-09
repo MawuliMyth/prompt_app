@@ -16,7 +16,7 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/w.png',
+      'assets/images/logopt.png',
       width: width,
       height: height,
       color: color,
