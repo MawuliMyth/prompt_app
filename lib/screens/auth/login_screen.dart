@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
-        title: 'Sign In',
+        title: '',
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(

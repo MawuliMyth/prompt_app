@@ -48,6 +48,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   final List<_FeatureRow> _features = const [
     _FeatureRow('Daily prompts', '10/day', 'Unlimited'),
+    _FeatureRow('Voice recording', 'Up to 3 min', 'Unlimited'),
     _FeatureRow('AI model depth', 'Standard', 'Advanced'),
     _FeatureRow('Prompt variations', 'No', 'Yes'),
     _FeatureRow('Tone selector', 'No', 'Yes'),
@@ -448,11 +449,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildTrustBadge('Secure'),
+            _buildTrustBadge('Secure', Icons.lock_outline),
             const SizedBox(width: 24),
-            _buildTrustBadge('Refund'),
+            _buildTrustBadge('Cancel anytime', Icons.cancel_outlined),
             const SizedBox(width: 24),
-            _buildTrustBadge('Cancel anytime'),
+            _buildTrustBadge('Free trial', Icons.card_giftcard_outlined),
           ],
         ),
         const SizedBox(height: 16),
@@ -468,13 +469,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _buildTrustBadge(String text) {
+  Widget _buildTrustBadge(String text, IconData icon) {
     final secondaryText = _secondaryTextColor(Theme.of(context));
 
     return Row(
       children: [
-        const Icon(
-          Icons.check_circle_rounded,
+        Icon(
+          icon,
           size: 14,
           color: AppColors.primaryLight,
         ),

@@ -153,7 +153,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
-        title: 'Create Account',
+        title: '',
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(
