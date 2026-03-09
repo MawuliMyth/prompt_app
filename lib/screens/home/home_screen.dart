@@ -11,6 +11,7 @@ import '../../core/widgets/adaptive_widgets.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../providers/shell_provider.dart';
+import '../auth/login_screen.dart';
 import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
 import '../templates/templates_screen.dart';
@@ -189,7 +190,10 @@ class _FloatingShell extends StatelessWidget {
                                   confirmText: 'Sign In',
                                 );
                                 if (shouldSignIn == true && context.mounted) {
-                                  shellProvider.selectTab(3);
+                                  await PlatformUtils.navigateTo(
+                                    context,
+                                    const LoginScreen(),
+                                  );
                                 }
                                 return;
                               }

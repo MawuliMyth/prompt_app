@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/platform_utils.dart';
+import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/profile_avatar.dart';
 import '../../providers/auth_provider.dart';
@@ -27,9 +28,7 @@ class SettingsScreen extends StatelessWidget {
   ) async {
     await authProvider.signOut();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Signed out successfully.')));
+    SnackbarUtils.showSuccess(context, 'Signed out successfully.');
   }
 
   Future<void> _launchURL(String url) async {
@@ -44,9 +43,7 @@ class SettingsScreen extends StatelessWidget {
       await _launchURL(url);
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open link right now.')),
-      );
+      SnackbarUtils.showError(context, 'Unable to open link right now.');
     }
   }
 

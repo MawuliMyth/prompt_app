@@ -17,6 +17,7 @@ import '../../providers/app_config_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/shell_provider.dart';
+import '../auth/login_screen.dart';
 import '../analytics/analytics_screen.dart';
 import '../paywall/paywall_screen.dart';
 import 'voice_assessment_screen.dart';
@@ -106,7 +107,10 @@ class HomeView extends StatelessWidget {
                             confirmText: 'Sign In',
                           );
                           if (shouldSignIn == true && context.mounted) {
-                            shellProvider.selectTab(3);
+                            await PlatformUtils.navigateTo(
+                              context,
+                              const LoginScreen(),
+                            );
                           }
                           break;
                         }

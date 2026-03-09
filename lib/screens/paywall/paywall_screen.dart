@@ -107,7 +107,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       : const Color(0xFFD8E1F0);
 
   Widget _buildHeader() {
-    final isCupertino = CupertinoUserInterfaceLevel.maybeOf(context) != null;
+    final isCupertino = PlatformUtils.useCupertino(context);
 
     return Container(
       width: double.infinity,

@@ -9,6 +9,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/platform_utils.dart';
+import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -75,7 +76,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _showClearAllConfirm() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final promptProvider = Provider.of<PromptProvider>(context, listen: false);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     final confirmed = await AdaptiveDialog.show(
       context: context,
@@ -92,12 +92,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final success = await promptProvider.clearAllHistory(
         authProvider.currentUser,
       );
+      if (!mounted) return;
       if (!success) {
-        scaffoldMessenger.hideCurrentSnackBar();
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(promptProvider.error ?? 'Failed to clear history'),
-          ),
+        SnackbarUtils.showError(
+          context,
+          promptProvider.error ?? 'Failed to clear history',
         );
       }
     }
@@ -167,23 +166,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       return PromptHistoryCard(
                                         prompt: prompt,
                                         onDelete: () async {
-                                          final scaffoldMessenger =
-                                              ScaffoldMessenger.of(context);
                                           final success = await promptProvider
                                               .deletePrompt(
                                                 authProvider.currentUser,
                                                 prompt.id,
                                               );
+                                          if (!context.mounted) return;
                                           if (!success) {
-                                            scaffoldMessenger
-                                                .hideCurrentSnackBar();
-                                            scaffoldMessenger.showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  promptProvider.error ??
-                                                      'Failed to delete prompt',
-                                                ),
-                                              ),
+                                            SnackbarUtils.showError(
+                                              context,
+                                              promptProvider.error ??
+                                                  'Failed to delete prompt',
                                             );
                                           }
                                         },
@@ -554,17 +547,7 @@ class PromptHistoryCard extends StatelessWidget {
       },
       onDismissed: (direction) {
         onDelete();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Prompt deleted'),
-            backgroundColor: theme.colorScheme.onSurface,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        SnackbarUtils.showInfo(context, 'Prompt deleted');
       },
       child: GestureDetector(
         onTap: () {
