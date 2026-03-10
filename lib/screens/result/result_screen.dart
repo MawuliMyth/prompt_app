@@ -322,107 +322,121 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   void _showSendToAiSheet() {
+    if (PlatformUtils.useCupertino(context)) {
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (sheetContext) => Material(
+          color: Colors.transparent,
+          child: _buildSendToAiSheet(sheetContext),
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final theme = Theme.of(sheetContext);
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppConstants.radiusBottomSheet),
-            ),
+      builder: _buildSendToAiSheet,
+    );
+  }
+
+  Widget _buildSendToAiSheet(BuildContext sheetContext) {
+    final theme = Theme.of(sheetContext);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppConstants.radiusBottomSheet),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
           ),
-          child: SafeArea(
-            top: false,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 42,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: theme.dividerColor,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                      ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.dividerColor,
+                      borderRadius: BorderRadius.circular(99),
                     ),
-                    const SizedBox(height: AppConstants.spacing20),
-                    Text(
-                      'Send to AI',
-                      style: AppTextStyles.title.copyWith(
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacing8),
-                    Text(
-                      'We will copy your prompt, then open the AI destination you choose.',
-                      style: AppTextStyles.body.copyWith(
-                        color: theme.hintColor,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacing20),
-                    _AiTargetTile(
-                      target: AiHandoffTarget.chatgpt,
-                      description: 'Open app or web, prompt copied',
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _sendToAi(AiHandoffTarget.chatgpt);
-                      },
-                    ),
-                    const SizedBox(height: AppConstants.spacing12),
-                    _AiTargetTile(
-                      target: AiHandoffTarget.claude,
-                      description: 'Open app or web, prompt copied',
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _sendToAi(AiHandoffTarget.claude);
-                      },
-                    ),
-                    const SizedBox(height: AppConstants.spacing12),
-                    _AiTargetTile(
-                      target: AiHandoffTarget.gemini,
-                      description: 'Open app or web, prompt copied',
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _sendToAi(AiHandoffTarget.gemini);
-                      },
-                    ),
-                    const SizedBox(height: AppConstants.spacing12),
-                    _AiTargetTile(
-                      target: AiHandoffTarget.deepseek,
-                      description: 'Open app or web, prompt copied',
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _sendToAi(AiHandoffTarget.deepseek);
-                      },
-                    ),
-                    const SizedBox(height: AppConstants.spacing12),
-                    _AiTargetTile(
-                      target: AiHandoffTarget.systemShare,
-                      description: 'Use the native share sheet',
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _sendToAi(AiHandoffTarget.systemShare);
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppConstants.spacing20),
+                Text(
+                  'Send to AI',
+                  style: AppTextStyles.title.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacing8),
+                Text(
+                  'We will copy your prompt, then open the AI destination you choose.',
+                  style: AppTextStyles.body.copyWith(
+                    color: theme.hintColor,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacing20),
+                _AiTargetTile(
+                  target: AiHandoffTarget.chatgpt,
+                  description: 'Open app or web, prompt copied',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _sendToAi(AiHandoffTarget.chatgpt);
+                  },
+                ),
+                const SizedBox(height: AppConstants.spacing12),
+                _AiTargetTile(
+                  target: AiHandoffTarget.claude,
+                  description: 'Open app or web, prompt copied',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _sendToAi(AiHandoffTarget.claude);
+                  },
+                ),
+                const SizedBox(height: AppConstants.spacing12),
+                _AiTargetTile(
+                  target: AiHandoffTarget.gemini,
+                  description: 'Open app or web, prompt copied',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _sendToAi(AiHandoffTarget.gemini);
+                  },
+                ),
+                const SizedBox(height: AppConstants.spacing12),
+                _AiTargetTile(
+                  target: AiHandoffTarget.deepseek,
+                  description: 'Open app or web, prompt copied',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _sendToAi(AiHandoffTarget.deepseek);
+                  },
+                ),
+                const SizedBox(height: AppConstants.spacing12),
+                _AiTargetTile(
+                  target: AiHandoffTarget.systemShare,
+                  description: 'Use the native share sheet',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _sendToAi(AiHandoffTarget.systemShare);
+                  },
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

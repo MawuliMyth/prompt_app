@@ -31,6 +31,34 @@ class SettingsScreen extends StatelessWidget {
     SnackbarUtils.showSuccess(context, 'Signed out successfully.');
   }
 
+  Future<void> _handleDeleteAccount(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) async {
+    final confirmed = await AdaptiveDialog.show(
+      context: context,
+      title: 'Delete account?',
+      content:
+          'This permanently deletes your account and saved prompts. You may need to sign in again before this can continue.',
+      confirmText: 'Delete',
+      isDestructive: true,
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final success = await authProvider.deleteAccount();
+    if (!context.mounted) return;
+
+    if (success) {
+      SnackbarUtils.showSuccess(context, 'Account deleted successfully.');
+      return;
+    }
+
+    if (authProvider.error != null) {
+      SnackbarUtils.showError(context, authProvider.error!);
+    }
+  }
+
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -284,14 +312,57 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ],
                           const SizedBox(height: AppConstants.spacing16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: AdaptiveButton(
-                              label: 'Sign out',
-                              filled: !isIOS,
-                              onPressed: authProvider.isLoading
-                                  ? null
-                                  : () => _handleSignOut(context, authProvider),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surface,
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.radiusCard,
+                              ),
+                              border: Border.all(color: theme.dividerColor),
+                            ),
+                            child: Column(
+                              children: [
+                                AdaptiveListTile(
+                                  leading: Icon(
+                                    Icons.logout_rounded,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                  title: 'Sign out',
+                                  subtitle: 'Sign out of this device',
+                                  onTap: authProvider.isLoading
+                                      ? null
+                                      : () => _handleSignOut(
+                                          context,
+                                          authProvider,
+                                        ),
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: theme.dividerColor,
+                                ),
+                                AdaptiveListTile(
+                                  leading: Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: theme.colorScheme.error,
+                                  ),
+                                  title: 'Delete account',
+                                  subtitle:
+                                      'Permanently remove your account and prompts',
+                                  trailing: Icon(
+                                    isIOS
+                                        ? Icons.chevron_right_rounded
+                                        : Icons.arrow_forward_ios_rounded,
+                                    size: 18,
+                                    color: theme.colorScheme.error,
+                                  ),
+                                  onTap: authProvider.isLoading
+                                      ? null
+                                      : () => _handleDeleteAccount(
+                                          context,
+                                          authProvider,
+                                        ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
