@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/utils/platform_utils.dart';
@@ -28,6 +30,29 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _termsAccepted = false;
+
+  String _formatDisplayName(String value) {
+    final buffer = StringBuffer();
+    var capitalizeNext = true;
+
+    for (final rune in value.runes) {
+      final character = String.fromCharCode(rune);
+      if (character == ' ') {
+        buffer.write(character);
+        capitalizeNext = true;
+        continue;
+      }
+
+      if (capitalizeNext) {
+        buffer.write(character.toUpperCase());
+        capitalizeNext = false;
+      } else {
+        buffer.write(character);
+      }
+    }
+
+    return buffer.toString();
+  }
 
   @override
   void dispose() {
@@ -120,9 +145,11 @@ class _SignupScreenState extends State<SignupScreen> {
     final success = await authProvider.signUpWithEmail(name, email, password);
 
     if (success && mounted) {
+      trackAnalytics(() => analyticsService.logSignUpCompleted(method: 'email'));
+      trackAnalytics(() => analyticsService.logGuestToUserConverted());
       SnackbarUtils.showInfo(
         context,
-        'Verification email sent. Confirm your email to unlock the free trial.',
+        'Verification email sent. Check your inbox or spam folder to unlock the free trial.',
       );
       PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
@@ -134,6 +161,8 @@ class _SignupScreenState extends State<SignupScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
     if (success && mounted) {
+      trackAnalytics(() => analyticsService.logSignUpCompleted(method: 'google'));
+      trackAnalytics(() => analyticsService.logGuestToUserConverted());
       PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
@@ -144,6 +173,8 @@ class _SignupScreenState extends State<SignupScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithApple();
     if (success && mounted) {
+      trackAnalytics(() => analyticsService.logSignUpCompleted(method: 'apple'));
+      trackAnalytics(() => analyticsService.logGuestToUserConverted());
       PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
@@ -198,6 +229,22 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 40),
                 AdaptiveTextField(
                   controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      final formatted = _formatDisplayName(newValue.text);
+                      final lengthDelta =
+                          formatted.length - newValue.text.length;
+                      final targetOffset =
+                          newValue.selection.baseOffset + lengthDelta;
+                      return TextEditingValue(
+                        text: formatted,
+                        selection: TextSelection.collapsed(
+                          offset: targetOffset.clamp(0, formatted.length),
+                        ),
+                      );
+                    }),
+                  ],
                   hintText: 'Full Name',
                   prefixIcon: const Icon(Icons.person_outline),
                 ),

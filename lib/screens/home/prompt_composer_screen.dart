@@ -8,9 +8,11 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/utils/app_icon_mapper.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/utils/strength_calculator.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/daily_limit_sheet.dart';
 import '../../core/widgets/locked_feature_sheet.dart';
@@ -46,6 +48,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
   String? _selectedCategoryId;
   String _selectedToneId = 'auto';
   bool _isProcessing = false;
+  bool _usedVoiceInput = false;
 
   void _onTextChanged() {
     if (mounted) {
@@ -104,6 +107,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
     if (!mounted || transcript == null) return;
     setState(() {
       _controller.text = transcript;
+      _usedVoiceInput = true;
       _controller.selection = TextSelection.collapsed(
         offset: _controller.text.length,
       );
@@ -132,6 +136,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
 
     if (!authProvider.isAuthenticated) {
       if (freePromptProvider.hasReachedLimit) {
+        trackAnalytics(() => analyticsService.logGuestLimitReached());
         final shouldSignUp = await AdaptiveDialog.show(
           context: context,
           title: 'Create an account',
@@ -149,6 +154,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
       await dailyLimitProvider.loadDailyUsage();
       if (!mounted) return;
       if (dailyLimitProvider.hasReachedLimit) {
+        trackAnalytics(() => analyticsService.logDailyLimitReached());
         DailyLimitSheet.show(context);
         return;
       }
@@ -178,6 +184,21 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
     setState(() => _isProcessing = false);
 
     if (result['success'] == true) {
+      final enhancedPrompt = result['enhancedPrompt'] as String;
+      final strengthScore = StrengthCalculator.calculate(
+        text,
+        enhancedPrompt,
+        category.label,
+      );
+      trackAnalytics(
+        () => analyticsService.logPromptEnhanced(
+          category: category.label,
+          tone: tone.label,
+          isVoice: _usedVoiceInput,
+          isPremium: premiumProvider.hasPremiumAccess,
+          strengthScore: strengthScore,
+        ),
+      );
       if (!authProvider.isAuthenticated) {
         await freePromptProvider.increment();
       } else if (!premiumProvider.hasPremiumAccess) {
@@ -189,7 +210,7 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
         PlatformUtils.adaptivePageRoute(
           ResultScreen(
             originalText: text,
-            enhancedPrompt: result['enhancedPrompt'] as String,
+            enhancedPrompt: enhancedPrompt,
             category: category.label,
           ),
         ),
@@ -310,8 +331,14 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                               cupertino: isCupertino,
                             ),
                           ),
-                          onTap: () =>
-                              setState(() => _selectedCategoryId = category.id),
+                          onTap: () {
+                            setState(() => _selectedCategoryId = category.id);
+                            trackAnalytics(
+                              () => analyticsService.logCategorySelected(
+                                category: category.label,
+                              ),
+                            );
+                          },
                         );
                       }).toList(),
                     ),
@@ -339,6 +366,11 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                         return GestureDetector(
                           onTap: () {
                             if (locked) {
+                              trackAnalytics(
+                                () => analyticsService.logFeatureLockedTapped(
+                                  featureName: 'premium_tones',
+                                ),
+                              );
                               LockedFeatureSheet.show(
                                 context,
                                 'Premium tones',
@@ -347,6 +379,11 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                               return;
                             }
                             setState(() => _selectedToneId = tone.id);
+                            trackAnalytics(
+                              () => analyticsService.logToneSelected(
+                                tone: tone.label,
+                              ),
+                            );
                           },
                           child: Stack(
                             clipBehavior: Clip.none,

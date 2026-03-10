@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
@@ -46,6 +47,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   StreamSubscription<double>? _levelSubscription;
   Uint8List? _lastRecordedAudio;
   Timer? _recordingLimitTimer;
+  Timer? _recordingTicker;
 
   @override
   void initState() {
@@ -65,6 +67,7 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
   @override
   void dispose() {
     _recordingLimitTimer?.cancel();
+    _recordingTicker?.cancel();
     _levelSubscription?.cancel();
     _audioRecorderService.dispose().ignore();
     _orbController.dispose();
@@ -92,13 +95,14 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
 
     if (_isRecording) {
       _recordingLimitTimer?.cancel();
+      _recordingTicker?.cancel();
       _isTransitioningRecorder = true;
       setState(() {
         _isRecording = false;
         _isProcessing = true;
         _showRetryAction = false;
         _canRetryTranscription = false;
-        _caption = 'Transcribing your voice...';
+        _caption = 'Transcribing your recording...';
         _audioLevel = 0;
       });
 
@@ -106,6 +110,14 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       final startedAt = _recordingStartedAt;
       _recordingStartedAt = null;
       _isTransitioningRecorder = false;
+
+      if (startedAt != null) {
+        trackAnalytics(
+          () => analyticsService.logVoiceRecordingCompleted(
+            durationSeconds: DateTime.now().difference(startedAt).inSeconds,
+          ),
+        );
+      }
 
       if (startedAt != null &&
           DateTime.now().difference(startedAt) < _minimumRecordingDuration) {
@@ -200,9 +212,16 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
       _isRecording = true;
       _showRetryAction = false;
       _canRetryTranscription = false;
-      _caption = 'Listening... speak naturally.';
+      _caption = 'Recording live now - speak naturally.';
     });
     _recordingStartedAt = DateTime.now();
+    _recordingTicker?.cancel();
+    _recordingTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _isRecording) {
+        setState(() {});
+      }
+    });
+    trackAnalytics(() => analyticsService.logVoiceRecordingStarted());
 
     if (!premiumProvider.hasPremiumAccess) {
       _recordingLimitTimer?.cancel();
@@ -307,6 +326,9 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
     final premiumProvider = context.watch<PremiumProvider>();
     final hasVoiceAccess = authProvider.isAuthenticated;
     final isUnlimitedRecording = premiumProvider.hasPremiumAccess;
+    final recordingElapsed = _recordingStartedAt == null
+        ? Duration.zero
+        : DateTime.now().difference(_recordingStartedAt!);
 
     return AdaptiveScaffold(
       appBar: const AdaptiveAppBar(
@@ -323,13 +345,50 @@ class _VoiceAssessmentScreenState extends State<VoiceAssessmentScreen>
               Text(
                 hasVoiceAccess
                     ? isUnlimitedRecording
-                        ? 'Speak naturally and we will turn it into a prompt draft.'
-                        : 'Speak naturally and we will turn it into a prompt draft. Free recordings are limited to 3 minutes.'
+                        ? 'Tap the mic and we start recording immediately while you speak.'
+                        : 'Tap the mic and we start recording immediately while you speak. Free recordings are limited to 3 minutes.'
                     : 'Voice recording is locked in guest mode. Sign in to use it.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(color: theme.hintColor),
               ),
               const SizedBox(height: AppConstants.spacing32),
+              if (_isRecording) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacing16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusChip),
+                    border: Border.all(
+                      color: AppColors.primaryLight.withValues(alpha: 0.24),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: AppConstants.spacing8),
+                      Text(
+                        'Recording ${recordingElapsed.inMinutes.toString().padLeft(2, '0')}:${(recordingElapsed.inSeconds % 60).toString().padLeft(2, '0')}',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.primaryLight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacing16),
+              ],
               Text(
                 _caption,
                 textAlign: TextAlign.center,

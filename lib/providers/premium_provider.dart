@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../core/utils/analytics.dart';
 import '../data/models/user_model.dart';
 import '../data/services/premium_service.dart';
 
@@ -57,6 +58,12 @@ class PremiumProvider extends ChangeNotifier {
         _isTrialActive = userData.isTrialActive;
         _daysLeftInTrial = userData.daysLeftInTrial;
         _trialUsed = userData.trialUsed;
+        trackAnalytics(
+          () => analyticsService.setUserProperties(
+            isPremium: hasPremiumAccess,
+            planType: _planType,
+          ),
+        );
       } else {
         _resetState();
       }
@@ -183,6 +190,7 @@ class PremiumProvider extends ChangeNotifier {
         if (_userData != null) {
           _userData = _userData!.copyWith(persona: persona);
         }
+        trackAnalytics(() => analyticsService.logPersonaUpdated());
         _isLoading = false;
         notifyListeners();
         return true;
@@ -214,6 +222,12 @@ class PremiumProvider extends ChangeNotifier {
     _trialUsed = false;
     _userData = null;
     _error = null;
+    trackAnalytics(
+      () => analyticsService.setUserProperties(
+        isPremium: false,
+        planType: 'free',
+      ),
+    );
     notifyListeners();
   }
 

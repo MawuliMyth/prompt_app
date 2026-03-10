@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/utils/platform_utils.dart';
@@ -64,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await authProvider.signInWithEmail(email, password);
 
     if (success && mounted) {
+      trackAnalytics(() => analyticsService.logLoginCompleted(method: 'email'));
       PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
@@ -74,6 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
     if (success && mounted) {
+      trackAnalytics(() => analyticsService.logLoginCompleted(method: 'google'));
       PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);
@@ -84,6 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithApple();
     if (success && mounted) {
+      trackAnalytics(() => analyticsService.logLoginCompleted(method: 'apple'));
       PlatformUtils.navigateReplace(context, const HomeScreen());
     } else if (mounted && authProvider.error != null) {
       SnackbarUtils.showError(context, authProvider.error!);

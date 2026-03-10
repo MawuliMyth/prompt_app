@@ -121,7 +121,10 @@ class _DailyLimitContent extends StatelessWidget {
               icon: Icons.workspace_premium_outlined,
               onPressed: () {
                 Navigator.pop(context);
-                PlatformUtils.navigateTo(context, const PaywallScreen());
+                PlatformUtils.navigateTo(
+                  context,
+                  const PaywallScreen(trigger: 'daily_limit_reached'),
+                );
               },
             ),
           ),

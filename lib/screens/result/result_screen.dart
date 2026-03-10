@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/strength_calculator.dart';
 import '../../core/utils/platform_utils.dart';
@@ -22,6 +23,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/prompt_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../auth/signup_screen.dart';
+import '../home/prompt_composer_screen.dart';
 
 class ResultScreen extends StatefulWidget {
   const ResultScreen({
@@ -170,6 +172,9 @@ class _ResultScreenState extends State<ResultScreen>
         promptProvider.error ?? 'Failed to update favourite',
       );
     } else if (mounted) {
+      if (_isFavourited) {
+        trackAnalytics(() => analyticsService.logPromptFavourited());
+      }
       SnackbarUtils.showSuccess(
         context,
         _isFavourited ? 'Added to favourites' : 'Removed from favourites',
@@ -269,7 +274,14 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   void _copyToClipboard() async {
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
     await Clipboard.setData(ClipboardData(text: widget.enhancedPrompt));
+    trackAnalytics(
+      () => analyticsService.logPromptCopied(
+        category: widget.category,
+        isPremium: premiumProvider.hasPremiumAccess,
+      ),
+    );
     setState(() {
       _isCopied = true;
     });
@@ -300,6 +312,7 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   Future<void> _sharePrompt() async {
+    trackAnalytics(() => analyticsService.logPromptShared(category: widget.category));
     await SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt));
   }
 
@@ -445,8 +458,14 @@ class _ResultScreenState extends State<ResultScreen>
       context,
       listen: false,
     );
+    trackAnalytics(() => analyticsService.logVariationsRequested());
 
     if (!premiumProvider.hasPremiumAccess) {
+      trackAnalytics(
+        () => analyticsService.logFeatureLockedTapped(
+          featureName: 'prompt_variations',
+        ),
+      );
       LockedFeatureSheet.show(
         context,
         'Prompt Variations',
@@ -878,9 +897,13 @@ class _ResultScreenState extends State<ResultScreen>
             children: [
               Expanded(
                 child: _buildActionButton(
-                  icon: Icons.refresh,
-                  label: 'New',
-                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icons.edit_rounded,
+                  label: 'Edit',
+                  onPressed: () => Navigator.of(context).pushReplacement(
+                    PlatformUtils.adaptivePageRoute(
+                      PromptComposerScreen(initialText: widget.originalText),
+                    ),
+                  ),
                   isOutlined: true,
                   isSmallScreen: isSmallScreen,
                 ),

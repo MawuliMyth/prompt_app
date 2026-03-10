@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'core/utils/analytics.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'providers/theme_provider.dart';
@@ -20,6 +21,7 @@ class PromptApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
+          navigatorObservers: [analyticsObserver],
           home: SplashScreen(firebaseInitialized: firebaseInitialized),
         );
       },

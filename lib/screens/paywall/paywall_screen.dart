@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
@@ -13,7 +14,9 @@ import '../auth/login_screen.dart';
 import '../settings/settings_screen.dart';
 
 class PaywallScreen extends StatefulWidget {
-  const PaywallScreen({super.key});
+  const PaywallScreen({super.key, this.trigger = 'upgrade_banner'});
+
+  final String trigger;
 
   @override
   State<PaywallScreen> createState() => _PaywallScreenState();
@@ -21,6 +24,16 @@ class PaywallScreen extends StatefulWidget {
 
 class _PaywallScreenState extends State<PaywallScreen> {
   int _selectedPlanIndex = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      trackAnalytics(
+        () => analyticsService.logPaywallViewed(trigger: widget.trigger),
+      );
+    });
+  }
 
   final List<_PlanOption> _plans = const [
     _PlanOption(
@@ -112,7 +125,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
           Align(
             alignment: Alignment.centerRight,
             child: GestureDetector(
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                trackAnalytics(() => analyticsService.logPaywallDismissed());
+                Navigator.pop(context);
+              },
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -505,6 +521,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   void _selectPlan(int index) {
     setState(() => _selectedPlanIndex = index);
+    trackAnalytics(
+      () => analyticsService.logPlanSelected(plan: _plans[index].id),
+    );
   }
 
   Future<void> _handleUpgrade(
@@ -514,8 +533,18 @@ class _PaywallScreenState extends State<PaywallScreen> {
   ) async {
     final authProvider = context.read<AuthProvider>();
     final navigator = Navigator.of(context);
+    final selectedPlan = _plans[_selectedPlanIndex];
+    final selectedPrice = double.tryParse(selectedPlan.price.replaceAll(r'$', '')) ?? 0;
 
     if (!authProvider.isAuthenticated) {
+      if (trialUsed) {
+        trackAnalytics(
+          () => analyticsService.logPurchaseStarted(
+            plan: selectedPlan.id,
+            price: selectedPrice,
+          ),
+        );
+      }
       final shouldSignIn = await AdaptiveDialog.show(
         context: context,
         title: 'Sign in required',
@@ -550,6 +579,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       if (!mounted) return;
 
       if (success) {
+        trackAnalytics(() => analyticsService.logTrialStarted());
         SnackbarUtils.showSuccess(
           context,
           'Premium activated. Enjoy your 3-day free trial.',
@@ -567,6 +597,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
       return;
     }
 
+    trackAnalytics(
+      () => analyticsService.logPurchaseStarted(
+        plan: selectedPlan.id,
+        price: selectedPrice,
+      ),
+    );
     if (!mounted) return;
     SnackbarUtils.showError(
       context,

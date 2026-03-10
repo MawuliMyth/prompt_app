@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
@@ -102,10 +103,17 @@ class SettingsScreen extends StatelessWidget {
             GestureDetector(
               onTap: premiumProvider.hasPremiumAccess
                   ? null
-                  : () => PlatformUtils.navigateTo(
-                      context,
-                      const PaywallScreen(),
-                    ),
+                  : () {
+                      trackAnalytics(
+                        () => analyticsService.logPaywallViewed(
+                          trigger: 'settings',
+                        ),
+                      );
+                      PlatformUtils.navigateTo(
+                        context,
+                        const PaywallScreen(trigger: 'settings'),
+                      );
+                    },
               child: Container(
                 padding: const EdgeInsets.all(AppConstants.spacing20),
                 decoration: BoxDecoration(
@@ -239,7 +247,7 @@ class SettingsScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: AppConstants.spacing8),
                                   Text(
-                                    'Didn\'t get the message? Resend it, then tap refresh after you verify.',
+                                    'Didn\'t get the message? Check your spam folder, or resend it and tap refresh after you verify.',
                                     style: AppTextStyles.body.copyWith(
                                       color: theme.hintColor,
                                     ),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/utils/app_icon_mapper.dart';
 import '../../core/widgets/adaptive_widgets.dart';
 import '../../data/models/app_config_model.dart';
@@ -83,6 +84,12 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                 child: _TemplateCard(
                   template: template,
                   onUse: () {
+                    trackAnalytics(
+                      () => analyticsService.logTemplateUsed(
+                        templateName: template.title,
+                        category: _categoryLabelFor(template.categoryId, categories),
+                      ),
+                    );
                     shellProvider.openComposer(
                       initialText: template.promptBody,
                       categoryId: template.categoryId,
@@ -95,6 +102,18 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         ),
       ),
     );
+  }
+
+  String _categoryLabelFor(
+    String categoryId,
+    List<TemplateCategoryConfig> categories,
+  ) {
+    for (final category in categories) {
+      if (category.id == categoryId) {
+        return category.label;
+      }
+    }
+    return categoryId;
   }
 }
 

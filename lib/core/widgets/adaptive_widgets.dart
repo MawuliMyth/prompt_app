@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../constants/app_text_styles.dart';
@@ -192,6 +193,8 @@ class AdaptiveTextField extends StatelessWidget {
     this.focusNode,
     this.enabled = true,
     this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.inputFormatters,
   });
   final TextEditingController? controller;
   final String? hintText;
@@ -208,6 +211,8 @@ class AdaptiveTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final bool enabled;
   final TextInputAction? textInputAction;
+  final TextCapitalization textCapitalization;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +244,8 @@ class AdaptiveTextField extends StatelessWidget {
             focusNode: focusNode,
             enabled: enabled,
             textInputAction: textInputAction,
+            textCapitalization: textCapitalization,
+            inputFormatters: inputFormatters,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
@@ -272,6 +279,8 @@ class AdaptiveTextField extends StatelessWidget {
       focusNode: focusNode,
       enabled: enabled,
       textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         hintText: hintText,
         labelText: labelText,

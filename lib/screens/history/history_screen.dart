@@ -305,7 +305,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 AdaptiveButton(
                   label: 'Upgrade',
                   onPressed: () =>
-                      PlatformUtils.navigateTo(context, const PaywallScreen()),
+                      PlatformUtils.navigateTo(
+                        context,
+                        const PaywallScreen(),
+                      ),
                 ),
               ],
             ),

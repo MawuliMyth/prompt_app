@@ -46,6 +46,7 @@ app.*.map.json
 
 # Android signing
 android/key.properties
+android/app/prompt-release-key.jks
 *.jks
 *.keystore
 

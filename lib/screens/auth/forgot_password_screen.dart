@@ -117,7 +117,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Enter your email and we\'ll send you a link to reset your password.',
+          'Enter your email and we\'ll send you a link to reset your password. If it does not arrive, check your spam folder too.',
           style: AppTextStyles.body.copyWith(
             color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
@@ -170,7 +170,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'We\'ve sent a password reset link to\n${_emailController.text}',
+          'We\'ve sent a password reset link to\n${_emailController.text}\n\nIf you do not see it soon, check your spam folder.',
           style: AppTextStyles.body.copyWith(
             color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
