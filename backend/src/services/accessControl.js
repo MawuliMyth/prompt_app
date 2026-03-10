@@ -277,7 +277,7 @@ async function activateTrialForUser(authenticatedUser, installationId) {
       isPremium: true,
       planType: 'trial',
       premiumExpiryDate: null,
-      trialInstallationId: normalizedInstallationId,
+      trialInstallationIdHash: hashInstallationId(normalizedInstallationId),
       trialActivatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
 
@@ -296,8 +296,6 @@ async function deleteUserAccount(authenticatedUser) {
   const userRef = userCollection.doc(uid);
   const promptsSnapshot = await userRef.collection('prompts').get();
 
-  await auth.deleteUser(uid);
-
   let batch = db.batch();
   let operationCount = 0;
   for (const doc of promptsSnapshot.docs) {
@@ -312,6 +310,8 @@ async function deleteUserAccount(authenticatedUser) {
 
   batch.delete(userRef);
   await batch.commit();
+
+  await auth.deleteUser(uid);
 }
 
 export {

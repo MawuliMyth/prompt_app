@@ -162,6 +162,59 @@ test('trial activation forwards the installation id', async () => {
   assert.equal(capturedInstallationId, 'install-1234567890abcdef');
 });
 
+test('trial activation surfaces invalid installation id errors', async () => {
+  const app = buildApp({
+    activateTrialForUser: async () => {
+      throw buildError(400, 'A valid installation ID is required.', 'installation-required');
+    },
+  });
+
+  const response = await request(app)
+    .post('/api/trial/activate')
+    .send({ installationId: 'bad-id' })
+    .expect(400);
+
+  assert.equal(response.body.code, 'installation-required');
+});
+
+test('trial activation surfaces email verification errors', async () => {
+  const app = buildApp({
+    activateTrialForUser: async () => {
+      throw buildError(
+        403,
+        'Verify your email before starting a free trial.',
+        'email-verification-required',
+      );
+    },
+  });
+
+  const response = await request(app)
+    .post('/api/trial/activate')
+    .send({ installationId: 'install-1234567890abcdef' })
+    .expect(403);
+
+  assert.equal(response.body.code, 'email-verification-required');
+});
+
+test('trial activation surfaces reused device errors', async () => {
+  const app = buildApp({
+    activateTrialForUser: async () => {
+      throw buildError(
+        409,
+        'This device has already used a free trial.',
+        'trial-device-already-used',
+      );
+    },
+  });
+
+  const response = await request(app)
+    .post('/api/trial/activate')
+    .send({ installationId: 'install-1234567890abcdef' })
+    .expect(409);
+
+  assert.equal(response.body.code, 'trial-device-already-used');
+});
+
 test('account deletion surfaces recent-login requirement', async () => {
   const app = buildApp({
     deleteUserAccount: async () => {
