@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
-import 'app_logo.dart';
+import '../constants/app_text_styles.dart';
 
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
@@ -20,6 +20,10 @@ class ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatarText = fallbackLabel.trim().isEmpty
+        ? 'P'
+        : fallbackLabel.trim()[0].toUpperCase();
+
     return Container(
       width: size,
       height: size,
@@ -38,24 +42,24 @@ class ProfileAvatar extends StatelessWidget {
                 height: size,
                 fit: BoxFit.cover,
                 fadeInDuration: const Duration(milliseconds: 120),
-                placeholder: (_, _) => _fallbackLogo(),
-                errorWidget: (_, _, _) => _fallbackLogo(),
+                placeholder: (_, _) => _fallbackText(avatarText),
+                errorWidget: (_, _, _) => _fallbackText(avatarText),
               ),
             )
-          : _fallbackLogo(),
+          : _fallbackText(avatarText),
     );
   }
 
-  Widget _fallbackLogo() {
-    return Padding(
-      padding: EdgeInsets.all(size * 0.18),
-      child: ClipOval(
-        child: Container(
-          color: Colors.white,
-          padding: EdgeInsets.all(size * 0.08),
-          child: AppLogo(
-            width: size * 0.7,
-            height: size * 0.7,
+  Widget _fallbackText(String avatarText) {
+    return Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          avatarText,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.title.copyWith(
+            color: Colors.white,
+            height: 1,
           ),
         ),
       ),
