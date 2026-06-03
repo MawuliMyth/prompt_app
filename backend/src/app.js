@@ -1,6 +1,11 @@
 import express from 'express';
 import multer from 'multer';
 import cors from 'cors';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function createApp({
   transcribeAudio,
@@ -15,6 +20,8 @@ function createApp({
   getAuthenticatedUser,
   recordEnhanceSuccess,
   createRateLimiter,
+  getSystemPrompts,
+  saveSystemPrompts,
   allowedOrigins = [
     'http://localhost:5000',
     'http://localhost:3000',
@@ -92,15 +99,32 @@ function createApp({
         }
       },
       credentials: true,
-      methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
     }),
   );
 
   app.use(express.json());
+  app.use('/static', express.static(path.join(__dirname, '..', 'public')));
 
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  app.get('/system-prompts', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'system-prompts.html'));
+  });
+
+  app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'privacy.html'));
+  });
+
+  app.get('/terms', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'terms.html'));
+  });
+
+  app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'favicon.ico'));
   });
 
   app.get('/api/app-config', (req, res) => {
@@ -108,6 +132,30 @@ function createApp({
       success: true,
       config: getAppConfig(),
     });
+  });
+
+  app.get('/api/system-prompts', async (req, res, next) => {
+    try {
+      const prompts = await getSystemPrompts();
+      res.json({
+        success: true,
+        prompts,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put('/api/system-prompts', async (req, res, next) => {
+    try {
+      const prompts = await saveSystemPrompts(req.body);
+      res.json({
+        success: true,
+        prompts,
+      });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.post(
@@ -143,7 +191,7 @@ function createApp({
 
   app.post('/api/enhance', enhanceRateLimit, async (req, res, next) => {
     try {
-      const { prompt, category, tone, persona } = req.body;
+      const { prompt, category, tone, persona, aiTool } = req.body;
 
       if (!prompt || prompt.trim().length === 0) {
         return res.status(400).json({
@@ -154,7 +202,7 @@ function createApp({
 
       const accessContext = await checkEnhanceAccess(req);
       console.log(
-        `Enhancing prompt for category: ${category || 'General'}, authType: ${accessContext.type}, hasPremium: ${accessContext.hasPremium === true}, tone: ${tone || 'Auto'}`,
+        `Enhancing prompt for category: ${category || 'General'}, authType: ${accessContext.type}, hasPremium: ${accessContext.hasPremium === true}, tone: ${tone || 'Auto'}, aiTool: ${aiTool || 'Cursor'}`,
       );
 
       const enhancedPrompt = await enhancePrompt(
@@ -163,6 +211,7 @@ function createApp({
         accessContext.hasPremium === true,
         tone || 'Auto',
         persona || null,
+        aiTool || 'Cursor',
       );
 
       await recordEnhanceSuccess(accessContext);

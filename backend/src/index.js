@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 import { createApp } from './app.js';
 import { getAppConfig } from './config/appConfig.js';
+import { db } from './config/firebaseAdmin.js';
 import { transcribeAudio } from './services/groq.js';
 import { enhancePrompt, generateVariations } from './services/claude.js';
+import { createSystemPromptStore } from './services/systemPrompts.js';
 import {
   activateTrialForUser,
   checkEnhanceAccess,
@@ -17,6 +19,7 @@ import { createRateLimiter } from './middleware/rateLimiter.js';
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
+const systemPromptStore = createSystemPromptStore(db);
 
 const app = createApp({
   transcribeAudio,
@@ -31,6 +34,8 @@ const app = createApp({
   getAuthenticatedUser,
   recordEnhanceSuccess,
   createRateLimiter,
+  getSystemPrompts: () => systemPromptStore.getSystemPrompts(),
+  saveSystemPrompts: (payload) => systemPromptStore.saveSystemPrompts(payload),
 });
 
 app.listen(PORT, '0.0.0.0', () => {

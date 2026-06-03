@@ -15,8 +15,8 @@ function buildApp(overrides = {}) {
 
   return createApp({
     transcribeAudio: async () => 'transcribed text',
-    enhancePrompt: async (prompt, category, isPremium, tone, persona) =>
-      `${prompt}|${category}|${isPremium}|${tone}|${persona}`,
+    enhancePrompt: async (prompt, category, isPremium, tone, persona, aiTool) =>
+      `${prompt}|${category}|${isPremium}|${tone}|${persona}|${aiTool}`,
     generateVariations: async () => ['one', 'two', 'three'],
     getAppConfig: () => ({
       categories: [{ id: 'general', label: 'General' }],
@@ -41,6 +41,25 @@ function buildApp(overrides = {}) {
     }),
     recordEnhanceSuccess: async () => {},
     createRateLimiter: noopRateLimiter,
+    getSystemPrompts: async () => ({
+      enhance: {
+        role: 'role',
+        task: 'task',
+        personaTemplate: 'User context: {{persona}}.',
+        rules: ['Rule 1', 'Rule 2'],
+        categoryLineTemplate: 'For the category "{{category}}": {{instruction}}',
+        toneLineTemplate: 'Tone requirement: {{toneInstruction}}',
+        closingInstruction: 'Transform it.',
+      },
+      variations: {
+        intro: 'intro',
+        styles: ['formal', 'creative', 'concise'],
+        categoryLineTemplate: 'For the category "{{category}}": {{instruction}}',
+        outputInstruction: 'Return JSON only.',
+        exampleOutput: '["one","two","three"]',
+      },
+    }),
+    saveSystemPrompts: async (payload) => payload,
     allowedOrigins: ['http://localhost:3000'],
     ...overrides,
   });
@@ -62,6 +81,79 @@ test('app config endpoint returns config payload', async () => {
 
   assert.equal(response.body.success, true);
   assert.equal(response.body.config.categories[0].id, 'general');
+});
+
+test('system prompt editor page is served', async () => {
+  const app = buildApp();
+
+  const response = await request(app).get('/system-prompts').expect(200);
+
+  assert.match(response.text, /System prompt editor/i);
+  assert.match(response.text, /Run enhance test/i);
+});
+
+test('privacy policy page is served from the backend', async () => {
+  const app = buildApp();
+
+  const response = await request(app).get('/privacy').expect(200);
+
+  assert.match(response.text, /Privacy Policy/i);
+  assert.match(response.text, /Prompt App/i);
+});
+
+test('terms page is served from the backend', async () => {
+  const app = buildApp();
+
+  const response = await request(app).get('/terms').expect(200);
+
+  assert.match(response.text, /Terms and Conditions/i);
+  assert.match(response.text, /Prompt App/i);
+});
+
+test('system prompts endpoint returns prompt payload', async () => {
+  const app = buildApp();
+
+  const response = await request(app).get('/api/system-prompts').expect(200);
+
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.prompts.enhance.role, 'role');
+});
+
+test('system prompts can be updated', async () => {
+  let savedPayload = null;
+  const app = buildApp({
+    saveSystemPrompts: async (payload) => {
+      savedPayload = payload;
+      return payload;
+    },
+  });
+
+  const payload = {
+    enhance: {
+      role: 'new role',
+      task: 'new task',
+      personaTemplate: 'User context: {{persona}}.',
+      rules: ['Only answer', 'Keep intent'],
+      categoryLineTemplate: 'For the category "{{category}}": {{instruction}}',
+      toneLineTemplate: 'Tone requirement: {{toneInstruction}}',
+      closingInstruction: 'Rewrite it.',
+    },
+    variations: {
+      intro: 'Create three versions.',
+      styles: ['FORMAL', 'CREATIVE', 'CONCISE'],
+      categoryLineTemplate: 'For the category "{{category}}": {{instruction}}',
+      outputInstruction: 'Return JSON.',
+      exampleOutput: '["a","b","c"]',
+    },
+  };
+
+  const response = await request(app)
+    .put('/api/system-prompts')
+    .send(payload)
+    .expect(200);
+
+  assert.deepEqual(savedPayload, payload);
+  assert.equal(response.body.prompts.enhance.task, 'new task');
 });
 
 test('enhance rejects empty prompt', async () => {
@@ -98,9 +190,9 @@ test('enhance passes server-side premium access to the model service', async () 
       type: 'user',
       hasPremium: true,
     }),
-    enhancePrompt: async (prompt, category, isPremium, tone, persona) => {
+    enhancePrompt: async (prompt, category, isPremium, tone, persona, aiTool) => {
       capturedIsPremium = isPremium;
-      return `${prompt}:${category}:${tone}:${persona}`;
+      return `${prompt}:${category}:${tone}:${persona}:${aiTool}`;
     },
   });
 
@@ -108,11 +200,12 @@ test('enhance passes server-side premium access to the model service', async () 
     .post('/api/enhance')
     .send({
       prompt: 'hello',
-      category: 'Coding',
-      tone: 'Technical',
-      persona: 'Engineer',
-      isPremium: false,
-    })
+        category: 'Coding',
+        tone: 'Technical',
+        persona: 'Engineer',
+        aiTool: 'Claude Code',
+        isPremium: false,
+      })
     .expect(200);
 
   assert.equal(capturedIsPremium, true);
