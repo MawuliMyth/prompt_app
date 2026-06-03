@@ -110,6 +110,15 @@ test('terms page is served from the backend', async () => {
   assert.match(response.text, /Prompt App/i);
 });
 
+test('delete account page is served from the backend', async () => {
+  const app = buildApp();
+
+  const response = await request(app).get('/delete-account').expect(200);
+
+  assert.match(response.text, /Delete Your Account/i);
+  assert.match(response.text, /Prompt App/i);
+});
+
 test('system prompts endpoint returns prompt payload', async () => {
   const app = buildApp();
 

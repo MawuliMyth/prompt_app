@@ -123,6 +123,10 @@ function createApp({
     res.sendFile(path.join(__dirname, '..', 'public', 'terms.html'));
   });
 
+  app.get('/delete-account', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'delete-account.html'));
+  });
+
   app.get('/favicon.ico', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'favicon.ico'));
   });
