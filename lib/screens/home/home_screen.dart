@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
+import '../../core/widgets/premium_aware_banner_ad.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../providers/shell_provider.dart';
@@ -122,6 +123,9 @@ class _FloatingShell extends StatelessWidget {
                     ),
                   ),
                 ),
+              const PremiumAwareBannerAd(
+                margin: EdgeInsets.only(bottom: 12),
+              ),
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppConstants.radiusFloating),
                 child: BackdropFilter(

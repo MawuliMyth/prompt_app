@@ -14,6 +14,7 @@ import 'providers/premium_provider.dart';
 import 'providers/daily_limit_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'providers/shell_provider.dart';
+import 'data/services/ad_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,8 @@ void main() async {
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
   }
+
+  await AdService.initialize();
 
   runApp(
     MultiProvider(
