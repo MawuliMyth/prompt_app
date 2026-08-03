@@ -14,11 +14,55 @@
       },
       "oauth_client": [
         {
-          "client_id": "436678880838-d104s27vcq1hqem26rm0emf52akhc0g9.apps.googleusercontent.com",
+          "client_id": "436678880838-qhqdn9r1lcuqjgjrt8uiecb6fkqqo6hu.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.promt_app",
-            "certificate_hash": "cb521619a4c986370393d7ca7b87d074d6ddf690"
+            "certificate_hash": "8833c5a4fd231e942401b3e258f1a5cf0e5a0dec"
+          }
+        },
+        {
+          "client_id": "436678880838-goq9ki04q9mvq0vm7svoagt8lvaek6bo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2dAOCTxsy4upPv8gDMCPZkZmyJl2L3Kk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "436678880838-goq9ki04q9mvq0vm7svoagt8lvaek6bo.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "436678880838-icrm6lvp1iaqu3bdv67uioeinaap8r9r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.promtApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436678880838:android:3a912e0dc8376a15a62447",
+        "android_client_info": {
+          "package_name": "com.josephmensah.promptapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "436678880838-jirt8fu7622mlaa49ual4ei3ul0dnuvq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.josephmensah.promptapp",
+            "certificate_hash": "8833c5a4fd231e942401b3e258f1a5cf0e5a0dec"
           }
         },
         {

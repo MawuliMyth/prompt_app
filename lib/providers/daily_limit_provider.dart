@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../data/services/daily_limit_service.dart';
 
 class DailyLimitProvider extends ChangeNotifier {
@@ -14,6 +15,7 @@ class DailyLimitProvider extends ChangeNotifier {
   int get dailyPromptsUsed => _dailyPromptsUsed;
   int get remainingPrompts => _remainingPrompts;
   bool get hasReachedLimit => _hasReachedLimit;
+  bool get canUsePrompt => !_hasReachedLimit;
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get dailyLimit => DailyLimitService.freeDailyLimit;
@@ -50,6 +52,12 @@ class DailyLimitProvider extends ChangeNotifier {
     }
     notifyListeners();
     return true;
+  }
+
+  Future<void> consumePromptUse() async {
+    if (!_hasReachedLimit) {
+      await incrementUsage();
+    }
   }
 
   /// Reset the daily counter

@@ -31,12 +31,14 @@ class ResultScreen extends StatefulWidget {
     required this.originalText,
     required this.enhancedPrompt,
     required this.category,
+    this.aiTool = 'Cursor',
     this.existingPrompt,
   });
 
   final String originalText;
   final String enhancedPrompt;
   final String category;
+  final String aiTool;
   final PromptModel? existingPrompt;
 
   @override
@@ -114,6 +116,7 @@ class _ResultScreenState extends State<ResultScreen>
         originalText: widget.originalText,
         enhancedPrompt: widget.enhancedPrompt,
         category: widget.category,
+        aiTool: widget.aiTool,
         strengthScore: _strengthScore,
         createdAt: DateTime.now(),
         userId: authProvider.currentUser!.uid,
@@ -274,7 +277,10 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   void _copyToClipboard() async {
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    final premiumProvider = Provider.of<PremiumProvider>(
+      context,
+      listen: false,
+    );
     await Clipboard.setData(ClipboardData(text: widget.enhancedPrompt));
     trackAnalytics(
       () => analyticsService.logPromptCopied(
@@ -312,7 +318,9 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   Future<void> _sharePrompt() async {
-    trackAnalytics(() => analyticsService.logPromptShared(category: widget.category));
+    trackAnalytics(
+      () => analyticsService.logPromptShared(category: widget.category),
+    );
     await SharePlus.instance.share(ShareParams(text: widget.enhancedPrompt));
   }
 
@@ -396,9 +404,7 @@ class _ResultScreenState extends State<ResultScreen>
                 const SizedBox(height: AppConstants.spacing8),
                 Text(
                   'We will copy your prompt, then open the AI destination you choose.',
-                  style: AppTextStyles.body.copyWith(
-                    color: theme.hintColor,
-                  ),
+                  style: AppTextStyles.body.copyWith(color: theme.hintColor),
                 ),
                 const SizedBox(height: AppConstants.spacing20),
                 _AiTargetTile(
@@ -541,6 +547,15 @@ class _ResultScreenState extends State<ResultScreen>
                     children: [
                       // Strength Meter
                       _buildStrengthMeter(theme, isSmallScreen),
+                      const SizedBox(height: AppConstants.spacing12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _buildSpecialistBadge(),
+                      ),
+                      if (widget.category == 'Coding') ...[
+                        const SizedBox(height: AppConstants.spacing12),
+                        _buildCodingPasteTip(theme),
+                      ],
                       const SizedBox(height: AppConstants.spacing24),
 
                       // Original Card
@@ -637,6 +652,124 @@ class _ResultScreenState extends State<ResultScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildSpecialistBadge() {
+    final icon = _badgeIcon();
+    final text = widget.category == 'Coding'
+        ? 'Optimized for ${widget.aiTool}'
+        : 'Enhanced by ${_specialistLabel()} Specialist';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryLight.withValues(alpha: 0.24),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: AppTextStyles.caption.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCodingPasteTip(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.spacing16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConstants.radiusCard),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.flash_on_outlined,
+              color: AppColors.primaryLight,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: AppConstants.spacing12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Best results tip',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Paste this into ${widget.aiTool}, then attach any relevant files or errors before you ask for implementation.',
+                  style: AppTextStyles.body.copyWith(color: theme.hintColor),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _specialistLabel() {
+    if (widget.category == 'Image' || widget.category == 'Image Generation') {
+      return 'Image';
+    }
+    return widget.category;
+  }
+
+  IconData _badgeIcon() {
+    if (widget.category == 'Coding') {
+      return switch (widget.aiTool) {
+        'Cursor' => Icons.code,
+        'Claude Code' => Icons.terminal,
+        'GitHub Copilot' => Icons.hub_outlined,
+        'Bolt/Lovable' => Icons.bolt,
+        'Bolt / Lovable' => Icons.bolt,
+        'ChatGPT' => Icons.smart_toy_outlined,
+        'Gemini' => Icons.auto_awesome,
+        _ => Icons.code,
+      };
+    }
+
+    if (widget.category == 'Writing') {
+      return Icons.edit_outlined;
+    }
+    if (widget.category == 'Image' || widget.category == 'Image Generation') {
+      return Icons.image_outlined;
+    }
+    if (widget.category == 'Business') {
+      return Icons.work_outline;
+    }
+    return Icons.auto_awesome;
   }
 
   Widget _buildOriginalCard(ThemeData theme, bool isSmallScreen) {
@@ -765,10 +898,7 @@ class _ResultScreenState extends State<ResultScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (_isLoadingVariations)
-                      const ShimmerPulse(
-                        width: 92,
-                        height: 16,
-                      )
+                      const ShimmerPulse(width: 92, height: 16)
                     else ...[
                       Icon(
                         hasPremium
@@ -808,10 +938,8 @@ class _ResultScreenState extends State<ResultScreen>
                     hint: 'Tap to copy this variation',
                     button: true,
                     child: GestureDetector(
-                      onTap: () => _copyVariationToClipboard(
-                        _variations![index],
-                        index,
-                      ),
+                      onTap: () =>
+                          _copyVariationToClipboard(_variations![index], index),
                       child: Container(
                         padding: const EdgeInsets.all(AppConstants.spacing16),
                         decoration: BoxDecoration(

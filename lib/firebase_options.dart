@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyC2dAOCTxsy4upPv8gDMCPZkZmyJl2L3Kk',
-    appId: '1:436678880838:android:785f430b0bcaeab2a62447',
+    appId: '1:436678880838:android:3a912e0dc8376a15a62447',
     messagingSenderId: '436678880838',
     projectId: 'prompt-5a926',
     storageBucket: 'prompt-5a926.firebasestorage.app',

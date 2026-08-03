@@ -1,4 +1,4 @@
-package com.example.promt_app
+package com.josephmensah.promptapp
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -560,6 +560,7 @@ class PromptHistoryCard extends StatelessWidget {
                 originalText: prompt.originalText,
                 enhancedPrompt: prompt.enhancedPrompt,
                 category: prompt.category,
+                aiTool: prompt.aiTool ?? 'Cursor',
                 existingPrompt: prompt,
               ),
             ),

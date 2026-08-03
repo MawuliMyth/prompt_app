@@ -55,10 +55,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   final List<_FeatureRow> _features = const [
     _FeatureRow('Daily prompts', '10/day', 'Unlimited'),
-    _FeatureRow('Voice recording', 'Up to 3 min', 'Unlimited'),
-    _FeatureRow('AI model depth', 'Standard', 'Advanced'),
+    _FeatureRow('AI Model', 'Standard', 'Advanced'),
+    _FeatureRow('Voice recordings', '3/day', 'Unlimited'),
+    _FeatureRow('AI tool optimization', 'Basic', 'Deep'),
+    _FeatureRow('Specialist personas', 'Basic', 'Expert level'),
     _FeatureRow('Prompt variations', 'No', 'Yes'),
-    _FeatureRow('Tone selector', 'No', 'Yes'),
+    _FeatureRow('Tone selector', 'Auto only', 'All tones'),
     _FeatureRow('Prompt history', 'Last 10', 'Unlimited'),
     _FeatureRow('Analytics', 'No', 'Yes'),
     _FeatureRow('Custom persona', 'No', 'Yes'),
@@ -159,15 +161,23 @@ class _PaywallScreenState extends State<PaywallScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Go Premium',
+            'Ship Faster with Premium',
             style: AppTextStyles.headingLarge.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 8),
           Text(
-            'Unlock your full prompt workflow',
+            'Unlock the full power of AI-optimized prompts for every tool you use',
             style: AppTextStyles.body.copyWith(
               color: Colors.white.withValues(alpha: 0.9),
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Free gives you limited access. Premium unlocks deeper optimization, more control, and unlimited usage.',
+            style: AppTextStyles.caption.copyWith(
+              color: Colors.white.withValues(alpha: 0.82),
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -467,8 +477,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
           requiresVerificationForTrial
               ? 'Verify your email first, then return here to start your free trial.'
               : trialUsed
-               ? '$priceText. Purchase integration is coming next.'
-               : 'Then $priceText. Cancel anytime.',
+              ? '$priceText. Purchase integration is coming next.'
+              : 'Then $priceText. Cancel anytime.',
           style: AppTextStyles.caption.copyWith(color: secondaryText),
           textAlign: TextAlign.center,
         ),
@@ -501,11 +511,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: AppColors.primaryLight,
-        ),
+        Icon(icon, size: 14, color: AppColors.primaryLight),
         const SizedBox(width: 4),
         Text(
           text,
@@ -534,7 +540,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
     final authProvider = context.read<AuthProvider>();
     final navigator = Navigator.of(context);
     final selectedPlan = _plans[_selectedPlanIndex];
-    final selectedPrice = double.tryParse(selectedPlan.price.replaceAll(r'$', '')) ?? 0;
+    final selectedPrice =
+        double.tryParse(selectedPlan.price.replaceAll(r'$', '')) ?? 0;
 
     if (!authProvider.isAuthenticated) {
       if (trialUsed) {

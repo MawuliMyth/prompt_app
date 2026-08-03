@@ -27,6 +27,7 @@ class FreePromptProvider extends ChangeNotifier {
   int get used => _used;
   int get remaining => maxFreePrompts - _used;
   bool get hasReachedLimit => _used >= maxFreePrompts;
+  bool get canUsePrompt => !hasReachedLimit;
 
   Future<void> loadCount() async {
     final prefs = await SharedPreferences.getInstance();
@@ -40,6 +41,18 @@ class FreePromptProvider extends ChangeNotifier {
     await _resetIfNewDay(prefs);
     _used++;
     await prefs.setInt(_key, _used);
+    notifyListeners();
+  }
+
+  Future<void> consumePromptUse() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _resetIfNewDay(prefs);
+
+    if (_used < maxFreePrompts) {
+      _used++;
+      await prefs.setInt(_key, _used);
+    }
+
     notifyListeners();
   }
 

@@ -56,10 +56,7 @@ class AnalyticsService {
     await _guard(
       () => _analytics.logEvent(
         name: 'prompt_copied',
-        parameters: {
-          'category': category,
-          'is_premium': isPremium.toString(),
-        },
+        parameters: {'category': category, 'is_premium': isPremium.toString()},
       ),
     );
   }
@@ -85,7 +82,9 @@ class AnalyticsService {
     await _guard(() => _analytics.logEvent(name: 'voice_recording_started'));
   }
 
-  Future<void> logVoiceRecordingCompleted({required int durationSeconds}) async {
+  Future<void> logVoiceRecordingCompleted({
+    required int durationSeconds,
+  }) async {
     await _guard(
       () => _analytics.logEvent(
         name: 'voice_recording_completed',
@@ -108,6 +107,24 @@ class AnalyticsService {
       () => _analytics.logEvent(
         name: 'tone_selected',
         parameters: {'tone': tone},
+      ),
+    );
+  }
+
+  Future<void> logAIToolSelected({required String toolName}) async {
+    await _guard(
+      () => _analytics.logEvent(
+        name: 'ai_tool_selected',
+        parameters: {'tool_name': toolName},
+      ),
+    );
+  }
+
+  Future<void> logSpecialistCategoryUsed({required String category}) async {
+    await _guard(
+      () => _analytics.logEvent(
+        name: 'specialist_category_used',
+        parameters: {'category': category},
       ),
     );
   }
@@ -188,10 +205,7 @@ class AnalyticsService {
     await _guard(
       () => _analytics.logEvent(
         name: 'template_used',
-        parameters: {
-          'template_name': templateName,
-          'category': category,
-        },
+        parameters: {'template_name': templateName, 'category': category},
       ),
     );
   }

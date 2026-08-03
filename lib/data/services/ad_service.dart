@@ -13,11 +13,9 @@ class AdService {
 
   static const String _configuredAndroidBannerId = String.fromEnvironment(
     'ADMOB_ANDROID_BANNER_ID',
-    defaultValue: _androidTestBannerId,
   );
   static const String _configuredIosBannerId = String.fromEnvironment(
     'ADMOB_IOS_BANNER_ID',
-    defaultValue: _iosTestBannerId,
   );
 
   static Future<void> initialize() async {
@@ -32,8 +30,18 @@ class AdService {
 
   static String? get bannerAdUnitId {
     if (kIsWeb) return null;
-    if (Platform.isAndroid) return _configuredAndroidBannerId;
-    if (Platform.isIOS) return _configuredIosBannerId;
+    if (Platform.isAndroid) {
+      if (_configuredAndroidBannerId.isNotEmpty) {
+        return _configuredAndroidBannerId;
+      }
+      return kReleaseMode ? null : _androidTestBannerId;
+    }
+    if (Platform.isIOS) {
+      if (_configuredIosBannerId.isNotEmpty) {
+        return _configuredIosBannerId;
+      }
+      return kReleaseMode ? null : _iosTestBannerId;
+    }
     return null;
   }
 }

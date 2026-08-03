@@ -7,6 +7,7 @@ class PromptModel { // nullable for guest users
     required this.originalText,
     required this.enhancedPrompt,
     required this.category,
+    this.aiTool,
     required this.strengthScore,
     this.isFavourite = false,
     required this.createdAt,
@@ -19,6 +20,7 @@ class PromptModel { // nullable for guest users
       originalText: map['originalText'] ?? '',
       enhancedPrompt: map['enhancedPrompt'] ?? '',
       category: map['category'] ?? 'General',
+      aiTool: map['aiTool'],
       strengthScore: map['strengthScore']?.toInt() ?? 0,
       isFavourite: map['isFavourite'] ?? false,
       createdAt: map['createdAt'] != null
@@ -33,6 +35,7 @@ class PromptModel { // nullable for guest users
   final String originalText;
   final String enhancedPrompt;
   final String category;
+  final String? aiTool;
   final int strengthScore;
   final bool isFavourite;
   final DateTime createdAt;
@@ -43,6 +46,7 @@ class PromptModel { // nullable for guest users
       'originalText': originalText,
       'enhancedPrompt': enhancedPrompt,
       'category': category,
+      'aiTool': aiTool,
       'strengthScore': strengthScore,
       'isFavourite': isFavourite,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -55,6 +59,7 @@ class PromptModel { // nullable for guest users
     String? originalText,
     String? enhancedPrompt,
     String? category,
+    String? aiTool,
     int? strengthScore,
     bool? isFavourite,
     DateTime? createdAt,
@@ -65,6 +70,7 @@ class PromptModel { // nullable for guest users
       originalText: originalText ?? this.originalText,
       enhancedPrompt: enhancedPrompt ?? this.enhancedPrompt,
       category: category ?? this.category,
+      aiTool: aiTool ?? this.aiTool,
       strengthScore: strengthScore ?? this.strengthScore,
       isFavourite: isFavourite ?? this.isFavourite,
       createdAt: createdAt ?? this.createdAt,

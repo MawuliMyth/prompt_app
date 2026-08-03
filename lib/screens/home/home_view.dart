@@ -60,132 +60,146 @@ class HomeView extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 210),
         children: [
-                Row(
-                  children: [
-                    const Spacer(),
-                    _HomeStatusIdentity(
-                      authProvider: authProvider,
-                      premiumProvider: premiumProvider,
-                      displayName: displayName,
-                      onTap: () => shellProvider.selectTab(3),
+          Row(
+            children: [
+              const Spacer(),
+              _HomeStatusIdentity(
+                authProvider: authProvider,
+                premiumProvider: premiumProvider,
+                displayName: displayName,
+                onTap: () => shellProvider.selectTab(3),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spacing32),
+          Text(
+            'Build faster with better prompts',
+            style: AppTextStyles.heroGreeting.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacing8),
+          Text(
+            'Turn your rough ideas into prompts that AI actually understands',
+            style: AppTextStyles.body.copyWith(color: theme.hintColor),
+          ),
+          const SizedBox(height: AppConstants.spacing16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: const [
+                _HeroTag(icon: Icons.code, label: 'Built for Cursor'),
+                SizedBox(width: AppConstants.spacing8),
+                _HeroTag(icon: Icons.terminal, label: 'Ready for Claude Code'),
+                SizedBox(width: AppConstants.spacing8),
+                _HeroTag(icon: Icons.hub_outlined, label: 'Sharp in Copilot'),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacing24),
+          if (!premiumProvider.hasPremiumAccess) ...[
+            _PremiumStatusCard(
+              isPremium: premiumProvider.hasPremiumAccess,
+              trialUsed: premiumProvider.trialUsed,
+              onTap: () =>
+                  PlatformUtils.navigateTo(context, const PaywallScreen()),
+            ),
+            const SizedBox(height: AppConstants.spacing24),
+          ],
+          _FeatureMosaic(
+            features: homeFeatures,
+            onAction: (feature) async {
+              switch (feature.actionType) {
+                case 'voice':
+                  if (!authProvider.isAuthenticated) {
+                    final shouldSignIn = await AdaptiveDialog.show(
+                      context: context,
+                      title: 'Sign in to use voice',
+                      content:
+                          'Voice recording is available after sign in. Guest mode can still use typed prompts.',
+                      cancelText: 'Not now',
+                      confirmText: 'Sign In',
+                    );
+                    if (shouldSignIn == true && context.mounted) {
+                      await PlatformUtils.navigateTo(
+                        context,
+                        const LoginScreen(),
+                      );
+                    }
+                    break;
+                  }
+
+                  final transcript = await Navigator.of(context).push<String>(
+                    PlatformUtils.adaptivePageRoute(
+                      const VoiceAssessmentScreen(),
                     ),
-                  ],
+                  );
+                  if (transcript != null && context.mounted) {
+                    shellProvider.openComposer(initialText: transcript);
+                  }
+                  break;
+                case 'analytics':
+                  await PlatformUtils.navigateTo(
+                    context,
+                    const AnalyticsScreen(),
+                  );
+                  break;
+                case 'templates':
+                  shellProvider.selectTab(2);
+                  break;
+                case 'compose':
+                default:
+                  shellProvider.openComposer();
+                  break;
+              }
+            },
+          ),
+          const SizedBox(height: AppConstants.spacing32),
+          Row(
+            children: [
+              Text(
+                'Templates',
+                style: AppTextStyles.heading.copyWith(
+                  color: theme.colorScheme.onSurface,
                 ),
-                const SizedBox(height: AppConstants.spacing32),
-                Text(
-                  authProvider.isAuthenticated
-                      ? 'How can I assist you today, $displayName?'
-                      : 'How can I assist you today?',
-                  style: AppTextStyles.heroGreeting.copyWith(
-                    color: theme.colorScheme.onSurface,
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => shellProvider.selectTab(2),
+                child: Text(
+                  'See all',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: theme.hintColor,
                   ),
                 ),
-                const SizedBox(height: AppConstants.spacing24),
-                if (!premiumProvider.hasPremiumAccess) ...[
-                   _PremiumStatusCard(
-                     isPremium: premiumProvider.hasPremiumAccess,
-                     trialUsed: premiumProvider.trialUsed,
-                     onTap: () => PlatformUtils.navigateTo(
-                       context,
-                       const PaywallScreen(),
-                     ),
-                   ),
-                  const SizedBox(height: AppConstants.spacing24),
-                ],
-                _FeatureMosaic(
-                  features: homeFeatures,
-                  onAction: (feature) async {
-                    switch (feature.actionType) {
-                      case 'voice':
-                        if (!authProvider.isAuthenticated) {
-                          final shouldSignIn = await AdaptiveDialog.show(
-                            context: context,
-                            title: 'Sign in to use voice',
-                            content:
-                                'Voice recording is available after sign in. Guest mode can still use typed prompts.',
-                            cancelText: 'Not now',
-                            confirmText: 'Sign In',
-                          );
-                          if (shouldSignIn == true && context.mounted) {
-                            await PlatformUtils.navigateTo(
-                              context,
-                              const LoginScreen(),
-                            );
-                          }
-                          break;
-                        }
-
-                        final transcript = await Navigator.of(context).push<String>(
-                          PlatformUtils.adaptivePageRoute(
-                            const VoiceAssessmentScreen(),
-                          ),
-                        );
-                        if (transcript != null && context.mounted) {
-                          shellProvider.openComposer(initialText: transcript);
-                        }
-                        break;
-                      case 'analytics':
-                        await PlatformUtils.navigateTo(
-                          context,
-                          const AnalyticsScreen(),
-                        );
-                        break;
-                      case 'templates':
-                        shellProvider.selectTab(2);
-                        break;
-                      case 'compose':
-                      default:
-                        shellProvider.openComposer();
-                        break;
-                    }
-                  },
-                ),
-                const SizedBox(height: AppConstants.spacing32),
-                Row(
-                  children: [
-                    Text(
-                      'Templates',
-                      style: AppTextStyles.heading.copyWith(
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => shellProvider.selectTab(2),
-                      child: Text(
-                        'See all',
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: theme.hintColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppConstants.spacing16),
-                SizedBox(
-                  height: 112,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: quickTemplates.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(width: AppConstants.spacing12),
-                    itemBuilder: (context, index) {
-                      final template = quickTemplates[index];
-                      return SizedBox(
-                        width: 180,
-                        child: _QuickTemplateTile(
-                          template: template,
-                          onTap: () {
-                            shellProvider.openComposer(
-                              initialText: template.promptBody,
-                              categoryId: template.categoryId,
-                            );
-                          },
-                        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spacing16),
+          SizedBox(
+            height: 112,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: quickTemplates.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(width: AppConstants.spacing12),
+              itemBuilder: (context, index) {
+                final template = quickTemplates[index];
+                return SizedBox(
+                  width: 180,
+                  child: _QuickTemplateTile(
+                    template: template,
+                    onTap: () {
+                      shellProvider.openComposer(
+                        initialText: template.promptBody,
+                        categoryId: template.categoryId,
                       );
                     },
                   ),
-                ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -344,6 +358,41 @@ class _PremiumStatusCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HeroTag extends StatelessWidget {
+  const _HeroTag({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.primaryLight),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

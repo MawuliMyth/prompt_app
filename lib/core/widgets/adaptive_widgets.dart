@@ -476,24 +476,29 @@ class AdaptiveListTile extends StatelessWidget {
       );
     }
 
-    return ListTile(
-      leading: leading,
-      title: Text(
-        title,
-        style: AppTextStyles.body.copyWith(color: theme.colorScheme.onSurface),
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        leading: leading,
+        title: Text(
+          title,
+          style: AppTextStyles.body.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        subtitle: subtitle != null
+            ? Text(
+                subtitle!,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+              )
+            : null,
+        trailing: trailing,
+        onTap: onTap,
+        contentPadding:
+            contentPadding ?? const EdgeInsets.symmetric(horizontal: 24),
       ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondaryLight,
-              ),
-            )
-          : null,
-      trailing: trailing,
-      onTap: onTap,
-      contentPadding:
-          contentPadding ?? const EdgeInsets.symmetric(horizontal: 24),
     );
   }
 }

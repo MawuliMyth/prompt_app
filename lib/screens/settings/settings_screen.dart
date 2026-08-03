@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/config/api_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
@@ -18,10 +19,8 @@ import '../paywall/paywall_screen.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  static const String _privacyPolicyUrl =
-      'https://promptapp-legal.netlify.app/privacy.html';
-  static const String _termsUrl =
-      'https://promptapp-legal.netlify.app/terms.html';
+  static String get _privacyPolicyUrl => '${ApiConfig.baseUrl}/privacy';
+  static String get _termsUrl => '${ApiConfig.baseUrl}/terms';
 
   Future<void> _handleSignOut(
     BuildContext context,
@@ -176,14 +175,14 @@ class SettingsScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                               ProfileAvatar(
-                                 photoUrl: authProvider.currentUser?.photoURL,
-                                 fallbackLabel:
-                                     (authProvider.currentUser?.displayName ??
-                                             authProvider.currentUser?.email ??
-                                             'P')
-                                         .trim(),
-                               ),
+                              ProfileAvatar(
+                                photoUrl: authProvider.currentUser?.photoURL,
+                                fallbackLabel:
+                                    (authProvider.currentUser?.displayName ??
+                                            authProvider.currentUser?.email ??
+                                            'P')
+                                        .trim(),
+                              ),
                               const SizedBox(width: AppConstants.spacing16),
                               Expanded(
                                 child: Column(
@@ -220,8 +219,10 @@ class SettingsScreen extends StatelessWidget {
                               ),
                             ),
                           ],
-                          if (!(authProvider.currentUser?.emailVerified ?? true) &&
-                              (authProvider.currentUser?.email?.isNotEmpty ?? false)) ...[
+                          if (!(authProvider.currentUser?.emailVerified ??
+                                  true) &&
+                              (authProvider.currentUser?.email?.isNotEmpty ??
+                                  false)) ...[
                             const SizedBox(height: AppConstants.spacing16),
                             Container(
                               width: double.infinity,
@@ -252,7 +253,9 @@ class SettingsScreen extends StatelessWidget {
                                       color: theme.hintColor,
                                     ),
                                   ),
-                                  const SizedBox(height: AppConstants.spacing16),
+                                  const SizedBox(
+                                    height: AppConstants.spacing16,
+                                  ),
                                   Row(
                                     children: [
                                       Expanded(
@@ -262,16 +265,16 @@ class SettingsScreen extends StatelessWidget {
                                           onPressed: authProvider.isLoading
                                               ? null
                                               : () async {
-                                                  final success =
-                                                      await authProvider
-                                                          .resendEmailVerification();
+                                                  final success = await authProvider
+                                                      .resendEmailVerification();
                                                   if (!context.mounted) return;
                                                   if (success) {
                                                     SnackbarUtils.showSuccess(
                                                       context,
                                                       'Verification email sent.',
                                                     );
-                                                  } else if (authProvider.error !=
+                                                  } else if (authProvider
+                                                          .error !=
                                                       null) {
                                                     SnackbarUtils.showError(
                                                       context,
@@ -281,7 +284,9 @@ class SettingsScreen extends StatelessWidget {
                                                 },
                                         ),
                                       ),
-                                      const SizedBox(width: AppConstants.spacing12),
+                                      const SizedBox(
+                                        width: AppConstants.spacing12,
+                                      ),
                                       Expanded(
                                         child: AdaptiveButton(
                                           label: 'Refresh',
@@ -344,10 +349,7 @@ class SettingsScreen extends StatelessWidget {
                                           authProvider,
                                         ),
                                 ),
-                                Divider(
-                                  height: 1,
-                                  color: theme.dividerColor,
-                                ),
+                                Divider(height: 1, color: theme.dividerColor),
                                 AdaptiveListTile(
                                   leading: Icon(
                                     Icons.delete_outline_rounded,
@@ -439,6 +441,8 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppConstants.spacing24),
+            const _CustomPersonaSection(),
+            const SizedBox(height: AppConstants.spacing24),
             _SettingsGroup(
               title: 'About',
               child: Padding(
@@ -529,6 +533,109 @@ class _SettingsGroup extends StatelessWidget {
           child: child,
         ),
       ],
+    );
+  }
+}
+
+class _CustomPersonaSection extends StatefulWidget {
+  const _CustomPersonaSection();
+
+  @override
+  State<_CustomPersonaSection> createState() => _CustomPersonaSectionState();
+}
+
+class _CustomPersonaSectionState extends State<_CustomPersonaSection> {
+  late final TextEditingController _controller;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _controller.text = context.read<PremiumProvider>().userData?.persona ?? '';
+    _initialized = true;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final premiumProvider = context.watch<PremiumProvider>();
+
+    return _SettingsGroup(
+      title: 'Custom AI Persona',
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.spacing16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Help Prompt shape responses around your workflow and preferred context.',
+              style: AppTextStyles.body.copyWith(color: theme.hintColor),
+            ),
+            const SizedBox(height: AppConstants.spacing16),
+            AdaptiveTextField(
+              controller: _controller,
+              maxLines: 3,
+              minLines: 3,
+              hintText:
+                  'e.g. I\'m a Flutter developer who builds mobile apps using Firebase and prefers clean architecture',
+            ),
+            const SizedBox(height: AppConstants.spacing12),
+            Text(
+              'Try coding-focused context first, like your stack, architecture, testing style, and the kind of apps you build.',
+              style: AppTextStyles.caption.copyWith(color: theme.hintColor),
+            ),
+            const SizedBox(height: AppConstants.spacing16),
+            if (premiumProvider.hasPremiumAccess)
+              SizedBox(
+                width: double.infinity,
+                child: AdaptiveButton(
+                  label: 'Save Persona',
+                  isLoading: premiumProvider.isLoading,
+                  onPressed: () async {
+                    final persona = _controller.text.trim();
+                    final success = await context
+                        .read<PremiumProvider>()
+                        .updatePersona(persona.isEmpty ? null : persona);
+                    if (!context.mounted) return;
+                    if (success) {
+                      SnackbarUtils.showSuccess(context, 'Persona updated.');
+                    } else {
+                      SnackbarUtils.showError(
+                        context,
+                        context.read<PremiumProvider>().error ??
+                            'Failed to update persona.',
+                      );
+                    }
+                  },
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: AdaptiveButton(
+                  label: 'Unlock with Premium',
+                  onPressed: () => PlatformUtils.navigateTo(
+                    context,
+                    const PaywallScreen(trigger: 'settings_persona'),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

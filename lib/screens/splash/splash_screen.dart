@@ -26,21 +26,22 @@ class _SplashScreenState extends State<SplashScreen>
 
   final List<Map<String, String>> _onboardingData = [
     {
-      'title': 'Speak Your Mind',
-      'subtitle': 'Just talk naturally. No need to be formal or perfect.',
+      'title': 'Speak Your Idea',
+      'subtitle':
+          'Just describe what you want to build or create. No need to be technical or precise.',
       'icon': 'mic',
     },
     {
-      'title': 'AI Does The Magic',
+      'title': 'AI Specialist Optimizes It',
       'subtitle':
-          'We instantly transform your rough idea into a professional prompt.',
+          'Our specialist AI transforms your rough idea into a perfect prompt crafted for your exact tool and task.',
       'icon': 'auto_awesome',
     },
     {
-      'title': 'Use It Anywhere',
+      'title': 'Get It Right First Try',
       'subtitle':
-          'Copy your perfect prompt and paste it into any AI tool you love.',
-      'icon': 'content_copy',
+          'Paste into Cursor, Claude Code, Midjourney or any AI tool and get exactly what you wanted.',
+      'icon': 'rocket_launch',
     },
   ];
 
@@ -118,8 +119,8 @@ class _SplashScreenState extends State<SplashScreen>
         return Icons.mic;
       case 'auto_awesome':
         return Icons.auto_awesome;
-      case 'content_copy':
-        return Icons.content_copy;
+      case 'rocket_launch':
+        return Icons.rocket_launch;
       default:
         return Icons.info;
     }

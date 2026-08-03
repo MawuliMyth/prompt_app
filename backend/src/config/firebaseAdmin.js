@@ -1,4 +1,22 @@
+import 'dotenv/config';
 import admin from 'firebase-admin';
+
+function detectProjectId() {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (serviceAccountJson) {
+    const parsed = JSON.parse(serviceAccountJson);
+    if (parsed.project_id) {
+      return parsed.project_id;
+    }
+  }
+
+  return (
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.GCLOUD_PROJECT ||
+    process.env.GOOGLE_CLOUD_PROJECT ||
+    null
+  );
+}
 
 function buildCredential() {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -28,6 +46,7 @@ function buildCredential() {
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: buildCredential(),
+    projectId: detectProjectId() || undefined,
   });
 }
 

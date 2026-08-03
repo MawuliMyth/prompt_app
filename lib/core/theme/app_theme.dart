@@ -10,6 +10,7 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.light,
       useMaterial3: true,
+      splashFactory: InkRipple.splashFactory,
       primaryColor: AppColors.primaryLight,
       scaffoldBackgroundColor: AppColors.backgroundLight,
       hintColor: AppColors.textSecondaryLight,
@@ -121,6 +122,7 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
+      splashFactory: InkRipple.splashFactory,
       primaryColor: AppColors.primaryDark,
       scaffoldBackgroundColor: AppColors.backgroundDark,
       hintColor: AppColors.textSecondaryDark,

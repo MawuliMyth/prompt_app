@@ -116,7 +116,10 @@ Widget buildTestApp({
         value: themeProvider ?? ThemeProvider(),
       ),
     ],
-    child: MaterialApp(home: child),
+    child: MaterialApp(
+      theme: ThemeData(splashFactory: InkRipple.splashFactory),
+      home: child,
+    ),
   );
 }
 
@@ -200,7 +203,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Go Premium'), findsOneWidget);
+      expect(find.text('Ship Faster with Premium'), findsOneWidget);
       expect(find.text('Choose your plan'), findsOneWidget);
       expect(find.text('Compare plans'), findsOneWidget);
       expect(find.text('Start 3-Day Free Trial'), findsOneWidget);

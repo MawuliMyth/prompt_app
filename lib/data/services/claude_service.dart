@@ -63,6 +63,7 @@ class ClaudeService {
     bool isAuthenticated = false,
     String tone = 'Auto',
     String? persona,
+    String aiTool = 'Cursor',
   }) async {
     try {
       final uri = Uri.parse(ApiConfig.enhanceEndpoint);
@@ -79,7 +80,7 @@ class ClaudeService {
       if (kDebugMode) {
         debugPrint('Sending enhancement request to $uri');
         debugPrint(
-          'Category: $category, Prompt length: ${roughPrompt.length}, isPremium: $isPremium, tone: $tone',
+          'Category: $category, Prompt length: ${roughPrompt.length}, isPremium: $isPremium, tone: $tone, aiTool: $aiTool',
         );
       }
 
@@ -92,6 +93,7 @@ class ClaudeService {
               'category': category,
               'tone': tone,
               'persona': persona,
+              'aiTool': aiTool,
             }),
           )
           .timeout(_httpTimeout);
