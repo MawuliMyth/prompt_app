@@ -27,6 +27,12 @@ function buildApp(overrides = {}) {
       visualAssets: [],
     }),
     activateTrialForUser: async () => {},
+    verifyGoogleSubscription: async ({ productId }) => ({
+      active: true,
+      productId,
+      planType: 'monthly',
+      expiryTime: '2026-09-16T00:00:00.000Z',
+    }),
     checkEnhanceAccess: async () => ({
       type: 'guest',
       hasPremium: false,
@@ -40,6 +46,9 @@ function buildApp(overrides = {}) {
       decodedToken: { uid: 'user-123' },
     }),
     recordEnhanceSuccess: async () => {},
+    requireAdmin: async () => ({
+      decodedToken: { uid: 'admin-1', email: 'admin@example.com' },
+    }),
     createRateLimiter: noopRateLimiter,
     getSystemPrompts: async () => ({
       enhance: {
@@ -165,6 +174,33 @@ test('system prompts can be updated', async () => {
   assert.equal(response.body.prompts.enhance.task, 'new task');
 });
 
+test('system prompts GET requires admin access', async () => {
+  const app = buildApp({
+    requireAdmin: async () => {
+      throw buildError(403, 'Admin access required.', 'admin-required');
+    },
+  });
+
+  const response = await request(app).get('/api/system-prompts').expect(403);
+
+  assert.equal(response.body.code, 'admin-required');
+});
+
+test('system prompts PUT requires admin access', async () => {
+  const app = buildApp({
+    requireAdmin: async () => {
+      throw buildError(401, 'Please sign in as an admin to continue.', 'auth-required');
+    },
+  });
+
+  const response = await request(app)
+    .put('/api/system-prompts')
+    .send({})
+    .expect(401);
+
+  assert.equal(response.body.code, 'auth-required');
+});
+
 test('enhance rejects empty prompt', async () => {
   const app = buildApp();
 
@@ -244,6 +280,35 @@ test('trial activation requires authentication', async () => {
   const response = await request(app).post('/api/trial/activate').expect(401);
 
   assert.equal(response.body.code, 'auth-required');
+});
+
+test('subscription verification requires authentication', async () => {
+  const app = buildApp({ getAuthenticatedUser: async () => null });
+
+  const response = await request(app)
+    .post('/api/subscriptions/google/verify')
+    .send({
+      productId: 'prompt_premium_monthly',
+      purchaseToken: 'valid-looking-purchase-token',
+    })
+    .expect(401);
+
+  assert.equal(response.body.code, 'auth-required');
+});
+
+test('subscription verification returns the verified entitlement', async () => {
+  const app = buildApp();
+
+  const response = await request(app)
+    .post('/api/subscriptions/google/verify')
+    .send({
+      productId: 'prompt_premium_monthly',
+      purchaseToken: 'valid-looking-purchase-token',
+    })
+    .expect(200);
+
+  assert.equal(response.body.active, true);
+  assert.equal(response.body.planType, 'monthly');
 });
 
 test('trial activation forwards the installation id', async () => {
@@ -335,4 +400,19 @@ test('transcribe requires audio upload', async () => {
   const response = await request(app).post('/api/transcribe').expect(400);
 
   assert.equal(response.body.error, 'No audio file provided');
+});
+
+test('transcribe enforces the same access check as enhance', async () => {
+  const app = buildApp({
+    checkEnhanceAccess: async () => {
+      throw buildError(429, 'You have reached the guest daily limit. Sign in for more prompts.', 'guest-limit-reached');
+    },
+  });
+
+  const response = await request(app)
+    .post('/api/transcribe')
+    .attach('audio', Buffer.from('fake-audio-bytes'), 'clip.webm')
+    .expect(429);
+
+  assert.equal(response.body.code, 'guest-limit-reached');
 });

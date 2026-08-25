@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { admin, auth, db } from '../config/firebaseAdmin.js';
+import { auth, db, FieldValue } from '../config/firebaseAdmin.js';
 
 const FREE_DAILY_LIMIT = 10;
 const GUEST_DAILY_LIMIT = 5;
@@ -9,10 +9,14 @@ const userCollection = db.collection('users');
 const trialInstallationCollection = db.collection('trialInstallations');
 
 function getClientIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0].trim();
-  }
+  // req.ip is computed by Express from the actual socket address unless
+  // `app.set('trust proxy', ...)` has been explicitly configured (see
+  // app.js), in which case Express itself safely parses X-Forwarded-For
+  // using only the trusted hop count. We deliberately do NOT read
+  // X-Forwarded-For directly here - an attacker fully controls that header
+  // on any request that doesn't pass through a trusted proxy, which would
+  // let them spoof a fresh IP on every request and defeat rate limiting and
+  // the guest daily quota below.
   return req.ip || req.socket?.remoteAddress || 'unknown';
 }
 
@@ -22,8 +26,17 @@ function getDateKey(date = new Date()) {
 
 function hashIp(ip) {
   const envSalt = process.env.GUEST_USAGE_SALT;
-  if (!envSalt && process.env.NODE_ENV === 'production') {
-    throw new Error('GUEST_USAGE_SALT is required in production');
+  // Fail closed: require an explicit salt unless we're clearly running
+  // locally. Previously this only refused the hardcoded fallback when
+  // NODE_ENV was the exact string 'production', so an unset/misconfigured
+  // NODE_ENV in a real deployment would silently use a salt that is public
+  // in this repository, undermining guest-abuse hashing entirely.
+  const isLocalDev =
+    process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+  if (!envSalt && !isLocalDev) {
+    throw new Error(
+      'GUEST_USAGE_SALT is required outside local development. Set NODE_ENV=development to use the local fallback salt.',
+    );
   }
   const salt = envSalt || 'prompt-app-local-salt';
   return crypto.createHash('sha256').update(`${salt}:${ip}`).digest('hex');
@@ -131,13 +144,53 @@ function requireRecentSignIn(decodedToken) {
   }
 }
 
+/// Compute how many prompts the user has used today, respecting the daily
+/// reset boundary. Shared by checkEnhanceAccess (pre-flight check, before we
+/// spend money on a Claude call) and recordEnhanceSuccess (the transactional,
+/// authoritative increment) so the two can't drift out of sync.
+function getCurrentDailyUsage(userData) {
+  if (!userData?.dailyPromptsResetDate) {
+    return 0;
+  }
+
+  const resetDate = userData.dailyPromptsResetDate.toDate
+    ? userData.dailyPromptsResetDate.toDate()
+    : new Date(userData.dailyPromptsResetDate);
+  const now = new Date();
+
+  const isSameDay =
+    resetDate.getFullYear() === now.getFullYear() &&
+    resetDate.getMonth() === now.getMonth() &&
+    resetDate.getDate() === now.getDate();
+
+  return isSameDay ? (userData?.dailyPromptsUsed ?? 0) : 0;
+}
+
 async function checkEnhanceAccess(req) {
   const authenticatedUser = await getAuthenticatedUser(req);
   if (authenticatedUser) {
+    const hasPremium = hasPremiumAccess(authenticatedUser.userData);
+
+    // Check the free-tier daily quota BEFORE we spend money calling Claude,
+    // not just afterward in recordEnhanceSuccess. This is a best-effort
+    // pre-flight check against a possibly-slightly-stale read; the
+    // transaction in recordEnhanceSuccess remains the authoritative,
+    // race-safe enforcement.
+    if (!hasPremium) {
+      const currentUsed = getCurrentDailyUsage(authenticatedUser.userData);
+      if (currentUsed >= FREE_DAILY_LIMIT) {
+        throw createError(
+          429,
+          "You have reached today's free prompt limit.",
+          'daily-limit-reached',
+        );
+      }
+    }
+
     return {
       type: 'user',
       authenticatedUser,
-      hasPremium: hasPremiumAccess(authenticatedUser.userData),
+      hasPremium,
       userId: authenticatedUser.decodedToken.uid,
     };
   }
@@ -184,7 +237,7 @@ async function recordEnhanceSuccess(accessContext) {
 
       transaction.set(accessContext.guestRef, {
         count: currentCount + 1,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     });
     return;
@@ -199,25 +252,13 @@ async function recordEnhanceSuccess(accessContext) {
     };
 
     if (!accessContext.hasPremium) {
-      const now = new Date();
-      const resetDate = latestUserData?.dailyPromptsResetDate?.toDate
-        ? latestUserData.dailyPromptsResetDate.toDate()
-        : latestUserData?.dailyPromptsResetDate
-            ? new Date(latestUserData.dailyPromptsResetDate)
-            : null;
-
-      const isSameDay = resetDate &&
-        resetDate.getFullYear() === now.getFullYear() &&
-        resetDate.getMonth() === now.getMonth() &&
-        resetDate.getDate() === now.getDate();
-
-      const currentUsed = isSameDay ? (latestUserData?.dailyPromptsUsed ?? 0) : 0;
+      const currentUsed = getCurrentDailyUsage(latestUserData);
       if (currentUsed >= FREE_DAILY_LIMIT) {
         throw createError(429, 'You have reached today\'s free prompt limit.', 'daily-limit-reached');
       }
 
       updates.dailyPromptsUsed = currentUsed + 1;
-      updates.dailyPromptsResetDate = admin.firestore.FieldValue.serverTimestamp();
+      updates.dailyPromptsResetDate = FieldValue.serverTimestamp();
     }
 
     transaction.set(userRef, updates, { merge: true });
@@ -272,21 +313,49 @@ async function activateTrialForUser(authenticatedUser, installationId) {
     }
 
     transaction.set(userRef, {
-      trialStartDate: admin.firestore.FieldValue.serverTimestamp(),
+      trialStartDate: FieldValue.serverTimestamp(),
       trialUsed: true,
       isPremium: true,
       planType: 'trial',
       premiumExpiryDate: null,
       trialInstallationIdHash: hashInstallationId(normalizedInstallationId),
-      trialActivatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      trialActivatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
     transaction.set(installationRef, {
       uid: decodedToken.uid,
       email: decodedToken.email ?? null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   });
+}
+
+/// Gate access to admin-only endpoints (currently: reading/writing the
+/// system prompts that drive every user's Claude request). Requires a
+/// verified Firebase ID token belonging to an account listed in the
+/// ADMIN_EMAILS env var, or one carrying a custom `admin: true` claim.
+async function requireAdmin(req) {
+  const authenticatedUser = await getAuthenticatedUser(req);
+  if (!authenticatedUser) {
+    throw createError(401, 'Please sign in as an admin to continue.', 'auth-required');
+  }
+
+  const { decodedToken } = authenticatedUser;
+  const adminEmails = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+  const isAdmin =
+    decodedToken.admin === true ||
+    (typeof decodedToken.email === 'string' &&
+      adminEmails.includes(decodedToken.email.toLowerCase()));
+
+  if (!isAdmin) {
+    throw createError(403, 'Admin access required.', 'admin-required');
+  }
+
+  return authenticatedUser;
 }
 
 async function deleteUserAccount(authenticatedUser) {
@@ -325,4 +394,5 @@ export {
   getAuthenticatedUser,
   getClientIp,
   recordEnhanceSuccess,
+  requireAdmin,
 };

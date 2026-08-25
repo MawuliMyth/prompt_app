@@ -243,6 +243,10 @@
       </section>
 
       <section class="status-bar">
+        <label style="display:flex; flex-direction:column; gap:4px; min-width:260px;">
+          <span class="label"><span>Admin ID token</span><span class="hint">Firebase ID token for an admin account (see ADMIN_EMAILS)</span></span>
+          <input id="adminToken" type="password" autocomplete="off" placeholder="Paste a signed-in admin's Firebase ID token" />
+        </label>
         <div id="status" class="status">Loading prompt configuration...</div>
         <div class="actions">
           <button class="ghost" type="button" id="reloadButton">Reload</button>
@@ -364,6 +368,16 @@
       const clearEnhanceButton = document.getElementById('clearEnhanceButton');
       const testStatusNode = document.getElementById('testStatus');
       const enhanceResultNode = document.getElementById('enhanceResult');
+      const adminTokenInput = document.getElementById('adminToken');
+
+      // GET/PUT /api/system-prompts require an admin-authenticated request
+      // (see backend/src/services/accessControl.js#requireAdmin). This page
+      // never stores the token (no localStorage) - it only lives in memory
+      // for the current page session.
+      function authHeaders(extra = {}) {
+        const token = adminTokenInput.value.trim();
+        return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+      }
 
       function setStatus(message, state = 'idle') {
         statusNode.textContent = message;
@@ -428,7 +442,9 @@
 
       async function loadPrompts() {
         setStatus('Loading prompt configuration...');
-        const response = await fetch('/api/system-prompts');
+        const response = await fetch('/api/system-prompts', {
+          headers: authHeaders(),
+        });
         const payload = await response.json();
 
         if (!response.ok || !payload.success) {
@@ -447,7 +463,7 @@
         try {
           const response = await fetch('/api/system-prompts', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(buildPayload()),
           });
           const payload = await response.json();
@@ -509,9 +525,7 @@
         });
       });
 
-      loadPrompts().catch((error) => {
-        setStatus(error.message || 'Failed to load system prompts.');
-      });
+      setStatus('Paste an admin ID token above, then press Reload.');
     </script>
   </body>
 </html>

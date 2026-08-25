@@ -13,8 +13,10 @@ import {
   deleteUserAccount,
   getAuthenticatedUser,
   recordEnhanceSuccess,
+  requireAdmin,
 } from './services/accessControl.js';
 import { createRateLimiter } from './middleware/rateLimiter.js';
+import { verifyGoogleSubscription } from './services/googlePlayBilling.js';
 
 dotenv.config();
 
@@ -27,12 +29,14 @@ const app = createApp({
   generateVariations,
   getAppConfig,
   activateTrialForUser,
+  verifyGoogleSubscription,
   checkEnhanceAccess,
   checkVariationAccess,
   createError,
   deleteUserAccount,
   getAuthenticatedUser,
   recordEnhanceSuccess,
+  requireAdmin,
   createRateLimiter,
   getSystemPrompts: () => systemPromptStore.getSystemPrompts(),
   saveSystemPrompts: (payload) => systemPromptStore.saveSystemPrompts(payload),

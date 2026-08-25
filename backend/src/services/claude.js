@@ -139,6 +139,15 @@ function createUpstreamBusyError() {
   return error;
 }
 
+function createUpstreamError() {
+  const error = new Error(
+    'The AI service could not complete this request. Please try again.',
+  );
+  error.status = 502;
+  error.code = 'upstream-error';
+  return error;
+}
+
 async function runAnthropicRequest(requestFactory) {
   const maxAttempts = 3;
 
@@ -155,7 +164,11 @@ async function runAnthropicRequest(requestFactory) {
         if (isRetryableAnthropicError(error)) {
           throw createUpstreamBusyError();
         }
-        throw error;
+        // Never forward the raw Anthropic SDK error to the client - it can
+        // include upstream details (e.g. an "invalid x-api-key" message on
+        // a misconfigured key) that shouldn't leak to end users. Full
+        // detail is already logged above for operators.
+        throw createUpstreamError();
       }
 
       const delayMs = 400 * attempt;
@@ -164,42 +177,6 @@ async function runAnthropicRequest(requestFactory) {
   }
 
   throw createUpstreamBusyError();
-}
-
-async function getSystemPrompt(category, tone = 'Auto', persona = null) {
-  const resolvedCategory = normalizeCategory(category);
-  const resolvedTone = normalizeTone(tone);
-  const promptConfig = await systemPromptStore.getSystemPrompts();
-
-  let personaContext = '';
-  if (persona && persona.trim()) {
-    personaContext = `\n\n${promptConfig.enhance.personaTemplate.replace('{{persona}}', persona.trim())}`;
-  }
-
-  let toneInstruction = '';
-  if (resolvedTone && resolvedTone !== 'Auto' && toneInstructions[resolvedTone]) {
-    toneInstruction = `\n\n${promptConfig.enhance.toneLineTemplate.replace('{{toneInstruction}}', toneInstructions[resolvedTone])}`;
-  }
-
-  const rules = promptConfig.enhance.rules
-    .map((rule, index) => `${index + 1}. ${rule}`)
-    .join('\n');
-  const categoryLine = promptConfig.enhance.categoryLineTemplate
-    .replace('{{category}}', resolvedCategory)
-    .replace(
-      '{{instruction}}',
-      categoryInstructions[resolvedCategory] || categoryInstructions.General,
-    );
-
-  return `${promptConfig.enhance.role}
-${personaContext}
-${promptConfig.enhance.task}
-
-STRICT RULES:
-${rules}
-${promptConfig.enhance.rules.length + 1}. ${categoryLine}${toneInstruction}
-
-${promptConfig.enhance.closingInstruction}`;
 }
 
 function createSpecialistPrompt(category, aiTool) {

@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
-import '../../core/widgets/premium_aware_banner_ad.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../providers/shell_provider.dart';
@@ -114,27 +114,27 @@ class _FloatingShell extends StatelessWidget {
                       AppConstants.radiusControl,
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Offline mode. Some actions may be unavailable.',
-                    style: TextStyle(
+                    style: AppTextStyles.caption.copyWith(
                       color: Colors.white,
-                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-              const PremiumAwareBannerAd(
-                margin: EdgeInsets.only(bottom: 12),
-              ),
               ClipRRect(
-                borderRadius: BorderRadius.circular(AppConstants.radiusFloating),
+                borderRadius: BorderRadius.circular(
+                  AppConstants.radiusFloating,
+                ),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                     decoration: BoxDecoration(
                       color: theme.brightness == Brightness.dark
-                          ? AppColors.floatingSurfaceDark.withValues(alpha: 0.78)
+                          ? AppColors.floatingSurfaceDark.withValues(
+                              alpha: 0.78,
+                            )
                           : AppColors.surfaceLight.withValues(alpha: 0.72),
                       borderRadius: BorderRadius.circular(
                         AppConstants.radiusFloating,
@@ -310,8 +310,7 @@ class _ShellItem extends StatelessWidget {
             Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
+              style: AppTextStyles.navigationLabel.copyWith(
                 color: selected ? theme.colorScheme.onSurface : theme.hintColor,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               ),

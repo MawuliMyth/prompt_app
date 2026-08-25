@@ -18,8 +18,8 @@ class FakeAuthRepository implements AuthRepositoryBase {
   Object? passwordResetError;
   Object? deleteError;
   Object? emailVerificationError;
-  Map<String, dynamic>? googleResult;
-  Map<String, dynamic>? appleResult;
+  SocialSignInResult? googleResult;
+  SocialSignInResult? appleResult;
   int signOutCalls = 0;
   int emailVerificationCalls = 0;
   int reloadCalls = 0;
@@ -52,9 +52,9 @@ class FakeAuthRepository implements AuthRepositoryBase {
   }
 
   @override
-  Future<Map<String, dynamic>?> signInWithApple() async {
+  Future<SocialSignInResult> signInWithApple() async {
     if (appleError != null) throw appleError!;
-    return appleResult;
+    return appleResult ?? const SocialSignInResult(cancelled: true);
   }
 
   @override
@@ -64,9 +64,9 @@ class FakeAuthRepository implements AuthRepositoryBase {
   }
 
   @override
-  Future<Map<String, dynamic>?> signInWithGoogle() async {
+  Future<SocialSignInResult> signInWithGoogle() async {
     if (googleError != null) throw googleError!;
-    return googleResult;
+    return googleResult ?? const SocialSignInResult(cancelled: true);
   }
 
   @override
@@ -143,7 +143,7 @@ void main() {
     });
 
     test('Google cancellation does not count as failure', () async {
-      authRepository.googleResult = {'credential': null, 'cancelled': true};
+      authRepository.googleResult = const SocialSignInResult(cancelled: true);
 
       final success = await provider.signInWithGoogle();
 

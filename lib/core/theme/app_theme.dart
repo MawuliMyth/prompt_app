@@ -23,6 +23,14 @@ class AppTheme {
       ),
       dividerColor: AppColors.dividerLight,
       fontFamily: 'Manrope',
+      textTheme: AppTextStyles.textTheme.apply(
+        bodyColor: AppColors.textPrimaryLight,
+        displayColor: AppColors.textPrimaryLight,
+      ),
+      primaryTextTheme: AppTextStyles.textTheme.apply(
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -102,7 +110,10 @@ class AppTheme {
         backgroundColor: AppColors.surfaceLight,
         selectedColor: AppColors.primaryLight,
         labelStyle: AppTextStyles.caption,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.spacing12,
+          vertical: AppConstants.spacing8,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusChip),
         ),
@@ -137,6 +148,14 @@ class AppTheme {
       ),
       dividerColor: AppColors.dividerDark,
       fontFamily: 'Manrope',
+      textTheme: AppTextStyles.textTheme.apply(
+        bodyColor: AppColors.textPrimaryDark,
+        displayColor: AppColors.textPrimaryDark,
+      ),
+      primaryTextTheme: AppTextStyles.textTheme.apply(
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -216,7 +235,10 @@ class AppTheme {
         backgroundColor: AppColors.surfaceDark,
         selectedColor: AppColors.primaryDark,
         labelStyle: AppTextStyles.caption,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.spacing12,
+          vertical: AppConstants.spacing8,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusChip),
         ),

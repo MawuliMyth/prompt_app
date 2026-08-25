@@ -5,6 +5,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../constants/app_constants.dart';
 import 'adaptive_widgets.dart';
+import '../../data/services/daily_limit_service.dart';
 import '../../screens/paywall/paywall_screen.dart';
 
 class DailyLimitSheet {
@@ -88,7 +89,7 @@ class _DailyLimitContent extends StatelessWidget {
 
           // Subtitle
           Text(
-            'You have used all 10 free prompts today. Your limit resets at midnight.',
+            'You have used all ${DailyLimitService.freeDailyLimit} free prompts today. Your limit resets at midnight.',
             style: AppTextStyles.body.copyWith(
               color: AppColors.textSecondaryLight,
             ),

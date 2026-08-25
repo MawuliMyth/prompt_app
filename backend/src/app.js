@@ -13,6 +13,7 @@ function createApp({
   generateVariations,
   getAppConfig,
   activateTrialForUser,
+  verifyGoogleSubscription,
   checkEnhanceAccess,
   checkVariationAccess,
   createError,
@@ -22,6 +23,7 @@ function createApp({
   createRateLimiter,
   getSystemPrompts,
   saveSystemPrompts,
+  requireAdmin,
   allowedOrigins = [
     'http://localhost:5000',
     'http://localhost:3000',
@@ -29,6 +31,19 @@ function createApp({
   ].filter(Boolean),
 }) {
   const app = express();
+
+  // Only trust X-Forwarded-For when explicitly configured with the number of
+  // hops (or a preset like 'loopback') for a known, real reverse proxy in
+  // front of this app. With no proxy in front (the default), req.ip falls
+  // back to the actual socket address, which can't be spoofed by the
+  // client - unlike a blindly-trusted X-Forwarded-For header, which would
+  // let any caller present a fresh IP on every request and defeat both the
+  // per-IP rate limiters and the guest daily quota below.
+  if (process.env.TRUST_PROXY) {
+    const trustProxy = process.env.TRUST_PROXY;
+    const numericHops = Number(trustProxy);
+    app.set('trust proxy', Number.isFinite(numericHops) ? numericHops : trustProxy);
+  }
 
   const storage = multer.memoryStorage();
   const upload = multer({
@@ -87,6 +102,11 @@ function createApp({
     windowMs: 60 * 60 * 1000,
     maxRequests: 10,
   });
+  const adminRateLimit = createRateLimiter({
+    keyPrefix: 'admin',
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 30,
+  });
 
   app.use(
     cors({
@@ -138,8 +158,12 @@ function createApp({
     });
   });
 
-  app.get('/api/system-prompts', async (req, res, next) => {
+  // Admin-only: these endpoints read/write the system prompts that drive
+  // every user's Claude request, so they must never be reachable
+  // anonymously (see accessControl.js#requireAdmin).
+  app.get('/api/system-prompts', adminRateLimit, async (req, res, next) => {
     try {
+      await requireAdmin(req);
       const prompts = await getSystemPrompts();
       res.json({
         success: true,
@@ -150,8 +174,9 @@ function createApp({
     }
   });
 
-  app.put('/api/system-prompts', async (req, res, next) => {
+  app.put('/api/system-prompts', adminRateLimit, async (req, res, next) => {
     try {
+      await requireAdmin(req);
       const prompts = await saveSystemPrompts(req.body);
       res.json({
         success: true,
@@ -174,6 +199,14 @@ function createApp({
             error: 'No audio file provided',
           });
         }
+
+        // Reuse the same guest/authenticated daily-quota eligibility check
+        // used by /api/enhance so an anonymous caller can't rack up
+        // unlimited (paid) Whisper transcriptions purely off the rate
+        // limiter above. This intentionally does NOT record/increment
+        // usage - the prompt's actual quota consumption happens once, at
+        // /api/enhance time, when a prompt is actually produced.
+        await checkEnhanceAccess(req);
 
         console.log(
           `Transcribing audio: ${req.file.originalname}, size: ${req.file.size} bytes`,
@@ -274,6 +307,27 @@ function createApp({
     }
   });
 
+  app.post(
+    '/api/subscriptions/google/verify',
+    accountRateLimit,
+    async (req, res, next) => {
+      try {
+        const authenticatedUser = await getAuthenticatedUser(req);
+        if (!authenticatedUser) {
+          throw createError(401, 'Please sign in to verify a purchase.', 'auth-required');
+        }
+        const result = await verifyGoogleSubscription({
+          authenticatedUser,
+          productId: req.body?.productId,
+          purchaseToken: req.body?.purchaseToken,
+        });
+        res.json({ success: true, ...result });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
   app.delete('/api/account', accountRateLimit, async (req, res, next) => {
     try {
       const authenticatedUser = await getAuthenticatedUser(req);
@@ -296,7 +350,7 @@ function createApp({
     }
   });
 
-  app.use((error, req, res, next) => {
+  app.use((error, req, res, _next) => {
     if (error.status) {
       console.warn(
         'Handled request error:',

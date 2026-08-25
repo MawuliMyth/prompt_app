@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/utils/analytics.dart';
+import '../../data/services/analytics_bootstrap.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';

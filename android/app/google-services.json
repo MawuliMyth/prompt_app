@@ -58,11 +58,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "436678880838-btf6qao3n68vhpmqm2ui8hmj26mhrj06.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.josephmensah.promptapp",
+            "certificate_hash": "86f7d411aa42b2b556c37dc8c38b3cbb85a41c7c"
+          }
+        },
+        {
           "client_id": "436678880838-jirt8fu7622mlaa49ual4ei3ul0dnuvq.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.josephmensah.promptapp",
             "certificate_hash": "8833c5a4fd231e942401b3e258f1a5cf0e5a0dec"
+          }
+        },
+        {
+          "client_id": "436678880838-vt8oumpc21chkq82u8m4lpoaii41ncoc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.josephmensah.promptapp",
+            "certificate_hash": "cb521619a4c986370393d7ca7b87d074d6ddf690"
           }
         },
         {

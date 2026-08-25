@@ -48,7 +48,8 @@ class FakeAuthRepository implements AuthRepositoryBase {
   Future<void> sendEmailVerification() async {}
 
   @override
-  Future<Map<String, dynamic>?> signInWithApple() async => null;
+  Future<SocialSignInResult> signInWithApple() async =>
+      const SocialSignInResult(cancelled: true);
 
   @override
   Future<UserCredential> signInWithEmail(String email, String password) async {
@@ -56,7 +57,8 @@ class FakeAuthRepository implements AuthRepositoryBase {
   }
 
   @override
-  Future<Map<String, dynamic>?> signInWithGoogle() async => null;
+  Future<SocialSignInResult> signInWithGoogle() async =>
+      const SocialSignInResult(cancelled: true);
 
   @override
   Future<UserCredential> signUpWithEmail(
@@ -110,7 +112,10 @@ Widget buildTestApp({
       ChangeNotifierProvider<PremiumProvider>.value(
         value:
             premiumProvider ??
-            PremiumProvider(premiumService: FakePremiumService()),
+            PremiumProvider(
+              premiumService: FakePremiumService(),
+              initializeBilling: false,
+            ),
       ),
       ChangeNotifierProvider<ThemeProvider>.value(
         value: themeProvider ?? ThemeProvider(),

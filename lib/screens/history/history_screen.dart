@@ -154,7 +154,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             _buildLimitBanner(theme, allPrompts.length),
                           Expanded(
                             child: displayPrompts.isEmpty
-                                ? _buildEmptyHistory(theme)
+                                ? _buildEmptyHistory(theme, promptProvider)
                                 : ListView.builder(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: AppConstants.spacing24,
@@ -305,10 +305,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 AdaptiveButton(
                   label: 'Upgrade',
                   onPressed: () =>
-                      PlatformUtils.navigateTo(
-                        context,
-                        const PaywallScreen(),
-                      ),
+                      PlatformUtils.navigateTo(context, const PaywallScreen()),
                 ),
               ],
             ),
@@ -360,7 +357,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildEmptyHistory(ThemeData theme) {
+  Widget _buildEmptyHistory(ThemeData theme, PromptProvider promptProvider) {
+    // Distinguish "you genuinely have no history yet" from "your
+    // search/filter matched nothing" - previously this always said "Start
+    // creating prompts from the Home tab" even when the user had history
+    // but a search term or category filter just didn't match anything.
+    final hasActiveFilter =
+        _searchController.text.isNotEmpty ||
+        promptProvider.selectedCategoryFilter != 'All';
+    final title = hasActiveFilter ? 'No matches found' : 'No prompts found';
+    final subtitle = hasActiveFilter
+        ? 'Try a different search term or category filter.'
+        : 'Start creating prompts from the Home tab';
+
     return CustomScrollView(
       slivers: [
         SliverFillRemaining(
@@ -377,15 +386,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     color: AppColors.surfaceVariantLight,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.history,
+                  child: Icon(
+                    hasActiveFilter ? Icons.search_off : Icons.history,
                     size: 40,
                     color: AppColors.textSecondaryLight,
                   ),
                 ),
                 const SizedBox(height: AppConstants.spacing24),
                 Text(
-                  'No prompts found',
+                  title,
                   style: AppTextStyles.title.copyWith(
                     color: theme.colorScheme.onSurface,
                   ),
@@ -393,7 +402,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
                 const SizedBox(height: AppConstants.spacing8),
                 Text(
-                  'Start creating prompts from the Home tab',
+                  subtitle,
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
@@ -661,9 +670,8 @@ class PromptHistoryCard extends StatelessWidget {
               const SizedBox(height: AppConstants.spacing8),
               Text(
                 AppDateUtils.formatDateTime(prompt.createdAt),
-                style: AppTextStyles.caption.copyWith(
+                style: AppTextStyles.navigationLabel.copyWith(
                   color: AppColors.textSecondaryLight.withValues(alpha: 0.7),
-                  fontSize: 11,
                 ),
               ),
             ],

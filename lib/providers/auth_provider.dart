@@ -158,23 +158,16 @@ class AuthProvider extends ChangeNotifier {
       _setError(null);
       final result = await _authRepository.signInWithGoogle();
 
-      // result is null when user cancelled - don't count as failure
-      if (result == null) {
-        _setError(null); // Clear any previous error
-        return false;
-      }
-
-      final credential = result['credential'];
-      final wasCancelled = result['cancelled'] ?? false;
-
-      if (credential != null) {
+      if (result.credential != null) {
         _resetFailedAttempts();
         return true;
       }
 
       // User cancelled - don't count as failed attempt
-      if (!wasCancelled) {
+      if (!result.cancelled) {
         _incrementFailedAttempt();
+      } else {
+        _setError(null); // Clear any previous error
       }
       return false;
     } on FirebaseAuthException catch (e) {
@@ -202,23 +195,16 @@ class AuthProvider extends ChangeNotifier {
       _setError(null);
       final result = await _authRepository.signInWithApple();
 
-      // result is null when user cancelled or not supported
-      if (result == null) {
-        _setError(null); // Clear any previous error
-        return false;
-      }
-
-      final credential = result['credential'];
-      final wasCancelled = result['cancelled'] ?? false;
-
-      if (credential != null) {
+      if (result.credential != null) {
         _resetFailedAttempts();
         return true;
       }
 
       // User cancelled - don't count as failed attempt
-      if (!wasCancelled) {
+      if (!result.cancelled) {
         _incrementFailedAttempt();
+      } else {
+        _setError(null); // Clear any previous error
       }
       return false;
     } on FirebaseAuthException catch (e) {

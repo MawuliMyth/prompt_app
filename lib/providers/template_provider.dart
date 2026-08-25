@@ -1,23 +1,10 @@
-import 'package:flutter/material.dart';
-
-class TemplateProvider extends ChangeNotifier {
-  String? _selectedTemplateContent;
-  String? _selectedCategory;
-
-  String? get selectedTemplateContent => _selectedTemplateContent;
-  String? get selectedCategory => _selectedCategory;
-
-  bool get hasTemplate => _selectedTemplateContent != null;
-
-  void setTemplate(String content, String category) {
-    _selectedTemplateContent = content;
-    _selectedCategory = category;
-    notifyListeners();
-  }
-
-  void clearTemplate() {
-    _selectedTemplateContent = null;
-    _selectedCategory = null;
-    notifyListeners();
-  }
-}
+// DEPRECATED — DELETE THIS FILE.
+//
+// Dead code: `TemplateProvider` had zero consumers anywhere in the codebase
+// besides its own registration in main.dart, which has also been removed.
+// Removed during the QA fix pass. This stub is intentionally left empty
+// and unreferenced.
+//
+// The Claude device bridge cannot delete files on your machine, so please
+// remove this file manually:
+//   lib/providers/template_provider.dart

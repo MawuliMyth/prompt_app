@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/config/api_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/utils/analytics.dart';
+import '../../data/services/analytics_bootstrap.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
@@ -467,12 +468,24 @@ class SettingsScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Prompt v1',
-                          style: AppTextStyles.subtitle.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        // Was a hardcoded 'Prompt v1' string that would
+                        // silently drift from the real app version on every
+                        // release - read it from the platform package info
+                        // (backed by pubspec.yaml's version field) instead.
+                        FutureBuilder<PackageInfo>(
+                          future: PackageInfo.fromPlatform(),
+                          builder: (context, snapshot) {
+                            final version = snapshot.data?.version;
+                            return Text(
+                              version != null
+                                  ? '${AppConstants.appName} v$version'
+                                  : AppConstants.appName,
+                              style: AppTextStyles.subtitle.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

@@ -31,6 +31,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/android/build/
 /coverage/
 
 # Symbolication related
@@ -43,14 +44,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
 
 # Android signing
 android/key.properties
 android/app/prompt-release-key.jks
 *.jks
 *.keystore
+*.p12
+*.pem
+*.apk
+*.aab
 
 # Backend environment files
 backend/.env
+backend/.env.*
+!backend/.env.example
 backend/node_modules/
 backend/uploads/
+*.db
+*.sqlite
+*.sqlite3

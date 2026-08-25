@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/utils/analytics.dart';
+import '../../data/services/analytics_bootstrap.dart';
 import '../../core/utils/app_icon_mapper.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
@@ -27,6 +27,7 @@ import '../../providers/free_prompt_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../auth/login_screen.dart';
 import '../auth/signup_screen.dart';
+import '../paywall/paywall_screen.dart';
 import '../result/result_screen.dart';
 import 'voice_assessment_screen.dart';
 
@@ -257,122 +258,157 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
   }
 
   Future<void> _enhancePrompt() async {
-    final navigator = Navigator.of(context);
     final text = _controller.text.trim();
     if (text.isEmpty) return;
-    final effectivePrompt = _buildEffectivePrompt(text);
-
-    final connectivityProvider = context.read<ConnectivityProvider>();
-    if (!connectivityProvider.isOnline) {
-      SnackbarUtils.showError(
-        context,
-        'You appear to be offline. Check your connection and try again.',
-      );
-      return;
-    }
-
-    final configProvider = context.read<AppConfigProvider>();
-    final authProvider = context.read<AuthProvider>();
-    final premiumProvider = context.read<PremiumProvider>();
-    final freePromptProvider = context.read<FreePromptProvider>();
-    final dailyLimitProvider = context.read<DailyLimitProvider>();
-
-    if (!authProvider.isAuthenticated) {
-      if (!freePromptProvider.canUsePrompt) {
-        trackAnalytics(() => analyticsService.logGuestLimitReached());
-        final shouldSignUp = await AdaptiveDialog.show(
-          context: context,
-          title: 'Create an account',
-          content:
-              'You have used today\'s free guest prompts. Create an account to keep going.',
-          cancelText: 'Later',
-          confirmText: 'Sign up',
-        );
-        if (shouldSignUp == true && mounted) {
-          await PlatformUtils.navigateTo(context, const SignupScreen());
-        }
-        return;
-      }
-    } else if (!premiumProvider.hasPremiumAccess) {
-      await dailyLimitProvider.loadDailyUsage();
-      if (!mounted) return;
-      if (!dailyLimitProvider.canUsePrompt) {
-        trackAnalytics(() => analyticsService.logDailyLimitReached());
-        DailyLimitSheet.show(context);
-        return;
-      }
-    }
-
-    final category = configProvider.categories.firstWhere(
-      (item) => item.id == _selectedCategoryId,
-      orElse: () => configProvider.categories.first,
-    );
-    final tone = configProvider.tones.firstWhere(
-      (item) => item.id == _selectedToneId,
-      orElse: () => configProvider.tones.first,
-    );
-
-    HapticFeedback.lightImpact();
+    // Guard against double-submit: without this, a rapid double-tap could
+    // fire two enhance requests before the button visually disables, since
+    // several awaits below (e.g. loadDailyUsage) happen before _isProcessing
+    // was previously flipped to true. Set it synchronously, first thing.
+    if (_isProcessing) return;
     setState(() => _isProcessing = true);
 
-    final result = await _claudeService.enhancePrompt(
-      roughPrompt: effectivePrompt,
-      category: category.label,
-      isAuthenticated: authProvider.isAuthenticated,
-      tone: tone.label,
-      persona: premiumProvider.userData?.persona,
-      aiTool: _selectedAiTool,
-    );
+    final navigator = Navigator.of(context);
+    try {
+      final effectivePrompt = _buildEffectivePrompt(text);
 
-    if (!mounted) return;
-    setState(() => _isProcessing = false);
-
-    if (result['success'] == true) {
-      final enhancedPrompt = result['enhancedPrompt'] as String;
-      final strengthScore = StrengthCalculator.calculate(
-        text,
-        enhancedPrompt,
-        category.label,
-      );
-      trackAnalytics(
-        () => analyticsService.logPromptEnhanced(
-          category: category.label,
-          tone: tone.label,
-          isVoice: _usedVoiceInput,
-          isPremium: premiumProvider.hasPremiumAccess,
-          strengthScore: strengthScore,
-        ),
-      );
-      trackAnalytics(
-        () => analyticsService.logSpecialistCategoryUsed(
-          category: category.label,
-        ),
-      );
-      if (!authProvider.isAuthenticated) {
-        await freePromptProvider.consumePromptUse();
-      } else if (!premiumProvider.hasPremiumAccess) {
-        await dailyLimitProvider.consumePromptUse();
-        await dailyLimitProvider.loadDailyUsage();
-        if (!mounted) return;
+      final connectivityProvider = context.read<ConnectivityProvider>();
+      if (!connectivityProvider.isOnline) {
+        SnackbarUtils.showError(
+          context,
+          'You appear to be offline. Check your connection and try again.',
+        );
+        return;
       }
 
-      await navigator.push(
-        PlatformUtils.adaptivePageRoute(
-          ResultScreen(
-            originalText: text,
-            enhancedPrompt: enhancedPrompt,
-            category: category.label,
-            aiTool: _selectedAiTool,
-          ),
-        ),
-      );
-      return;
-    }
+      final configProvider = context.read<AppConfigProvider>();
+      final authProvider = context.read<AuthProvider>();
+      final premiumProvider = context.read<PremiumProvider>();
+      final freePromptProvider = context.read<FreePromptProvider>();
+      final dailyLimitProvider = context.read<DailyLimitProvider>();
 
-    SnackbarUtils.showError(
-      context,
-      result['error'] as String? ?? 'Something went wrong.',
-    );
+      if (!authProvider.isAuthenticated) {
+        if (!freePromptProvider.canUsePrompt) {
+          trackAnalytics(() => analyticsService.logGuestLimitReached());
+          final shouldSignUp = await AdaptiveDialog.show(
+            context: context,
+            title: 'Create an account',
+            content:
+                'You have used today\'s free guest prompts. Create an account to keep going.',
+            cancelText: 'Later',
+            confirmText: 'Sign up',
+          );
+          if (shouldSignUp == true && mounted) {
+            await PlatformUtils.navigateTo(context, const SignupScreen());
+          }
+          return;
+        }
+      } else if (!premiumProvider.hasPremiumAccess) {
+        await dailyLimitProvider.loadDailyUsage();
+        if (!mounted) return;
+        if (!dailyLimitProvider.canUsePrompt) {
+          trackAnalytics(() => analyticsService.logDailyLimitReached());
+          DailyLimitSheet.show(context);
+          return;
+        }
+      }
+
+      final category = configProvider.categories.firstWhere(
+        (item) => item.id == _selectedCategoryId,
+        orElse: () => configProvider.categories.first,
+      );
+      final tone = configProvider.tones.firstWhere(
+        (item) => item.id == _selectedToneId,
+        orElse: () => configProvider.tones.first,
+      );
+
+      HapticFeedback.lightImpact();
+
+      final result = await _claudeService.enhancePrompt(
+        roughPrompt: effectivePrompt,
+        // Send the stable backend id, not the display label, per
+        // architecture.md ("stable IDs, never display names as business
+        // identifiers"). The backend's normalizeCategory/normalizeTone
+        // already resolve either id or label, so this is a safe, purely
+        // client-side hardening - it just stops the request contract from
+        // silently breaking if copy/labels are ever renamed.
+        category: category.id,
+        isAuthenticated: authProvider.isAuthenticated,
+        tone: tone.id,
+        persona: premiumProvider.userData?.persona,
+        aiTool: _selectedAiTool,
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        final enhancedPrompt = result['enhancedPrompt'] as String;
+        final strengthScore = StrengthCalculator.calculate(
+          text,
+          enhancedPrompt,
+          category.label,
+        );
+        trackAnalytics(
+          () => analyticsService.logPromptEnhanced(
+            category: category.label,
+            tone: tone.label,
+            isVoice: _usedVoiceInput,
+            isPremium: premiumProvider.hasPremiumAccess,
+            strengthScore: strengthScore,
+          ),
+        );
+        trackAnalytics(
+          () => analyticsService.logSpecialistCategoryUsed(
+            category: category.label,
+          ),
+        );
+        if (!authProvider.isAuthenticated) {
+          await freePromptProvider.consumePromptUse();
+          if (!mounted) return;
+        } else if (!premiumProvider.hasPremiumAccess) {
+          await dailyLimitProvider.consumePromptUse();
+          await dailyLimitProvider.loadDailyUsage();
+          if (!mounted) return;
+        }
+
+        await navigator.push(
+          PlatformUtils.adaptivePageRoute(
+            ResultScreen(
+              originalText: text,
+              enhancedPrompt: enhancedPrompt,
+              category: category.label,
+              aiTool: _selectedAiTool,
+            ),
+          ),
+        );
+        return;
+      }
+
+      // The client already checks quota/premium before calling enhance, but
+      // the backend is the authoritative source of truth and can still
+      // reject with one of these codes (e.g. another device used up the
+      // day's quota in the meantime). Route to the same UI a proactive
+      // client-side check would have shown, instead of a generic error
+      // snackbar that leaves the user unsure what to do next.
+      final code = result['code'] as String?;
+      if ((code == 'daily-limit-reached' || code == 'guest-limit-reached') &&
+          mounted) {
+        DailyLimitSheet.show(context);
+      } else if (code == 'premium-required' && mounted) {
+        await PlatformUtils.navigateTo(
+          context,
+          const PaywallScreen(trigger: 'enhance_rejected'),
+        );
+      } else {
+        SnackbarUtils.showError(
+          context,
+          result['error'] as String? ?? 'Something went wrong.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
   }
 
   String _usageLabel(
@@ -890,11 +926,9 @@ class _PromptComposerScreenState extends State<PromptComposerScreen> {
                                     ),
                                     child: Text(
                                       'PRO',
-                                      style: AppTextStyles.caption.copyWith(
+                                      style: AppTextStyles.badge.copyWith(
                                         color: Colors.white,
-                                        fontSize: 9,
                                         fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                   ),

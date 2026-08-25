@@ -16,12 +16,6 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-val admobAndroidTestAppId = "ca-app-pub-3940256099942544~3347511713"
-val admobAndroidAppId = providers.gradleProperty("ADMOB_ANDROID_APP_ID")
-    .orElse(providers.environmentVariable("ADMOB_ANDROID_APP_ID"))
-    .orNull
-    ?.takeIf { it.isNotBlank() }
-
 android {
     namespace = "com.josephmensah.promptapp"
     compileSdk = 36
@@ -42,8 +36,6 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["adMobApplicationId"] =
-            admobAndroidAppId ?: admobAndroidTestAppId
     }
 
     signingConfigs {
@@ -65,12 +57,6 @@ android {
 
     buildTypes {
         release {
-            if (admobAndroidAppId == null) {
-                throw GradleException(
-                    "Release builds require a real ADMOB_ANDROID_APP_ID. " +
-                        "Pass -PADMOB_ANDROID_APP_ID=ca-app-pub-...~... or set the ADMOB_ANDROID_APP_ID environment variable."
-                )
-            }
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true

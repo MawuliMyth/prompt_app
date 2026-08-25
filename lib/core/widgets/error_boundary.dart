@@ -6,12 +6,7 @@ import 'adaptive_widgets.dart';
 
 /// Error boundary widget that catches errors and displays a fallback UI
 class ErrorBoundary extends StatefulWidget {
-
-  const ErrorBoundary({
-    super.key,
-    required this.child,
-    this.fallback,
-  });
+  const ErrorBoundary({super.key, required this.child, this.fallback});
   final Widget child;
   final Widget? fallback;
 
@@ -21,36 +16,50 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   bool _hasError = false;
+  void Function(FlutterErrorDetails details)? _previousOnError;
 
   @override
   void initState() {
     super.initState();
-    // Catch errors in the widget tree
+    // Catch errors in the widget tree. We capture whatever handler was
+    // previously installed (e.g. from an outer ErrorBoundary, or none) so
+    // dispose() can restore it - previously this unconditionally clobbered
+    // FlutterError.onError and never restored it, so if more than one
+    // ErrorBoundary existed (or this one got disposed/recreated), errors
+    // could end up silently unhandled once this instance went away.
+    _previousOnError = FlutterError.onError;
     FlutterError.onError = (details) {
       if (mounted) {
         setState(() {
           _hasError = true;
         });
       }
-      FlutterError.presentError(details);
+      if (_previousOnError != null) {
+        _previousOnError!(details);
+      } else {
+        FlutterError.presentError(details);
+      }
     };
+  }
+
+  @override
+  void dispose() {
+    FlutterError.onError = _previousOnError;
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_hasError) {
-      return widget.fallback ?? const ErrorFallback(message: 'Something went wrong');
+      return widget.fallback ??
+          const ErrorFallback(message: 'Something went wrong');
     }
     return widget.child;
   }
 }
 
 class ErrorFallback extends StatelessWidget {
-
-  const ErrorFallback({
-    super.key,
-    required this.message,
-  });
+  const ErrorFallback({super.key, required this.message});
   final String message;
 
   @override
@@ -63,11 +72,7 @@ class ErrorFallback extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.red.shade700,
-              size: 48,
-            ),
+            Icon(Icons.error_outline, color: Colors.red.shade700, size: 48),
             const SizedBox(height: 16),
             Text(
               message,

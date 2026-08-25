@@ -26,6 +26,14 @@ class AnalyticsScreen extends StatelessWidget {
       return _AnalyticsLockedState(signedIn: authProvider.isAuthenticated);
     }
 
+    if (promptProvider.isLoading) {
+      // Previously this fell through to rendering zeroed-out stats and a
+      // canned placeholder curve while the prompts stream was still
+      // populating (e.g. right after sign-in), which read as real (flat)
+      // data rather than a loading state.
+      return const _AnalyticsLoadingState();
+    }
+
     final prompts = promptProvider.prompts;
     final avgStrength = prompts.isEmpty
         ? 0
@@ -111,8 +119,8 @@ class AnalyticsScreen extends StatelessWidget {
                     child: CustomPaint(
                       painter: _LineGraphPainter(
                         points: weeklyPoints,
-                        lineColor: AppColors.primaryLight,
-                        fillColor: AppColors.primaryLight.withValues(
+                        lineColor: theme.colorScheme.primary,
+                        fillColor: theme.colorScheme.primary.withValues(
                           alpha: 0.12,
                         ),
                         gridColor: theme.dividerColor,
@@ -150,7 +158,7 @@ class AnalyticsScreen extends StatelessWidget {
                       Text(
                         '${entry.value}',
                         style: AppTextStyles.heading.copyWith(
-                          color: AppColors.primaryLight,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],
@@ -186,6 +194,23 @@ class AnalyticsScreen extends StatelessWidget {
       return const [0.2, 0.34, 0.28, 0.48, 0.44, 0.62, 0.58];
     }
     return counts.map((item) => item / maxCount).toList();
+  }
+}
+
+class _AnalyticsLoadingState extends StatelessWidget {
+  const _AnalyticsLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AdaptiveScaffold(
+      appBar: const AdaptiveAppBar(
+        title: 'Insights',
+        backgroundColor: Colors.transparent,
+      ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: const Center(child: AdaptiveProgressIndicator(size: 32)),
+    );
   }
 }
 
@@ -292,8 +317,7 @@ class _StatBlock extends StatelessWidget {
       children: [
         Text(
           value,
-          style: AppTextStyles.display.copyWith(
-            fontSize: 28,
+          style: AppTextStyles.textTheme.displaySmall!.copyWith(
             color: onDark
                 ? Colors.white
                 : Theme.of(context).colorScheme.onSurface,

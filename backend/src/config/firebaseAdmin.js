@@ -1,5 +1,12 @@
 import 'dotenv/config';
-import admin from 'firebase-admin';
+import {
+  applicationDefault,
+  cert,
+  getApps,
+  initializeApp,
+} from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
 function detectProjectId() {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -25,7 +32,7 @@ function buildCredential() {
     if (parsed.private_key) {
       parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
     }
-    return admin.credential.cert(parsed);
+    return cert(parsed);
   }
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -33,24 +40,23 @@ function buildCredential() {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (projectId && clientEmail && privateKey) {
-    return admin.credential.cert({
+    return cert({
       projectId,
       clientEmail,
       privateKey: privateKey.replace(/\\n/g, '\n'),
     });
   }
 
-  return admin.credential.applicationDefault();
+  return applicationDefault();
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp({
+const app = getApps()[0] ||
+  initializeApp({
     credential: buildCredential(),
     projectId: detectProjectId() || undefined,
   });
-}
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { admin, auth, db };
+export { auth, db, FieldValue };

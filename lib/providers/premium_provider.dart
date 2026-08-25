@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../core/utils/analytics.dart';
+import '../data/services/analytics_bootstrap.dart';
 import '../data/models/user_model.dart';
 import '../data/services/premium_service.dart';
+import '../data/services/billing_service.dart';
 
 /// Provider for managing premium subscription state
 class PremiumProvider extends ChangeNotifier {
-  PremiumProvider({PremiumServiceBase? premiumService})
-    : _premiumService = premiumService ?? PremiumService();
+  PremiumProvider({
+    PremiumServiceBase? premiumService,
+    BillingService? billingService,
+    bool initializeBilling = true,
+  }) : _premiumService = premiumService ?? PremiumService(),
+       _billingService = billingService ?? BillingService() {
+    if (initializeBilling) {
+      _billingService.initialize(
+        onStateChanged: _handleBillingState,
+        onEntitlementChanged: refreshPremiumStatus,
+      );
+    }
+  }
 
   final PremiumServiceBase _premiumService;
+  final BillingService _billingService;
 
   // State
   bool _isPremium = false;
@@ -20,6 +33,7 @@ class PremiumProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   UserModel? _userData;
+  String? _activeUserId;
 
   // Getters
   bool get isPremium => _isPremium;
@@ -30,6 +44,41 @@ class PremiumProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   UserModel? get userData => _userData;
+  Map<String, dynamic> get storeProducts => _billingService.products;
+
+  void _handleBillingState(bool busy, String? error) {
+    _isLoading = busy;
+    _error = error;
+    notifyListeners();
+  }
+
+  String? priceForPlan(String planType) {
+    final id = planType == 'monthly'
+        ? monthlySubscriptionId
+        : yearlySubscriptionId;
+    return _billingService.products[id]?.price;
+  }
+
+  Future<bool> purchasePlan(String planType) async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      _error = 'Sign in to subscribe.';
+      notifyListeners();
+      return false;
+    }
+    try {
+      await _billingService.purchase(
+        planType == 'monthly'
+            ? monthlySubscriptionId
+            : yearlySubscriptionId,
+      );
+      return true;
+    } catch (error) {
+      _handleBillingState(false, error.toString());
+      return false;
+    }
+  }
+
+  Future<void> restorePurchases() => _billingService.restore();
 
   /// Check if user can start a trial
   bool get canStartTrial => !_trialUsed && !_isPremium;
@@ -234,9 +283,26 @@ class PremiumProvider extends ChangeNotifier {
   /// Update user - called when auth state changes
   void updateUser(User? user) {
     if (user == null) {
+      _activeUserId = null;
       _resetState();
-    } else {
-      loadPremiumStatus();
+    } else if (_activeUserId != user.uid) {
+      _activeUserId = user.uid;
+      _syncUserEntitlement();
     }
+  }
+
+  Future<void> _syncUserEntitlement() async {
+    await loadPremiumStatus();
+    try {
+      await _billingService.restore();
+    } catch (error) {
+      debugPrint('Unable to sync Google Play purchases: $error');
+    }
+  }
+
+  @override
+  void dispose() {
+    _billingService.dispose();
+    super.dispose();
   }
 }

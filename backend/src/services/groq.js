@@ -30,14 +30,31 @@ async function transcribeAudio(audioBuffer, filename = 'audio.webm') {
   // Create a File object from the buffer
   const file = new File([audioBuffer], filename, { type: contentType });
 
-  const transcription = await groq.audio.transcriptions.create({
-    file: file,
-    model: 'whisper-large-v3-turbo',
-    language: 'en',
-    response_format: 'json',
-  });
+  try {
+    const transcription = await groq.audio.transcriptions.create({
+      file: file,
+      model: 'whisper-large-v3-turbo',
+      language: 'en',
+      response_format: 'json',
+    });
 
-  return transcription.text;
+    return transcription.text;
+  } catch (error) {
+    // Log full detail for operators, but never forward the raw Groq SDK
+    // error message to the client - it can carry upstream API-key/config
+    // details that shouldn't be exposed.
+    console.error(
+      'Groq transcription failed:',
+      error?.status || error?.statusCode,
+      error?.message,
+    );
+    const upstreamError = new Error(
+      'Unable to transcribe audio right now. Please try again.',
+    );
+    upstreamError.status = 502;
+    upstreamError.code = 'transcription-failed';
+    throw upstreamError;
+  }
 }
 
 export { transcribeAudio };

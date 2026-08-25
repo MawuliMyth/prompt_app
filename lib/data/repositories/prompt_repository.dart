@@ -12,9 +12,7 @@ class PromptRepository {
   Future<void> savePrompt(String userId, PromptModel prompt) async {
     try {
       final data = prompt.toMap();
-      debugPrint('Saving prompt to Firestore: users/$userId/prompts/${prompt.id}');
       await _userPromptsRef(userId).doc(prompt.id).set(data);
-      debugPrint('Prompt saved successfully');
     } catch (e) {
       debugPrint('Error saving prompt: $e');
       rethrow;
@@ -24,7 +22,6 @@ class PromptRepository {
   Future<void> deletePrompt(String userId, String promptId) async {
     try {
       await _userPromptsRef(userId).doc(promptId).delete();
-      debugPrint('Prompt deleted: $promptId');
     } catch (e) {
       debugPrint('Error deleting prompt: $e');
       rethrow;
@@ -36,7 +33,6 @@ class PromptRepository {
       await _userPromptsRef(userId).doc(promptId).update({
         'isFavourite': newStatus,
       });
-      debugPrint('Favourite updated: $promptId -> $newStatus');
     } catch (e) {
       debugPrint('Error updating favourite: $e');
       rethrow;
@@ -44,12 +40,10 @@ class PromptRepository {
   }
 
   Stream<List<PromptModel>> watchPrompts(String userId) {
-    debugPrint('Setting up prompts stream for user: $userId');
     return _userPromptsRef(userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          debugPrint('Received ${snapshot.docs.length} prompts from Firestore');
           return snapshot.docs
               .map((doc) => PromptModel.fromMap(doc.data(), doc.id))
               .toList();
@@ -63,6 +57,5 @@ class PromptRepository {
       batch.delete(doc.reference);
     }
     await batch.commit();
-    debugPrint('Cleared all history for user: $userId');
   }
 }

@@ -9,7 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/utils/analytics.dart';
+import '../../data/services/analytics_bootstrap.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/strength_calculator.dart';
 import '../../core/utils/platform_utils.dart';
@@ -106,6 +106,10 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   Future<void> _autoSaveIfAuthenticated() async {
+    // Guards a postFrameCallback: the widget could theoretically be
+    // disposed before this callback fires (e.g. an immediate pop), and
+    // touching an unmounted widget's context is unsafe.
+    if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final promptProvider = Provider.of<PromptProvider>(context, listen: false);
 
@@ -618,10 +622,11 @@ class _ResultScreenState extends State<ResultScreen>
                     fit: BoxFit.scaleDown,
                     child: Text(
                       '$_strengthScore',
-                      style: AppTextStyles.heading.copyWith(
-                        color: AppColors.primaryLight,
-                        fontSize: isSmallScreen ? 20 : 28,
-                      ),
+                      style:
+                          (isSmallScreen
+                                  ? AppTextStyles.heading
+                                  : AppTextStyles.textTheme.displaySmall!)
+                              .copyWith(color: AppColors.primaryLight),
                     ),
                   ),
                 ),
@@ -805,11 +810,14 @@ class _ResultScreenState extends State<ResultScreen>
           const SizedBox(height: AppConstants.spacing12),
           Text(
             widget.originalText,
-            style: AppTextStyles.body.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              fontStyle: FontStyle.italic,
-              fontSize: isSmallScreen ? 13 : 14,
-            ),
+            style:
+                (isSmallScreen
+                        ? AppTextStyles.sectionLabel
+                        : AppTextStyles.body)
+                    .copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontStyle: FontStyle.italic,
+                    ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -859,11 +867,8 @@ class _ResultScreenState extends State<ResultScreen>
             ),
             child: SelectableText(
               widget.enhancedPrompt,
-              style: AppTextStyles.body.copyWith(
-                color: theme.colorScheme.onSurface,
-                height: 1.7,
-                fontSize: isSmallScreen ? 14 : 15,
-              ),
+              style: (isSmallScreen ? AppTextStyles.body : AppTextStyles.button)
+                  .copyWith(color: theme.colorScheme.onSurface, height: 1.7),
             ),
           ),
         ],
@@ -983,10 +988,13 @@ class _ResultScreenState extends State<ResultScreen>
                             const SizedBox(height: AppConstants.spacing12),
                             Text(
                               _variations![index],
-                              style: AppTextStyles.body.copyWith(
-                                color: theme.colorScheme.onSurface,
-                                fontSize: isSmallScreen ? 13 : 14,
-                              ),
+                              style:
+                                  (isSmallScreen
+                                          ? AppTextStyles.sectionLabel
+                                          : AppTextStyles.body)
+                                      .copyWith(
+                                        color: theme.colorScheme.onSurface,
+                                      ),
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),

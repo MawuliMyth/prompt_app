@@ -9,12 +9,10 @@ import 'providers/auth_provider.dart';
 import 'providers/app_config_provider.dart';
 import 'providers/prompt_provider.dart';
 import 'providers/free_prompt_provider.dart';
-import 'providers/template_provider.dart';
 import 'providers/premium_provider.dart';
 import 'providers/daily_limit_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'providers/shell_provider.dart';
-import 'data/services/ad_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,8 +33,6 @@ void main() async {
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
   }
-
-  await AdService.initialize();
 
   runApp(
     MultiProvider(
@@ -62,7 +58,6 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => FreePromptProvider()..loadCount(),
         ),
-        ChangeNotifierProvider(create: (_) => TemplateProvider()),
         ChangeNotifierProvider(create: (_) => DailyLimitProvider()),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
       ],

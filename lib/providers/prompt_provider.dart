@@ -54,12 +54,8 @@ class PromptProvider extends ChangeNotifier {
 
   void updateUser(User? user) {
     final newUserId = user?.uid;
-    debugPrint(
-      'PromptProvider.updateUser called. New userId: $newUserId, Current: $_currentUserId',
-    );
 
     if (_currentUserId == newUserId) {
-      debugPrint('Same user, skipping update');
       return;
     }
 
@@ -70,13 +66,11 @@ class PromptProvider extends ChangeNotifier {
     if (user != null) {
       _isLoading = true;
       notifyListeners();
-      debugPrint('Setting up prompts stream for user: ${user.uid}');
 
       _subscription = _promptRepository
           .watchPrompts(user.uid)
           .listen(
             (data) {
-              debugPrint('Received ${data.length} prompts from stream');
               _prompts = data;
               _isLoading = false;
               notifyListeners();
@@ -85,16 +79,15 @@ class PromptProvider extends ChangeNotifier {
               debugPrint('Error loading prompts: $error');
               _prompts = [];
               _isLoading = false;
+              _error = 'Failed to load your prompts. Please check your connection and try again.';
               notifyListeners();
             },
             onDone: () {
-              debugPrint('Prompts stream done');
               _isLoading = false;
               notifyListeners();
             },
           );
     } else {
-      debugPrint('No user, clearing prompts');
       _prompts = [];
       _isLoading = false;
       notifyListeners();
@@ -137,7 +130,7 @@ class PromptProvider extends ChangeNotifier {
       await _promptRepository.toggleFavourite(
         user.uid,
         prompt.id,
-        prompt.isFavourite,
+        !prompt.isFavourite,
       );
       return true;
     } catch (e) {

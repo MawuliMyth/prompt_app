@@ -31,8 +31,16 @@ class DailyLimitProvider extends ChangeNotifier {
       _dailyPromptsUsed = data['used'] as int;
       _remainingPrompts = data['remaining'] as int;
       _hasReachedLimit = data['hasReachedLimit'] as bool;
+      if (data['hadError'] == true) {
+        _error = 'Could not confirm your remaining prompts. Please check your connection.';
+      }
     } catch (e) {
       debugPrint('Error loading daily usage: $e');
+      // Fail closed: an unexpected error here must not leave the UI showing
+      // a fresh/unused quota.
+      _dailyPromptsUsed = DailyLimitService.freeDailyLimit;
+      _remainingPrompts = 0;
+      _hasReachedLimit = true;
       _error = 'Failed to load usage data';
     }
 
@@ -40,9 +48,22 @@ class DailyLimitProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Increment usage after a prompt is enhanced
+  /// Increment usage after a prompt is enhanced.
+  ///
+  /// This persists the increment to Firestore via [DailyLimitService] - the
+  /// backend has already atomically incremented the authoritative counter
+  /// as part of the successful /api/enhance call, so this is keeping the
+  /// client's local mirror in sync for the UI. If persistence fails we
+  /// still reflect the usage locally (the prompt WAS already consumed
+  /// server-side), but we surface an error so the user knows their visible
+  /// count may be stale until it syncs.
   Future<bool> incrementUsage() async {
     if (_hasReachedLimit) return false;
+
+    final persisted = await _dailyLimitService.incrementDailyUsage();
+    if (!persisted) {
+      _error = 'Could not sync your prompt usage. Your remaining count may be out of date.';
+    }
 
     _dailyPromptsUsed++;
     _remainingPrompts--;

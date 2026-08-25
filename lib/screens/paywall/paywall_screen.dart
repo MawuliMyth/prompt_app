@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/utils/analytics.dart';
+import '../../data/services/analytics_bootstrap.dart';
 import '../../core/utils/platform_utils.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/widgets/adaptive_widgets.dart';
+import '../../data/services/daily_limit_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/free_prompt_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../auth/login_screen.dart';
 import '../settings/settings_screen.dart';
@@ -53,25 +55,37 @@ class _PaywallScreenState extends State<PaywallScreen> {
     ),
   ];
 
-  final List<_FeatureRow> _features = const [
-    _FeatureRow('Daily prompts', '10/day', 'Unlimited'),
-    _FeatureRow('AI Model', 'Standard', 'Advanced'),
-    _FeatureRow('Voice recordings', '3/day', 'Unlimited'),
-    _FeatureRow('AI tool optimization', 'Basic', 'Deep'),
-    _FeatureRow('Specialist personas', 'Basic', 'Expert level'),
-    _FeatureRow('Prompt variations', 'No', 'Yes'),
-    _FeatureRow('Tone selector', 'Auto only', 'All tones'),
-    _FeatureRow('Prompt history', 'Last 10', 'Unlimited'),
-    _FeatureRow('Analytics', 'No', 'Yes'),
-    _FeatureRow('Custom persona', 'No', 'Yes'),
-    _FeatureRow('Ad free', 'No', 'Yes'),
-  ];
+  // Guests get FreePromptProvider.maxFreePrompts/day; signed-in free users
+  // get the higher DailyLimitService.freeDailyLimit/day - these are two
+  // different tiers server-side (see backend GUEST_DAILY_LIMIT vs
+  // FREE_DAILY_LIMIT), so the copy here must reflect whichever applies to
+  // the person actually looking at this screen rather than a hardcoded
+  // number that's only correct for one of them.
+  List<_FeatureRow> _features(bool isSignedIn) {
+    final dailyPrompts = isSignedIn
+        ? '${DailyLimitService.freeDailyLimit}/day'
+        : '${FreePromptProvider.maxFreePrompts}/day';
+    return [
+      _FeatureRow('Daily prompts', dailyPrompts, 'Unlimited'),
+      const _FeatureRow('AI Model', 'Standard', 'Advanced'),
+      const _FeatureRow('Voice recordings', '3/day', 'Unlimited'),
+      const _FeatureRow('AI tool optimization', 'Basic', 'Deep'),
+      const _FeatureRow('Specialist personas', 'Basic', 'Expert level'),
+      const _FeatureRow('Prompt variations', 'No', 'Yes'),
+      const _FeatureRow('Tone selector', 'Auto only', 'All tones'),
+      const _FeatureRow('Prompt history', 'Last 10', 'Unlimited'),
+      const _FeatureRow('Analytics', 'No', 'Yes'),
+      const _FeatureRow('Custom persona', 'No', 'Yes'),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final premiumProvider = context.watch<PremiumProvider>();
     final trialUsed = premiumProvider.trialUsed;
+    final isSignedIn = context.watch<AuthProvider>().isAuthenticated;
+    final features = _features(isSignedIn);
 
     return AdaptiveScaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -88,7 +102,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   children: [
                     _buildPricingCards(theme),
                     const SizedBox(height: 24),
-                    _buildFeatureComparison(theme),
+                    _buildFeatureComparison(theme, features),
                     const SizedBox(height: 24),
                     _buildBottomSection(premiumProvider, trialUsed),
                   ],
@@ -251,10 +265,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                           child: Text(
                             plan.badge!,
                             textAlign: TextAlign.center,
-                            style: AppTextStyles.caption.copyWith(
+                            style: AppTextStyles.badge.copyWith(
                               color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -296,9 +308,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         const SizedBox(height: 2),
                         Text(
                           plan.subtitle!,
-                          style: AppTextStyles.caption.copyWith(
+                          style: AppTextStyles.navigationLabel.copyWith(
                             color: AppColors.primaryLight,
-                            fontSize: 10,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -314,7 +325,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _buildFeatureComparison(ThemeData theme) {
+  Widget _buildFeatureComparison(ThemeData theme, List<_FeatureRow> features) {
     final primaryText = _primaryTextColor(theme);
     final secondaryText = _secondaryTextColor(theme);
     final softBorder = _softBorderColor(theme);
@@ -383,9 +394,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   ],
                 ),
               ),
-              ...List.generate(_features.length, (index) {
-                final feature = _features[index];
-                final isLast = index == _features.length - 1;
+              ...List.generate(features.length, (index) {
+                final feature = features[index];
+                final isLast = index == features.length - 1;
 
                 return Container(
                   padding: const EdgeInsets.symmetric(
@@ -450,7 +461,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
         !(authProvider.currentUser?.emailVerified ?? false);
 
     final selectedPlan = _plans[_selectedPlanIndex];
-    final priceText = '${selectedPlan.price}${selectedPlan.period}';
+    final storePrice = premiumProvider.priceForPlan(selectedPlan.id);
+    final priceText = storePrice == null
+        ? '${selectedPlan.price}${selectedPlan.period}'
+        : '$storePrice${selectedPlan.period}';
 
     return Column(
       children: [
@@ -477,7 +491,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
           requiresVerificationForTrial
               ? 'Verify your email first, then return here to start your free trial.'
               : trialUsed
-              ? '$priceText. Purchase integration is coming next.'
+              ? '$priceText. Cancel anytime through Google Play.'
               : 'Then $priceText. Cancel anytime.',
           style: AppTextStyles.caption.copyWith(color: secondaryText),
           textAlign: TextAlign.center,
@@ -493,13 +507,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
             _buildTrustBadge('Free trial', Icons.card_giftcard_outlined),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        TextButton(
+          onPressed: isBusy ? null : premiumProvider.restorePurchases,
+          child: const Text('Restore purchases'),
+        ),
+        const SizedBox(height: 8),
         Text(
           'By subscribing you agree to our Terms of Service.',
-          style: AppTextStyles.caption.copyWith(
-            color: secondaryText,
-            fontSize: 11,
-          ),
+          style: AppTextStyles.navigationLabel.copyWith(color: secondaryText),
           textAlign: TextAlign.center,
         ),
       ],
@@ -515,9 +531,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
         const SizedBox(width: 4),
         Text(
           text,
-          style: AppTextStyles.caption.copyWith(
+          style: AppTextStyles.navigationLabel.copyWith(
             color: secondaryText,
-            fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -611,10 +626,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
       ),
     );
     if (!mounted) return;
-    SnackbarUtils.showError(
-      context,
-      'Store billing is not connected yet. This screen is ready for it.',
-    );
+    final started = await premiumProvider.purchasePlan(selectedPlan.id);
+    if (!started && mounted) {
+      SnackbarUtils.showError(
+        context,
+        premiumProvider.error ?? 'Unable to start the purchase.',
+      );
+    }
   }
 }
 

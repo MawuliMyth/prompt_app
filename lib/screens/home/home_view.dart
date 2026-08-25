@@ -596,23 +596,23 @@ class _FeatureCard extends StatelessWidget {
               feature.title,
               maxLines: large ? 2 : 2,
               overflow: TextOverflow.ellipsis,
-              style: (large ? AppTextStyles.display : AppTextStyles.heading)
-                  .copyWith(
-                    color: onCardColor,
-                    fontSize: large ? 24 : 15,
-                    height: large ? 1.05 : 1.1,
-                  ),
+              style:
+                  (large
+                          ? AppTextStyles.textTheme.headlineLarge!
+                          : AppTextStyles.button)
+                      .copyWith(color: onCardColor, height: large ? 1.05 : 1.1),
             ),
             const SizedBox(height: 6),
             Text(
               feature.subtitle,
               maxLines: large ? 3 : 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.body.copyWith(
-                color: onCardColor.withValues(alpha: 0.78),
-                fontSize: large ? 14 : 11.5,
-                height: large ? 1.25 : 1.1,
-              ),
+              style:
+                  (large ? AppTextStyles.body : AppTextStyles.navigationLabel)
+                      .copyWith(
+                        color: onCardColor.withValues(alpha: 0.78),
+                        height: large ? 1.25 : 1.1,
+                      ),
             ),
           ],
         ),

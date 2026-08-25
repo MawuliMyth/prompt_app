@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../constants/app_text_styles.dart';
 import 'platform_utils.dart';
 
 class SnackbarUtils {
@@ -73,12 +74,16 @@ class SnackbarUtils {
           child: SafeArea(
             child: CupertinoPopupSurface(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(color: backgroundColor.withValues(alpha: 0.95)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: backgroundColor.withValues(alpha: 0.95),
+                ),
                 child: DefaultTextStyle(
-                  style: const TextStyle(
+                  style: AppTextStyles.body.copyWith(
                     color: Colors.white,
-                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                   child: Row(

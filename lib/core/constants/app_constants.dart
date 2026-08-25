@@ -10,7 +10,6 @@ class AppConstants {
   static const double radiusInput = 18.0;
   static const double radiusBottomSheet = 30.0;
   static const double radiusFloating = 30.0;
-  static const double borderRadius = 16.0; // Legacy alias
 
   // Spacing System
   static const double spacing4 = 4.0;

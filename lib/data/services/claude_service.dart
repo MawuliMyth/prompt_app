@@ -26,16 +26,26 @@ class ClaudeService {
     return headers;
   }
 
-  String _parseErrorMessage(String responseBody, String fallbackMessage) {
+  /// Parses a backend error response into a message plus (when present) the
+  /// machine-readable `code` the backend attaches to validation/access
+  /// failures (e.g. 'daily-limit-reached', 'premium-required'). Callers can
+  /// branch on `code` to show the right UI (paywall, daily-limit sheet,
+  /// etc.) instead of only ever showing a generic error string - previously
+  /// every non-200 response collapsed into one undifferentiated message
+  /// regardless of whether it was a quota/access failure or a real error.
+  Map<String, String?> _parseError(String responseBody, String fallbackMessage) {
     try {
       final data = jsonDecode(responseBody);
       if (data is Map<String, dynamic>) {
-        return data['error'] as String? ?? fallbackMessage;
+        return {
+          'error': data['error'] as String? ?? fallbackMessage,
+          'code': data['code'] as String?,
+        };
       }
     } catch (_) {
       // Ignore JSON parsing failures and fall back to the default message.
     }
-    return fallbackMessage;
+    return {'error': fallbackMessage, 'code': null};
   }
 
   String _transportErrorMessage(Object error) {
@@ -107,12 +117,19 @@ class ClaudeService {
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'enhancedPrompt': data['enhancedPrompt']};
       } else {
+        final parsed = _parseError(
+          response.body,
+          'Something went wrong. Please try again.',
+        );
         return {
           'success': false,
-          'error': _parseErrorMessage(
-            response.body,
-            'Something went wrong. Please try again.',
-          ),
+          'error': parsed['error'],
+          // Machine-readable code from the backend (e.g.
+          // 'daily-limit-reached', 'premium-required', 'guest-limit-reached')
+          // when present, so callers can distinguish a quota/access failure
+          // from a generic one instead of only having a message string.
+          'code': parsed['code'],
+          'statusCode': response.statusCode,
         };
       }
     } on TimeoutException {
@@ -122,17 +139,26 @@ class ClaudeService {
       return {
         'success': false,
         'error': 'The server took too long to respond. Please try again.',
+        'code': 'timeout',
       };
     } on http.ClientException catch (e) {
       if (kDebugMode) {
         debugPrint('Network error during enhancement: $e');
       }
-      return {'success': false, 'error': _transportErrorMessage(e)};
+      return {
+        'success': false,
+        'error': _transportErrorMessage(e),
+        'code': 'transport-error',
+      };
     } on SocketException catch (e) {
       if (kDebugMode) {
         debugPrint('Socket error during enhancement: $e');
       }
-      return {'success': false, 'error': _transportErrorMessage(e)};
+      return {
+        'success': false,
+        'error': _transportErrorMessage(e),
+        'code': 'transport-error',
+      };
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Enhancement error: $e');
@@ -140,6 +166,7 @@ class ClaudeService {
       return {
         'success': false,
         'error': 'Something went wrong. Please try again.',
+        'code': 'unknown-error',
       };
     }
   }
@@ -190,12 +217,15 @@ class ClaudeService {
           'variations': List<String>.from(data['variations']),
         };
       } else {
+        final parsed = _parseError(
+          response.body,
+          'Failed to generate variations.',
+        );
         return {
           'success': false,
-          'error': _parseErrorMessage(
-            response.body,
-            'Failed to generate variations.',
-          ),
+          'error': parsed['error'],
+          'code': parsed['code'],
+          'statusCode': response.statusCode,
         };
       }
     } on TimeoutException {
@@ -205,17 +235,26 @@ class ClaudeService {
       return {
         'success': false,
         'error': 'The server took too long to respond. Please try again.',
+        'code': 'timeout',
       };
     } on http.ClientException catch (e) {
       if (kDebugMode) {
         debugPrint('Network error during variations: $e');
       }
-      return {'success': false, 'error': _transportErrorMessage(e)};
+      return {
+        'success': false,
+        'error': _transportErrorMessage(e),
+        'code': 'transport-error',
+      };
     } on SocketException catch (e) {
       if (kDebugMode) {
         debugPrint('Socket error during variations: $e');
       }
-      return {'success': false, 'error': _transportErrorMessage(e)};
+      return {
+        'success': false,
+        'error': _transportErrorMessage(e),
+        'code': 'transport-error',
+      };
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Variations error: $e');
@@ -223,6 +262,7 @@ class ClaudeService {
       return {
         'success': false,
         'error': 'Something went wrong. Please try again.',
+        'code': 'unknown-error',
       };
     }
   }

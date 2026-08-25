@@ -124,7 +124,7 @@ class UserModel {
       premiumExpiryDate: premiumExpiryDate ?? this.premiumExpiryDate,
       trialStartDate: trialStartDate ?? this.trialStartDate,
       trialUsed: trialUsed ?? this.trialUsed,
-      persona: persona,
+      persona: persona ?? this.persona,
       dailyPromptsUsed: dailyPromptsUsed ?? this.dailyPromptsUsed,
       dailyPromptsResetDate: dailyPromptsResetDate ?? this.dailyPromptsResetDate,
     );

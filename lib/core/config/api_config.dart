@@ -26,6 +26,8 @@ class ApiConfig {
   static String get enhanceEndpoint => '$apiEndpoint/enhance';
   static String get variationsEndpoint => '$apiEndpoint/variations';
   static String get activateTrialEndpoint => '$apiEndpoint/trial/activate';
+  static String get verifySubscriptionEndpoint =>
+      '$apiEndpoint/subscriptions/google/verify';
   static String get deleteAccountEndpoint => '$apiEndpoint/account';
   static String get appConfigEndpoint => '$apiEndpoint/app-config';
   static String get healthEndpoint => '$baseUrl/health';

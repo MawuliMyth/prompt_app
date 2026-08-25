@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../constants/app_text_styles.dart';
 import '../utils/platform_utils.dart';
@@ -33,7 +32,7 @@ class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
         middle: Text(
           title,
           style: AppTextStyles.headingMedium.copyWith(
-            color: AppColors.primaryLight,
+            color: theme.colorScheme.primary,
           ),
         ),
         trailing: actions != null && actions!.isNotEmpty
@@ -49,7 +48,7 @@ class AdaptiveAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: AppTextStyles.headingLarge.copyWith(
-          color: AppColors.primaryLight,
+          color: theme.colorScheme.primary,
         ),
       ),
       actions: actions,
@@ -87,6 +86,7 @@ class AdaptiveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isCupertino = PlatformUtils.useCupertino(context);
 
     if (isCupertino) {
@@ -95,9 +95,9 @@ class AdaptiveButton extends StatelessWidget {
         color: filled
             ? (isDestructive
                   ? CupertinoColors.destructiveRed
-                  : backgroundColor ?? AppColors.primaryLight)
+                  : backgroundColor ?? theme.colorScheme.primary)
             : null,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppConstants.radiusButton),
         padding: EdgeInsets.zero,
         child: isLoading
             ? const CupertinoActivityIndicator(color: CupertinoColors.white)
@@ -106,9 +106,11 @@ class AdaptiveButton extends StatelessWidget {
                     ? null
                     : BoxDecoration(
                         color: backgroundColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusButton,
+                        ),
                         border: Border.all(
-                          color: foregroundColor ?? AppColors.primaryLight,
+                          color: foregroundColor ?? theme.colorScheme.primary,
                         ),
                       ),
                 padding: const EdgeInsets.symmetric(
@@ -122,14 +124,16 @@ class AdaptiveButton extends StatelessWidget {
                       Icon(
                         icon,
                         size: 18,
-                        color: foregroundColor ?? (filled ? Colors.white : null),
+                        color:
+                            foregroundColor ?? (filled ? Colors.white : null),
                       ),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       label,
                       style: AppTextStyles.button.copyWith(
-                        color: foregroundColor ?? (filled ? Colors.white : null),
+                        color:
+                            foregroundColor ?? (filled ? Colors.white : null),
                       ),
                     ),
                   ],
@@ -143,10 +147,12 @@ class AdaptiveButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: isDestructive
             ? Colors.red
-            : backgroundColor ?? AppColors.primaryLight,
+            : backgroundColor ?? theme.colorScheme.primary,
         foregroundColor: foregroundColor ?? Colors.white,
         padding: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusButton),
+        ),
       ),
       child: isLoading
           ? const ShimmerPulse(
@@ -226,9 +232,7 @@ class AdaptiveTextField extends StatelessWidget {
           if (labelText != null) ...[
             Text(
               labelText!,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondaryLight,
-              ),
+              style: AppTextStyles.caption.copyWith(color: theme.hintColor),
             ),
             const SizedBox(height: 8),
           ],
@@ -249,8 +253,12 @@ class AdaptiveTextField extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              border: Border.all(color: AppColors.dividerLight),
-              borderRadius: BorderRadius.circular(12),
+              // Was hardcoded to the light-mode divider color, which
+              // rendered as a near-white border around a dark input field
+              // in dark mode - directly against the "no bright white
+              // borders in dark mode" design rule.
+              border: Border.all(color: theme.dividerColor),
+              borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
             ),
             prefix: prefixIcon != null
                 ? Padding(
@@ -331,30 +339,35 @@ class AdaptiveDialog {
 
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title, style: AppTextStyles.headingMedium),
-        content: Text(content, style: AppTextStyles.body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              cancelText,
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.textSecondaryLight,
+      builder: (dialogContext) {
+        final dialogTheme = Theme.of(dialogContext);
+        return AlertDialog(
+          title: Text(title, style: AppTextStyles.headingMedium),
+          content: Text(content, style: AppTextStyles.body),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(
+                cancelText,
+                style: AppTextStyles.button.copyWith(
+                  color: dialogTheme.hintColor,
+                ),
               ),
             ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              confirmText,
-              style: AppTextStyles.button.copyWith(
-                color: isDestructive ? Colors.red : AppColors.primaryLight,
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                confirmText,
+                style: AppTextStyles.button.copyWith(
+                  color: isDestructive
+                      ? Colors.red
+                      : dialogTheme.colorScheme.primary,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
@@ -368,6 +381,7 @@ class AdaptiveProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCupertino = PlatformUtils.useCupertino(context);
+    final effectiveColor = color ?? Theme.of(context).colorScheme.primary;
 
     if (isCupertino) {
       return CupertinoActivityIndicator(radius: (size ?? 20) / 2, color: color);
@@ -379,10 +393,8 @@ class AdaptiveProgressIndicator extends StatelessWidget {
       child: ShimmerPulse(
         width: size ?? 20,
         height: size ?? 20,
-        baseColor: (color ?? AppColors.primaryLight).withValues(alpha: 0.28),
-        highlightColor: (color ?? AppColors.primaryLight).withValues(
-          alpha: 0.6,
-        ),
+        baseColor: effectiveColor.withValues(alpha: 0.28),
+        highlightColor: effectiveColor.withValues(alpha: 0.6),
       ),
     );
   }
@@ -461,9 +473,7 @@ class AdaptiveListTile extends StatelessWidget {
         subtitle: subtitle != null
             ? Text(
                 subtitle!,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
+                style: AppTextStyles.caption.copyWith(color: theme.hintColor),
               )
             : null,
         trailing:
@@ -489,9 +499,7 @@ class AdaptiveListTile extends StatelessWidget {
         subtitle: subtitle != null
             ? Text(
                 subtitle!,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
+                style: AppTextStyles.caption.copyWith(color: theme.hintColor),
               )
             : null,
         trailing: trailing,
@@ -524,7 +532,7 @@ class AdaptiveSelectionChip extends StatelessWidget {
     final theme = Theme.of(context);
     final isCupertino = PlatformUtils.useCupertino(context);
     final backgroundColor = selected
-        ? AppColors.primaryLight
+        ? theme.colorScheme.primary
         : theme.colorScheme.surface;
     final foregroundColor = selected
         ? Colors.white
@@ -550,10 +558,7 @@ class AdaptiveSelectionChip extends StatelessWidget {
             ),
           ),
         ),
-        if (trailing != null) ...[
-          const SizedBox(width: 6),
-          trailing!,
-        ],
+        if (trailing != null) ...[const SizedBox(width: 6), trailing!],
       ],
     );
 
@@ -563,7 +568,10 @@ class AdaptiveSelectionChip extends StatelessWidget {
         minimumSize: Size.zero,
         onPressed: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.spacing12,
+            vertical: AppConstants.spacing8,
+          ),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(AppConstants.radiusChip),
@@ -578,7 +586,10 @@ class AdaptiveSelectionChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppConstants.radiusChip),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.spacing12,
+          vertical: AppConstants.spacing8,
+        ),
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(AppConstants.radiusChip),
@@ -615,9 +626,9 @@ class AdaptiveScaffold extends StatelessWidget {
     if (isCupertino) {
       return CupertinoPageScaffold(
         backgroundColor: backgroundColor,
-        navigationBar: appBar is AdaptiveAppBar
-            ? null // AdaptiveAppBar handles its own rendering
-            : null,
+        // AdaptiveAppBar (and any other appBar) renders itself inline in
+        // the Column below, so the Cupertino scaffold's own navigationBar
+        // slot is always unused here.
         child: SafeArea(
           bottom: false,
           child: Column(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'core/utils/analytics.dart';
+import 'data/services/analytics_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'providers/theme_provider.dart';
